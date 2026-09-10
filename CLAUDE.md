@@ -2,7 +2,9 @@
 
 Interfaz web del sistema de información de transporte público de Fusagasugá. Proyecto Integrador de Ingeniería de Software I, Universidad de Cundinamarca (docente: Ing. Luiferney Ortiz Parra).
 
-**Recursos externos:** la carpeta del curso en OneDrive (`C:/Users/Santiago/OneDrive - UNIVERSIDAD DE CUNDINAMARCA/Universidad/5 SEMESTRE/INGENIERIA SOFTWARE I`) contiene la Actividad 3 v3 y el material de clase. Las historias de usuario grilladas (RF-01 a RF-09, con criterios de aceptación) están en `docs/backlog/historias-rf01-rf09.md` de esa misma carpeta — es la fuente de las reglas de negocio de este archivo.
+**Recursos externos:** la carpeta del curso en OneDrive (`C:/Users/Santiago/OneDrive - UNIVERSIDAD DE CUNDINAMARCA/Universidad/5 SEMESTRE/INGENIERIA SOFTWARE I`) contiene la Actividad 3 v3 y el material de clase. Las historias de usuario grilladas (RF-01 a RF-12, con criterios de aceptación) están en `docs/backlog/historias-rf01-rf12.md` de esa misma carpeta — es la fuente de las reglas de negocio de este archivo.
+
+**Planes vigentes** (leer los dos al abrir sesión nueva): el plan maestro de arranque en `C:/Users/Santiago/.claude/plans/eager-coalescing-creek.md` y el **Plan de Metodología y Preparación** (vigente desde 2026-09-09) en `C:/Users/Santiago/.claude/plans/lee-el-estado-del-wondrous-hoare.md`.
 
 El contexto completo del curso, el alcance del proyecto y las métricas de calidad comprometidas están en el `CLAUDE.md` de la carpeta madre de la asignatura.
 
@@ -10,7 +12,7 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 
 ## Stack
 
-- Angular 18 + **TypeScript**, con Angular CLI
+- Angular 21 + **TypeScript**, con Angular CLI
 - Angular Router para navegación
 - Google Maps JavaScript API para visualizar rutas y paradas
 - Jasmine + Karma (test runner por defecto de Angular) o Jest si se justifica
@@ -64,6 +66,34 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 - Se configura por variable de entorno (`NG_API_KEY` o equivalente según el sistema de environments de Angular). `.env` en `.gitignore`, `.env.example` versionado con la clave vacía.
 - Maps se usa para **mostrar** rutas y paradas y para el mapa base. Adicionalmente, la **simulación de cada ruta para la búsqueda** se hace del lado del backend contra la Directions API de Google Maps; el frontend solo consume el endpoint ya resuelto y pinta la polilínea resultante. Las rutas de busetas siguen siendo dato propio: el backend envía a Maps la secuencia de paradas por ruta, no le pide a Maps que "invente" trayectos.
 
+## Ambientes y configuración
+
+**Concepto, en una línea:** el código nunca cambia entre ambientes; lo que cambia es cuál archivo de configuración se activa.
+
+| Ambiente | Qué es | Estado hoy |
+|---|---|---|
+| **DEV** | backend en `http://localhost:8080` en el portátil de cada uno | **activo** |
+| **PRE** | proyecto Supabase con datos de prueba | se monta en el Sprint 2 |
+| **PROD** | proyecto Supabase con las rutas reales | se monta en el Sprint 2 · **no está desplegado en ningún servidor este semestre** |
+
+```
+src/environments/
+├── environment.ts        # DEV — apiUrl: 'http://localhost:8080'
+└── environment.prod.ts   # PROD — se llena en el Sprint 2
+```
+
+Angular sustituye `environment.ts` por `environment.prod.ts` en el build de producción, vía `fileReplacements` en `angular.json`. **Ningún archivo lee una URL que no venga de `environment`**: si aparece un `http://localhost:8080` escrito a mano en un servicio, es un error.
+
+**Secretos: ninguno, jamás.** Es la regla de la §12 de la guía de buenas prácticas del docente y no admite excepción — todo lo que se compila en Angular viaja al navegador y es inspeccionable con F12. La clave de Google Maps que sí vive aquí es la **del frontend**, distinta de la del backend, pública por naturaleza, y lo que la protege es la restricción por dominio en la consola de Google Cloud. `.env.example` está versionado con las claves vacías; `.env` está en `.gitignore`.
+
+Arranque en DEV, desde un clon limpio:
+
+```bash
+npm ci
+cp .env.example .env      # y llenarlo
+npm start                 # ng serve en http://localhost:4200
+```
+
 ## Calidad medible (ISO/IEC 25010)
 
 *Nota: Estas métricas deben verificarse contra la Actividad 3 v3.*
@@ -94,8 +124,12 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 ## Convenciones de código
 
 - Código y nombres de variables en **inglés**; comentarios, commits, issues, documentación y README en **español**. Los textos que ve el usuario van en español (es una app para Fusagasugá).
-- Componentes en `PascalCase`, hooks con prefijo `use`, un componente por archivo.
-- Componentes de función con hooks; sin componentes de clase.
+- **Componentes standalone**, uno por archivo. Clase en `PascalCase` con sufijo de rol (`RouteSearchPage`, `MapViewComponent`, `RouteService`); archivos en `kebab-case` (`route-search.page.ts`).
+- Selectores con el prefijo `app-` (`<app-route-card>`), que es el `prefix` declarado en `angular.json`.
+- **Inyección por `inject()`**, no por constructor con parámetros: `private readonly routes = inject(RouteService);`. Es lo que Angular recomienda desde la v16 y lo que hace testeable un servicio sin `TestBed`.
+- **Signals para el estado del componente** (`signal()`, `computed()`), y RxJS solo donde hay un flujo asíncrono real que componer — típicamente `HttpClient` dentro de `services/`. No se mezclan los dos para lo mismo.
+- Plantillas con el flujo de control nuevo (`@if`, `@for`, `@switch`), no con `*ngIf` / `*ngFor`.
+- **Nada de React aquí.** Si aparece `useState`, un "hook", o un componente de función, es código copiado de otro stack y no entra: este proyecto es Angular.
 - Comentar solo el *por qué* no obvio. Lo que el código ya dice no se comenta.
-- Sin librerías de UI ni gestores de estado global mientras no haga falta: primero `useState` y contexto, y solo se agrega una dependencia cuando haya un problema real que resolver. Cada dependencia hay que poder justificarla ante el comité.
+- Sin librerías de UI ni gestores de estado global mientras no haga falta: primero signals y un servicio con `providedIn: 'root'`, y solo se agrega una dependencia cuando haya un problema real que resolver. Cada dependencia hay que poder justificarla ante el comité.
 - Formatear montos como pesos colombianos (COP).
