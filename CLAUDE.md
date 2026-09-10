@@ -13,6 +13,7 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 ## Stack
 
 - Angular 21 + **TypeScript 5.9**, con Angular CLI · Node 22 LTS
+- **PWA** (`@angular/service-worker`): instalable desde el navegador, sin tiendas de aplicaciones
 - Angular Router para navegación
 - Google Maps JavaScript API para visualizar rutas y paradas
 - **Vitest**, que es el test runner que trae el scaffolding de Angular 21 (`ng test`, builder `@angular/build:unit-test`) — ya no Karma
@@ -65,6 +66,44 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 - La API key del frontend es **distinta** de la del backend y va **restringida por dominio** en la consola de Google Cloud. Es pública por naturaleza al viajar en el navegador; la restricción es lo que la protege.
 - Se configura por variable de entorno (`NG_API_KEY` o equivalente según el sistema de environments de Angular). `.env` en `.gitignore`, `.env.example` versionado con la clave vacía.
 - Maps se usa para **mostrar** rutas y paradas y para el mapa base. Adicionalmente, la **simulación de cada ruta para la búsqueda** se hace del lado del backend contra la Directions API de Google Maps; el frontend solo consume el endpoint ya resuelto y pinta la polilínea resultante. Las rutas de busetas siguen siendo dato propio: el backend envía a Maps la secuencia de paradas por ruta, no le pide a Maps que "invente" trayectos.
+
+## PWA — la app se instala desde el navegador
+
+FusaRoute es una **aplicación web progresiva**: se abre en el navegador y el usuario puede instalarla en su celular con «Añadir a pantalla de inicio». Queda con su propio ícono, sin barra de direcciones. **No hay que publicar nada en Play Store ni en App Store**, y eso es justamente lo que la hace viable para este proyecto.
+
+Importa porque la mayoría de usuarios consulta la ruta desde el celular, parada en la calle.
+
+```
+public/manifest.webmanifest   nombre, iconos, color y modo de la app instalada
+public/icons/                 8 tamaños, de 72 a 512 px
+ngsw-config.json              qué archivos guarda el service worker
+src/app/app.config.ts         provideServiceWorker(...), con enabled: !isDevMode()
+src/index.html                <link rel="manifest"> y <meta name="theme-color">
+```
+
+### Lo que hay que saber para no perder tiempo
+
+**`ng serve` no activa el service worker.** Está deshabilitado en desarrollo a propósito (`enabled: !isDevMode()`), porque un service worker cacheando mientras programas te hace ver una versión vieja de tu propio código. Para probar la instalación de verdad hay que servir el build:
+
+```bash
+ng build
+npx http-server -p 8081 -c-1 dist/fusaroute-frontend/browser
+```
+
+Y abrir `http://localhost:8081`. En Chrome, *DevTools → Application → Manifest* dice si es instalable y por qué no, si no lo es.
+
+**Solo funciona sobre HTTPS o sobre `localhost`.** Es una regla del navegador, no una decisión nuestra. Consecuencia concreta que hay que decir tal cual ante el comité: mientras PROD no esté desplegado con certificado, **la instalación se puede demostrar en el portátil (`localhost`), pero no desde el celular de otra persona.**
+
+**El service worker NO es el modo offline del requisito.** Son dos cosas distintas y confundirlas sería declarar terminado algo que no lo está:
+
+| | Qué resuelve |
+|---|---|
+| **Service worker** (esto) | que la **app cargue** sin red: HTML, JS, CSS e iconos ya descargados |
+| **Modo offline** (RF de la épica 2) | que se pueda **calcular una ruta** sin red — endpoint del backend que resuelve por distancia geométrica sobre los GeoJSON |
+
+Hoy el service worker solo guarda el cascarón de la aplicación. Cachear respuestas de la API (`dataGroups` en `ngsw-config.json`) es una decisión del **Sprint 2**, cuando existan endpoints que valga la pena cachear, y hay que tomarla con cuidado: una ruta con la tarifa vieja servida desde caché es peor que un aviso de «sin conexión».
+
+**Al desplegar una versión nueva**, el usuario que ya tiene la app instalada sigue viendo la anterior hasta que recargue. Si eso llega a estorbar, se resuelve con `SwUpdate` de `@angular/service-worker` avisando «hay una versión nueva». No está implementado todavía.
 
 ## Ambientes y configuración
 
