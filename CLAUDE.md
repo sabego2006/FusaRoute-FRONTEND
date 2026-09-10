@@ -12,10 +12,10 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 
 ## Stack
 
-- Angular 21 + **TypeScript**, con Angular CLI
+- Angular 21 + **TypeScript 5.9**, con Angular CLI · Node 22 LTS
 - Angular Router para navegación
 - Google Maps JavaScript API para visualizar rutas y paradas
-- Jasmine + Karma (test runner por defecto de Angular) o Jest si se justifica
+- **Vitest**, que es el test runner que trae el scaffolding de Angular 21 (`ng test`, builder `@angular/build:unit-test`) — ya no Karma
 
 ## Responsabilidad del frontend
 
@@ -109,7 +109,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 
 ## Testing
 
-- Test runner de Angular (Jasmine + Karma) o Jest si se justifica, probando **comportamiento visible** al usuario, no detalles internos del componente.
+- **Vitest** (`ng test`), probando **comportamiento visible** al usuario, no detalles internos del componente. Es el runner que Angular 21 configura por defecto; no se cambia sin una razón escrita.
 - Prioridad: formularios (login, registro, comentarios) y la pantalla de búsqueda de ruta, incluyendo el cambio de endpoint online ↔ offline según la conectividad.
 - Las llamadas HTTP se mockean a nivel de `services/`.
 
