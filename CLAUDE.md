@@ -2,7 +2,9 @@
 
 Interfaz web del sistema de información de transporte público de Fusagasugá. Proyecto Integrador de Ingeniería de Software I, Universidad de Cundinamarca (docente: Ing. Luiferney Ortiz Parra).
 
-**Recursos externos:** la carpeta del curso en OneDrive (`C:/Users/Santiago/OneDrive - UNIVERSIDAD DE CUNDINAMARCA/Universidad/5 SEMESTRE/INGENIERIA SOFTWARE I`) contiene la Actividad 3 v3 y el material de clase. Las historias de usuario grilladas (RF-01 a RF-09, con criterios de aceptación) están en `docs/backlog/historias-rf01-rf09.md` de esa misma carpeta — es la fuente de las reglas de negocio de este archivo.
+**Recursos externos:** la carpeta del curso en OneDrive (`C:/Users/Santiago/OneDrive - UNIVERSIDAD DE CUNDINAMARCA/Universidad/5 SEMESTRE/INGENIERIA SOFTWARE I`) contiene la Actividad 3 v3 y el material de clase. Las 15 historias de usuario aprobadas (RF-01 a RF-15, con criterios de aceptación) están en `docs/backlog/historias-rf01-rf15.md` de esa misma carpeta, y los RNF en `docs/backlog/requisitos-no-funcionales.md` — es la fuente de las reglas de negocio de este archivo.
+
+**Jira:** proyecto `SCRUM` en `fusaroute.atlassian.net`. 5 épicas (`SCRUM-7`..`SCRUM-11`), 15 historias (`SCRUM-12`..`SCRUM-26` + `SCRUM-153`, la parte de última milla/offline separada de HU_MF02_001), 7 RNF como Task (`SCRUM-127`..`SCRUM-133`). **Sprint Planning cerrado el 2026-09-17**: 9 sprints semanales, cada issue con Sprint + Story Points + responsable asignado, cada Subtask con descripción y responsable. Sprint 1 activo (15→21 sep, arranque técnico). Ver `docs/guia-jira-fusaroute.md` en la carpeta del curso para las convenciones completas del tablero.
 
 El contexto completo del curso, el alcance del proyecto y las métricas de calidad comprometidas están en el `CLAUDE.md` de la carpeta madre de la asignatura.
 
@@ -10,7 +12,7 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 
 ## Stack
 
-- Angular 18 + **TypeScript**, con Angular CLI
+- Angular 21 + **TypeScript** 5.9, con Angular CLI
 - Angular Router para navegación
 - Google Maps JavaScript API para visualizar rutas y paradas
 - Jasmine + Karma (test runner por defecto de Angular) o Jest si se justifica
@@ -94,8 +96,8 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 ## Convenciones de código
 
 - Código y nombres de variables en **inglés**; comentarios, commits, issues, documentación y README en **español**. Los textos que ve el usuario van en español (es una app para Fusagasugá).
-- Componentes en `PascalCase`, hooks con prefijo `use`, un componente por archivo.
-- Componentes de función con hooks; sin componentes de clase.
+- Componentes **standalone** (sin `NgModule`), un componente por archivo, nombre en `PascalCase` + sufijo (`RouteSearchComponent`).
+- Estado local con **signals** (`signal`, `computed`); RxJS solo donde el flujo es genuinamente asíncrono/reactivo (streams HTTP, eventos de conectividad) — no como reemplazo por defecto de un signal.
 - Comentar solo el *por qué* no obvio. Lo que el código ya dice no se comenta.
-- Sin librerías de UI ni gestores de estado global mientras no haga falta: primero `useState` y contexto, y solo se agrega una dependencia cuando haya un problema real que resolver. Cada dependencia hay que poder justificarla ante el comité.
+- Sin librerías de UI ni gestor de estado global (NgRx, etc.) mientras no haga falta: primero signals + servicios inyectables, y solo se agrega una dependencia cuando haya un problema real que resolver. Cada dependencia hay que poder justificarla ante el comité.
 - Formatear montos como pesos colombianos (COP).
