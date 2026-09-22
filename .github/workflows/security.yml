@@ -1,0 +1,23 @@
+name: Security Scan (Frontend)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: Install Dependencies
+        run: npm ci
+      - name: Scan for Vulnerabilities
+        run: npm audit --audit-level=high
