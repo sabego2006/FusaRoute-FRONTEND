@@ -88,6 +88,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 - `main` protegida. Ramas `feature/SCRUM-N-nombre` o `fix/SCRUM-N-nombre`.
 - **Pull Request obligatorio**, revisado por el otro integrante; nadie mergea su propio PR sin revisión. Es donde ambos aprenden el código del otro, que es justo lo que el docente busca.
 - Conventional Commits en español con key de Jira: `feat(SCRUM-N): descripción`, `fix(SCRUM-N): descripción`, etc.
+- **Ningún commit ni PR lleva atribución a Claude** (`Co-Authored-By: Claude...`, `Claude-Session: ...`). Regla general de los 3 repos, en el `CLAUDE.md` de la carpeta del curso, sección Git.
 - CI en GitHub Actions: build + lint + tests en cada PR. Si el CI falla, no se mergea.
 - Backlog en Jira; cada sustentación quincenal ante el comité cierra un hito.
 
