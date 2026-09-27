@@ -1,0 +1,34 @@
+<div class="routes-container">
+  <header>
+    <h1>Catálogo de Rutas Públicas</h1>
+    <p>Consulta las rutas de transporte disponibles en Fusagasugá</p>
+  </header>
+
+  <div *ngIf="loading()" class="loading">Cargando rutas...</div>
+
+  <div *ngIf="errorMessage()" class="error-msg">
+    {{ errorMessage() }}
+  </div>
+
+  <div class="routes-grid" *ngIf="!loading() && !errorMessage()">
+    <div *ngFor="let route of routes()" class="route-card">
+      <div class="route-header">
+        <h3>{{ route.name }}</h3>
+        <span class="fare-badge">${{ route.fare }}</span>
+      </div>
+      
+      <div class="neighborhoods">
+        <strong>Barrios:</strong> 
+        <span>{{ route.neighborhoods.join(', ') }}</span>
+      </div>
+
+      <button [routerLink]="['/rutas', route.id]" class="detail-btn">
+        Ver detalle
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading() && routes().length === 0 && !errorMessage()" class="empty-state">
+    No se encontraron rutas activas en este momento.
+  </div>
+</div>
