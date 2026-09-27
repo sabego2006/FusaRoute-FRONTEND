@@ -10,50 +10,62 @@ import { Route } from '../models/route.model';
 export class RouteService {
   private readonly apiUrl = `${environment.apiUrl}/api/routes`;
 
-  // Datos simulados (Mocks) para permitir el desarrollo del frontend sin bloqueo del backend
+  // Datos empíricos proporcionados por el experto (Usuario)
   private readonly mockRoutes: Route[] = [
     { 
       id: '1', 
-      name: 'Ruta Centro - Salitre', 
-      description: 'Conecta el centro de la ciudad con la zona del Salitre', 
-      fare: 2900, 
+      name: 'Terminal - Gaitán', 
+      description: 'Mejor ruta para llegar a la comuna norte desde la terminal. Recorrido estratégico por puntos comerciales y educativos.', 
+      fare: 2600, 
       status: 'ACTIVE', 
-      neighborhoods: ['Centro', 'Barrio Bolívar', 'Salitre'] 
+      neighborhoods: [
+        'Terminal', 
+        'Centro Comercial Avenida', 
+        'Avenida de las Palmas', 
+        'Ara (Antiguo Colsubsidio)', 
+        'Calle Caliente', 
+        'Centro de Integración Infantil', 
+        'Escuela Julio Sabogal', 
+        'Gaitán'
+      ] 
     },
     { 
       id: '2', 
-      name: 'Ruta Norte - Sur', 
-      description: 'Recorrido principal norte-sur de Fusagasugá', 
-      fare: 2900, 
+      name: 'Cedritos - Siboney', 
+      description: 'Ruta extensa que conecta la zona de Cedritos con Siboney, pasando por la Universidad y puntos estratégicos del centro.', 
+      fare: 2600, 
       status: 'ACTIVE', 
-      neighborhoods: ['El Oasis', 'Centro', 'La Esperanza', 'Sur'] 
-    },
-    { 
-      id: '3', 
-      name: 'Ruta Circular Oriente', 
-      description: 'Recorrido por los barrios del oriente', 
-      fare: 2900, 
-      status: 'ACTIVE', 
-      neighborhoods: ['Oriente', 'La Aurora', 'El Mirador'] 
+      neighborhoods: [
+        'Carrera 5', 
+        'Chorro Padilla', 
+        'Avenida de las Palmas', 
+        'Carrera 8 (Panadería Filipo)', 
+        'Fiscalía', 
+        'Colegio Carlos Lozano', 
+        'Universidad de Cundinamarca', 
+        'Manila', 
+        'D1 Balmoral', 
+        'Calle 22', 
+        'El Obrero (Puesto de Salud)', 
+        'Centro Comercial San Fernando', 
+        'Contigo con Todo'
+      ] 
     }
   ];
 
   constructor(private http: HttpClient) {}
 
   getAllPublicRoutes(): Observable<Route[]> {
-    // Intentamos llamar al backend, pero si falla o estamos en desarrollo, devolvemos los mocks
-    return this.http.get<Route[]>(this.apiUrl).pipe(
-      // Si hay error en la petición, devolvemos los datos simulados para no bloquear el frontend
-      // Nota: En un entorno real, esto se manejaría con un interceptor o un flag de environment
-    );
-  }
-
-  // Método alternativo para forzar el uso de mocks durante el desarrollo
-  getMockRoutes(): Observable<Route[]> {
-    return of(this.mockRoutes);
+    return this.http.get<Route[]>(this.apiUrl);
   }
 
   getRouteById(id: string): Observable<Route> {
-    return this.http.get<Route>(`${this.apiUrl}/${id}`);
+    // Priorizar la búsqueda en los mocks para asegurar que la información empírica se vea
+    const route = this.mockRoutes.find(r => r.id === id);
+    return route ? of(route) : this.http.get<Route>(`${this.apiUrl}/${id}`);
+  }
+
+  getMockRoutes(): Observable<Route[]> {
+    return of(this.mockRoutes);
   }
 }

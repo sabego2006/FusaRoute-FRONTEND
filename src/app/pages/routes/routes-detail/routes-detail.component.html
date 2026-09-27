@@ -1,0 +1,33 @@
+<div class="detail-container">
+  <button [routerLink]="['/rutas']" class="back-btn">← Volver al listado</button>
+
+  <div *ngIf="loading()" class="loading">Cargando detalles de la ruta...</div>
+
+  <div *ngIf="route() && !loading()" class="route-detail-card">
+    <header>
+      <h1>{{ route()?.name }}</h1>
+      <span class="fare-badge">${{ route()?.fare }}</span>
+    </header>
+
+    <section class="info-section">
+      <h3><span class="icon">📍</span> Descripción del Recorrido</h3>
+      <p class="description">{{ route()?.description }}</p>
+    </section>
+
+    <section class="timeline-section">
+      <h3><span class="icon">🚌</span> Secuencia de Paradas</h3>
+      <div class="timeline">
+        <div *ngFor="let stop of route()?.neighborhoods; let last = last" class="timeline-item">
+          <div class="timeline-dot" [class.last]="last"></div>
+          <div class="timeline-content">
+            {{ stop }}
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div *ngIf="errorMessage()" class="error-msg">
+    {{ errorMessage() }}
+  </div>
+</div>

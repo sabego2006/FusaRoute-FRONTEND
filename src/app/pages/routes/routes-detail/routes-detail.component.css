@@ -1,0 +1,45 @@
+.detail-container { max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: sans-serif; }
+.back-btn { 
+  background: none; border: none; color: #007bff; 
+  cursor: pointer; font-size: 1rem; margin-bottom: 1.5rem; padding: 0;
+}
+
+.route-detail-card { 
+  background: white; border-radius: 16px; padding: 2rem; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #eee;
+}
+
+header { 
+  display: flex; justify-content: space-between; align-items: center; 
+  border-bottom: 2px solid #f0f0f0; padding-bottom: 1rem; margin-bottom: 2rem; 
+}
+header h1 { margin: 0; color: #333; font-size: 1.5rem; }
+.fare-badge { 
+  background: #e7f3ff; color: #007bff; padding: 6px 15px; 
+  border-radius: 20px; font-weight: bold; 
+}
+
+.info-section { margin-bottom: 2rem; }
+.info-section h3 { color: #555; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.description { color: #777; line-height: 1.6; font-size: 1rem; }
+
+.timeline-section h3 { color: #555; font-size: 1.1rem; margin-bottom: 1.5rem; }
+
+.timeline { position: relative; padding-left: 30px; }
+.timeline::before { 
+  content: ''; position: absolute; left: 7px; top: 0; 
+  width: 2px; height: 100%; background: #ddd; 
+}
+
+.timeline-item { position: relative; margin-bottom: 1.5rem; }
+.timeline-dot { 
+  position: absolute; left: -30px; top: 5px; 
+  width: 16px; height: 16px; background: #007bff; 
+  border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px #007bff;
+}
+.timeline-dot.last { background: #28a745; box-shadow: 0 0 0 2px #28a745; }
+.timeline-content { font-size: 1rem; color: #444; font-weight: 500; }
+
+.loading, .error-msg { text-align: center; padding: 3rem; font-size: 1.1rem; }
+.error-msg { color: red; }
+.icon { margin-right: 8px; }
