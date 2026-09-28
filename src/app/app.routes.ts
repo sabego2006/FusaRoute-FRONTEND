@@ -13,5 +13,11 @@ export const routes: Routes = [
   },
   { path: 'registro', loadComponent: () => import('./pages/auth/register/register.component').then(m => m.RegisterComponent) },
   { path: 'login', loadComponent: () => import('./pages/auth/login/login.component').then(m => m.LoginComponent) },
-  { path: '', redirectTo: 'rutas', pathMatch: 'full' }
+  {
+    path: 'perfil',
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [() => import('./core/guards/auth.guard').then(m => m.authGuard)]
+  },
+  { path: '', redirectTo: 'rutas', pathMatch: 'full' },
+  { path: '**', redirectTo: 'rutas' }
 ];
