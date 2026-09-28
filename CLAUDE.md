@@ -4,7 +4,7 @@ Interfaz web del sistema de información de transporte público de Fusagasugá. 
 
 **Recursos externos:** la carpeta del curso en OneDrive (`C:/Users/Santiago/OneDrive - UNIVERSIDAD DE CUNDINAMARCA/Universidad/5 SEMESTRE/INGENIERIA SOFTWARE I`) contiene la Actividad 3 v3 y el material de clase. Las 15 historias de usuario aprobadas (RF-01 a RF-15, con criterios de aceptación) están en `docs/backlog/historias-rf01-rf15.md` de esa misma carpeta, y los RNF en `docs/backlog/requisitos-no-funcionales.md` — es la fuente de las reglas de negocio de este archivo.
 
-**Jira:** proyecto `SCRUM` en `fusaroute.atlassian.net`. 5 épicas (`SCRUM-7`..`SCRUM-11`), 15 historias (`SCRUM-12`..`SCRUM-26` + `SCRUM-153`, la parte de última milla/offline separada de HU_MF02_001), 7 RNF como Task (`SCRUM-127`..`SCRUM-133`). **Sprint Planning cerrado el 2026-09-17**: 9 sprints semanales, cada issue con Sprint + Story Points + responsable asignado, cada Subtask con descripción y responsable. Sprint 1 activo (15→21 sep, arranque técnico). Ver `docs/guia-jira-fusaroute.md` en la carpeta del curso para las convenciones completas del tablero.
+**Jira:** proyecto `SCRUM` en `fusaroute.atlassian.net`. 5 épicas (`SCRUM-7`..`SCRUM-11`), 15 historias (`SCRUM-12`..`SCRUM-26` + `SCRUM-153`, la parte de última milla/offline separada de HU_MF02_001), 7 RNF como Task (`SCRUM-127`..`SCRUM-133`). **Sprint Planning cerrado el 2026-09-17**: 9 sprints semanales, cada issue con Sprint + Story Points + responsable asignado, cada Subtask con descripción y responsable. El Sprint 1 (15→21 sep) cerró con velocidad 0; el Sprint 2 (22→28 sep) es el del comité del 28-sep: registro, login y catálogo público, más el perfil (`SCRUM-14`), que se adelantó al Sprint 2 y está en rama sin mergear. Sprint 3 (29-sep→5-oct): despliegue en Vercel. Ver `docs/guia-jira-fusaroute.md` en la carpeta del curso para las convenciones completas del tablero.
 
 El contexto completo del curso, el alcance del proyecto y las métricas de calidad comprometidas están en el `CLAUDE.md` de la carpeta madre de la asignatura.
 
@@ -15,7 +15,7 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 - Angular 21 + **TypeScript** 5.9, con Angular CLI
 - Angular Router para navegación
 - Google Maps JavaScript API para visualizar rutas y paradas
-- Jasmine + Karma (test runner por defecto de Angular) o Jest si se justifica
+- **Vitest** 4 como test runner (el que trae Angular 21 con `ng test`); no se usa Karma ni Jasmine
 
 ## Responsabilidad del frontend
 
@@ -73,7 +73,7 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 | Atributo | Métrica | Cómo se verifica |
 |---|---|---|
 | Usabilidad | flujo principal (buscar ruta) en máximo **4 acciones** sin contar login | recorrido manual del flujo + prueba con ≥ 5 usuarios externos al equipo |
-| Rendimiento | LCP < 2.5 s en Lighthouse mobile Slow 4G sobre la pantalla de resultado de búsqueda | Lighthouse en CI en cada Pull Request |
+| Rendimiento | LCP < 2.5 s en Lighthouse mobile Slow 4G sobre la pantalla de resultado de búsqueda | Lighthouse en CI en cada Pull Request — **pendiente**: el CI actual no lo ejecuta (la pantalla de resultado existe recién con la búsqueda, Sprint 4; ver `SCRUM-127`) |
 | Mantenibilidad | 0 llamadas HTTP fuera de `services/`; sin `any` | revisión en PR |
 | Accesibilidad | HTML semántico, formularios con `<label>`, navegable por teclado | revisión en PR |
 
@@ -81,7 +81,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 
 ## Testing
 
-- Test runner de Angular (Jasmine + Karma) o Jest si se justifica, probando **comportamiento visible** al usuario, no detalles internos del componente.
+- Vitest (`ng test`), probando **comportamiento visible** al usuario, no detalles internos del componente.
 - Prioridad: formularios (login, registro, comentarios) y la pantalla de búsqueda de ruta, incluyendo el cambio de endpoint online ↔ offline según la conectividad.
 - Las llamadas HTTP se mockean a nivel de `services/`.
 
@@ -92,7 +92,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 - **Bloque de ejecución manual por sprint:** cada integrante resuelve al menos una Subtask propia sin que un agente escriba el código ni corra el comando — Claude puede guiar, no ejecutar. El commit de esa Subtask no lleva `Co-Authored-By: Claude` (regla completa en el `CLAUDE.md` de la carpeta del curso).
 - Conventional Commits en español con key de Jira: `feat(SCRUM-N): descripción`, `fix(SCRUM-N): descripción`, etc.
 - **Ningún commit ni PR lleva atribución a Claude** (`Co-Authored-By: Claude...`, `Claude-Session: ...`). Regla general de los 3 repos, en el `CLAUDE.md` de la carpeta del curso, sección Git.
-- CI en GitHub Actions: build + lint + tests en cada PR. Si el CI falla, no se mergea.
+- CI en GitHub Actions: `ng build` + `ng test` en cada PR (todavía sin lint ni Lighthouse). Si el CI falla, no se mergea.
 - Backlog en Jira; cada sustentación quincenal ante el comité cierra un hito.
 
 ## Convenciones de código
