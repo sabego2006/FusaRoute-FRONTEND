@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Instalar dependencias
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Escaneo de vulnerabilidades (npm audit)
         run: npm audit --audit-level=high

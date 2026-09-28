@@ -1,0 +1,43 @@
+<div class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
+  <button [routerLink]="['/rutas']" class="fr-btn" style="margin-bottom: var(--space-6); min-height: 40px;">
+    ← Volver al listado
+  </button>
+
+  <div *ngIf="loading()" class="fr-alerta" style="text-align: center; background: var(--lima); border-color: var(--borde);">
+    Cargando detalles de la ruta...
+  </div>
+
+  <div *ngIf="route() && !loading()" class="fr-card">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+      <h1 class="fr-titulo-1">{{ route()?.name }}</h1>
+      <div class="fr-tarifa">
+        <span class="fr-tarifa-valor">${{ route()?.fare }}</span>
+      </div>
+    </header>
+
+    <section style="margin-bottom: var(--space-6);">
+      <h3 class="fr-titulo-3" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+        <span>📍</span> Descripción del Recorrido
+      </h3>
+      <p class="fr-texto">{{ route()?.description }}</p>
+    </section>
+
+    <section>
+      <h3 class="fr-titulo-3" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4);">
+        <span>🚌</span> Secuencia de Paradas
+      </h3>
+      <div class="fr-secuencia">
+        <div *ngFor="let stop of route()?.neighborhoods; let i = index; let last = last"
+             class="fr-nodo"
+             [style.--muni]="'var(--muni-fusagasuga)'">
+          <p class="fr-nodo-titulo">{{ stop }}</p>
+          <div class="fr-nodo-num">{{ i + 1 }}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div *ngIf="errorMessage()" class="fr-alerta" role="alert">
+    <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+  </div>
+</div>
