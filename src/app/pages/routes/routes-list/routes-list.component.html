@@ -1,4 +1,4 @@
-<div class="fr-pila" style="max-width: 1000px; margin: 2rem auto; padding: 0 var(--space-4);">
+<main class="fr-pila" style="max-width: 1000px; margin: 2rem auto; padding: 0 var(--space-4);">
   <header style="text-align: center; margin-bottom: var(--space-8);">
     <div class="fr-barra" style="justify-content: center; margin-bottom: var(--space-4);">
       <span class="fr-wordmark">Fusa<b>Route</b></span>
@@ -7,35 +7,43 @@
     <p class="fr-texto-sm">Consulta las rutas de transporte disponibles en Fusagasugá</p>
   </header>
 
-  <div *ngIf="loading()" class="fr-alerta" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-    Cargando rutas...
-  </div>
-
-  <div *ngIf="errorMessage()" class="fr-alerta" role="alert">
-    <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
-  </div>
-
-  <div class="fr-lista" style="gap: var(--space-6);" *ngIf="!loading() && !errorMessage()">
-    <div *ngFor="let route of routes()" class="fr-card fr-card-interactiva" [routerLink]="['/rutas', route.id]">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
-        <h3 class="fr-titulo-3">{{ route.name }}</h3>
-        <div class="fr-tarifa">
-          <span class="fr-tarifa-valor">${{ route.fare }}</span>
-        </div>
-      </div>
-
-      <div class="fr-meta">
-        <strong class="fr-etiqueta" style="margin: 0; text-transform: none; font-size: 14px;">Barrios:</strong>
-        <span class="fr-texto-sm">{{ route.neighborhoods.join(', ') }}</span>
-      </div>
-
-      <button class="fr-btn fr-btn-primario fr-btn-bloque" style="margin-top: var(--space-4);">
-        Ver detalle
-      </button>
+  @if (loading()) {
+    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
+      Cargando rutas...
     </div>
-  </div>
+  }
 
-  <div *ngIf="!loading() && routes().length === 0 && !errorMessage()" class="fr-card" style="text-align: center; padding: var(--space-8);">
-    <p class="fr-texto">No se encontraron rutas activas en este momento.</p>
-  </div>
-</div>
+  @if (errorMessage()) {
+    <div class="fr-alerta" role="alert">
+      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+    </div>
+  }
+
+  @if (!loading() && !errorMessage()) {
+    @if (routes().length === 0) {
+      <div class="fr-card" style="text-align: center; padding: var(--space-8);">
+        <p class="fr-texto">No se encontraron rutas activas en este momento.</p>
+      </div>
+    } @else {
+      <ul class="fr-lista" style="gap: var(--space-6); list-style: none; padding: 0;">
+        @for (route of routes(); track route.id) {
+          <li class="fr-card fr-card-interactiva">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+              <h2 class="fr-titulo-3">{{ route.name }}</h2>
+              <strong style="font: 700 18px/24px var(--font-display); white-space: nowrap;">{{ fareLabel(route) }}</strong>
+            </div>
+
+            <div>
+              <strong class="fr-etiqueta" style="margin: 0; text-transform: none; font-size: 14px;">Barrios:</strong>
+              <span class="fr-texto-sm">{{ pickNeighborhoodSteps(route.neighborhoods).join(' → ') }}</span>
+            </div>
+
+            <a class="fr-btn fr-btn-primario fr-btn-bloque" style="margin-top: var(--space-4);" [routerLink]="['/rutas', route.id]">
+              Ver detalle
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+</main>

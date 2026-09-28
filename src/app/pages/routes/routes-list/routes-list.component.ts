@@ -1,20 +1,22 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { RouteService } from '../../../services/route.service';
 import { Route } from '../../../models/route.model';
-import { RouterLink } from '@angular/router';
+import { formatCop } from '../../../lib/format';
+import { pickNeighborhoodSteps } from '../../../lib/route-steps';
 
 @Component({
   selector: 'app-routes-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  templateUrl: './routes-list.component.html',
-  styleUrls: ['./routes-list.component.css']
+  imports: [RouterLink],
+  templateUrl: './routes-list.component.html'
 })
 export class RoutesListComponent implements OnInit {
   routes = signal<Route[]>([]);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
+
+  readonly pickNeighborhoodSteps = pickNeighborhoodSteps;
 
   constructor(private routeService: RouteService) {}
 
@@ -25,20 +27,26 @@ export class RoutesListComponent implements OnInit {
   loadRoutes() {
     this.loading.set(true);
     this.errorMessage.set(null);
-    
+
     this.routeService.getAllPublicRoutes().subscribe({
       next: (data) => {
         this.routes.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
-        console.log('[RoutesList] Backend no disponible, usando datos simulados (Mocks)');
-        // Implementación de Mocking: si el backend falla, cargamos los datos de prueba
-        this.routeService.getMockRoutes().subscribe(mocks => {
-          this.routes.set(mocks);
-          this.loading.set(false);
-        });
+      error: () => {
+        // Sin datos de respaldo: mostrar rutas inventadas cuando el backend falla sería mentirle al usuario.
+        this.errorMessage.set('No se pudo cargar el catálogo de rutas. Intenta de nuevo en un momento.');
+        this.loading.set(false);
       }
     });
+  }
+
+  /** Resumen de tarifa para la tarjeta: precio único (urbana) o el más bajo, "Desde" (intermunicipal). */
+  fareLabel(route: Route): string {
+    if (route.fares.length === 0) {
+      return 'Tarifa no disponible';
+    }
+    const lowest = Math.min(...route.fares.map((f) => f.amount));
+    return route.type === 'URBANA' ? formatCop(lowest) : `Desde ${formatCop(lowest)}`;
   }
 }

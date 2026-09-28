@@ -1,43 +1,73 @@
-<div class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
+<main class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
   <button [routerLink]="['/rutas']" class="fr-btn" style="margin-bottom: var(--space-6); min-height: 40px;">
     ← Volver al listado
   </button>
 
-  <div *ngIf="loading()" class="fr-alerta" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-    Cargando detalles de la ruta...
-  </div>
+  @if (loading()) {
+    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
+      Cargando detalles de la ruta...
+    </div>
+  }
 
-  <div *ngIf="route() && !loading()" class="fr-card">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
-      <h1 class="fr-titulo-1">{{ route()?.name }}</h1>
-      <div class="fr-tarifa">
-        <span class="fr-tarifa-valor">${{ route()?.fare }}</span>
-      </div>
-    </header>
+  @if (errorMessage()) {
+    <div class="fr-alerta" role="alert">
+      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+    </div>
+  }
 
-    <section style="margin-bottom: var(--space-6);">
-      <h3 class="fr-titulo-3" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
-        <span>📍</span> Descripción del Recorrido
-      </h3>
-      <p class="fr-texto">{{ route()?.description }}</p>
-    </section>
+  @if (route(); as r) {
+    <article class="fr-card">
+      <header style="margin-bottom: var(--space-6);">
+        <h1 class="fr-titulo-1">{{ r.name }}</h1>
+        <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+      </header>
 
-    <section>
-      <h3 class="fr-titulo-3" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4);">
-        <span>🚌</span> Secuencia de Paradas
-      </h3>
-      <div class="fr-secuencia">
-        <div *ngFor="let stop of route()?.neighborhoods; let i = index; let last = last"
-             class="fr-nodo"
-             [style.--muni]="'var(--muni-fusagasuga)'">
-          <p class="fr-nodo-titulo">{{ stop }}</p>
-          <div class="fr-nodo-num">{{ i + 1 }}</div>
-        </div>
-      </div>
-    </section>
-  </div>
+      <section style="margin-bottom: var(--space-6);">
+        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
+        <ol class="fr-lista">
+          @for (stop of steps(); track $index; let i = $index) {
+            <li class="fr-fila">
+              <span class="fr-chip-lugar" aria-hidden="true">{{ i + 1 }}</span>
+              <span class="barrio">{{ stop }}</span>
+            </li>
+          }
+        </ol>
+      </section>
 
-  <div *ngIf="errorMessage()" class="fr-alerta" role="alert">
-    <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
-  </div>
-</div>
+      <section>
+        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Tarifa</h2>
+        @if (r.fares.length === 0) {
+          <p class="fr-texto">Tarifa no disponible por ahora.</p>
+        } @else if (isUrban()) {
+          <p class="fr-texto">
+            <strong style="font: 700 24px/32px var(--font-display);">{{ formatCop(r.fares[0].amount) }}</strong>
+            <span class="fr-texto-sm"> · precio único, sin importar dónde te subas o bajes</span>
+          </p>
+          <p class="fr-texto-sm">Actualizada el {{ formatDateEs(r.fares[0].validFrom) }}</p>
+        } @else {
+          <table style="width: 100%; border-collapse: collapse;">
+            <caption class="fr-texto-sm" style="text-align: left; margin-bottom: var(--space-2);">
+              Precio según el punto de referencia donde te bajas
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align: left;">Bajada en</th>
+                <th scope="col" style="text-align: right;">Precio</th>
+                <th scope="col" style="text-align: right;">Actualizada</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fare of r.fares; track fare.referencePoint) {
+                <tr>
+                  <td>{{ fare.referencePoint }}</td>
+                  <td style="text-align: right;">{{ formatCop(fare.amount) }}</td>
+                  <td style="text-align: right;" class="fr-texto-sm">{{ formatDateEs(fare.validFrom) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    </article>
+  }
+</main>
