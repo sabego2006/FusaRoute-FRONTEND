@@ -1,16 +1,14 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
 
+// El catálogo de rutas (listado y detalle) es público, sin sesión (RF-15): no lleva authGuard.
 export const routes: Routes = [
   { path: 'health', loadComponent: () => import('./pages/health-check/health-check.component').then(m => m.HealthCheckComponent) },
   {
     path: 'rutas',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/routes/routes-list/routes-list.component').then(m => m.RoutesListComponent)
   },
   {
     path: 'rutas/:id',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/routes/routes-detail/routes-detail.component').then(m => m.RoutesDetailComponent)
   },
   { path: 'registro', loadComponent: () => import('./pages/auth/register/register.component').then(m => m.RegisterComponent) },
