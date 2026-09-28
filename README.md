@@ -7,13 +7,19 @@ Proyecto Integrador de Ingeniería de Software I, Universidad de Cundinamarca.
 
 | | Versión |
 |---|---|
-| Angular | **21** |
+| Angular | **21** (zoneless — sin zone.js) |
 | TypeScript | 5.9 |
 | Node.js | 22 LTS |
 | PWA | `@angular/service-worker` |
+| Test runner | Vitest (vía `@angular/build:unit-test`) |
 
 Se arranca en la versión vigente de cada herramienta, no en una anterior. Un salto de
 versión mayor es una decisión propia, con su tarjeta; no se hace a mitad de sprint.
+
+## Requisitos
+
+- **Node.js ≥ 22.12** (LTS). Si se usa `nvm`: `nvm use` lee el `.nvmrc`.
+- Backend corriendo en `http://localhost:8080` (ver el README del backend).
 
 ## Instalación y ejecución (ambiente DEV)
 
@@ -25,6 +31,74 @@ npm start                 # http://localhost:4200
 
 `npm start` levanta el frontend contra el backend en `http://localhost:8080`, que es lo que
 declara `src/environments/environment.ts`. El backend tiene que estar corriendo aparte.
+
+### Verificación rápida
+
+```bash
+npm ci              # instalar dependencias
+npx ng build        # compilar (debe salir sin errores)
+npx ng test         # ejecutar los tests (Vitest)
+```
+
+## Arquitectura
+
+```mermaid
+graph LR
+  subgraph Navegador
+    Header["HeaderComponent"]
+    Pages["Páginas<br/>(Login · Registro · Perfil<br/>· Catálogo · Detalle)"]
+    Toast["ToastComponent"]
+  end
+
+  subgraph Servicios
+    AuthSvc["AuthService<br/>(token, usuario, isLoggedIn)"]
+    UserSvc["UserService<br/>(getMe, updateMe, changePassword)"]
+    RouteSvc["RouteService<br/>(getAllPublicRoutes, getRouteById)"]
+    HealthSvc["HealthService"]
+  end
+
+  Interceptor["AuthInterceptor<br/>(adjunta JWT, redirige 401)"]
+  Guard["authGuard<br/>(protege /perfil)"]
+
+  Pages --> AuthSvc
+  Pages --> UserSvc
+  Pages --> RouteSvc
+  Header --> AuthSvc
+  AuthSvc --> Interceptor
+  UserSvc --> Interceptor
+  RouteSvc --> Interceptor
+  Interceptor -->|HTTP| API["Backend API<br/>localhost:8080"]
+  Guard --> AuthSvc
+```
+
+### ¿Por qué signals y no zone.js?
+
+Angular 21 corre en modo **zoneless** por defecto: no hay `zone.js` que detecte cambios
+automáticamente tras un evento asíncrono. Los componentes usan `signal()` y `computed()`
+para que Angular sepa qué cambió y cuándo re-renderizar. Sin signals, un error asignado
+a una variable normal después de un `subscribe()` no se refleja en la vista — el error
+queda "invisible", que es justamente el bug que se corrigió en login, registro y health-check.
+
+### Interceptor de autenticación
+
+El interceptor (`core/interceptors/auth.interceptor.ts`) adjunta el header
+`Authorization: Bearer <token>` a cada petición HTTP, con dos excepciones:
+
+1. **No adjunta token en `/api/auth/**`**: evita que un token vencido en localStorage
+   provoque un 401 espurio al intentar registrarse o iniciar sesión.
+2. **No redirige al login en 401 de rutas de auth**: un 401 en `/api/auth/login` es
+   "credenciales incorrectas", no "sesión expirada" — se muestra el error, no se redirige.
+
+## Pantallas
+
+| Ruta | Componente | Auth requerida |
+|---|---|---|
+| `/rutas` | RoutesListComponent | No |
+| `/rutas/:id` | RoutesDetailComponent | No |
+| `/registro` | RegisterComponent | No |
+| `/login` | LoginComponent | No |
+| `/perfil` | ProfileComponent | Sí (authGuard) |
+| `/health` | HealthCheckComponent | No |
 
 ## PWA
 
@@ -46,3 +120,12 @@ endpoint del backend que calcula la ruta por distancia sobre los GeoJSON.
 **Ninguna clave secreta va en este repositorio.** Todo lo que se compila en Angular viaja al
 navegador y es inspeccionable; los secretos viven solo en el backend. `.env.example` está
 versionado con los valores vacíos y es la lista de las variables que existen.
+
+## Troubleshooting
+
+| Problema | Solución |
+|---|---|
+| Puerto 4200 ocupado | `npx ng serve --port 4201` |
+| Token vencido y la app no carga | Limpiar localStorage: `localStorage.clear()` en la consola del navegador, recargar |
+| `npm ci` falla por peer deps | El `.npmrc` ya tiene `legacy-peer-deps=true` — si se borró, recrearlo |
+| Los mensajes de error no se ven | Verificar que el componente use `signal()`, no una variable normal (Angular 21 es zoneless) |
