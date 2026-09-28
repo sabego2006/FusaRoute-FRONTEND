@@ -1,25 +1,28 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ProblemDetail } from '../../../models/auth.model';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="fr-card" style="max-width: 400px; margin: 2rem auto;">
-      <div class="fr-barra" style="margin-bottom: var(--space-6); display: flex; justify-content: center;">
+      <div style="margin-bottom: var(--space-6); display: flex; justify-content: center;">
         <span class="fr-wordmark">Fusa<b>Route</b></span>
       </div>
 
       <h1 class="fr-titulo-1" style="text-align: center; margin-bottom: var(--space-4);">Entra a tu cuenta</h1>
       <p class="fr-texto-sm" style="text-align: center; margin-bottom: var(--space-6);">Guarda tu historial y tu destino favorito.</p>
 
-      <div *ngIf="errorMessage" class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
-        <strong>Error:</strong> {{ errorMessage }}
-      </div>
+      @if (errorMessage()) {
+        <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
+          <strong>Error:</strong> {{ errorMessage() }}
+        </div>
+      }
 
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: var(--space-4);">
         <div class="fr-campo">
@@ -32,8 +35,8 @@ import { AuthService } from '../../../services/auth.service';
           <input id="password" class="fr-input" formControlName="password" type="password" placeholder="Tu contraseña">
         </div>
 
-        <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="loginForm.invalid">
-          Entrar
+        <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="loginForm.invalid || loading()">
+          {{ loading() ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
 
@@ -45,34 +48,45 @@ import { AuthService } from '../../../services/auth.service';
       </p>
     </div>
   `,
-  styles: [] // Estilos movidos a src/styles.css mediante clases .fr-
+  styles: [],
 })
-export class LoginComponent {
-  loginForm: FormGroup;
-  errorMessage: string = '';
+export class LoginComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
-    });
+  readonly errorMessage = signal<string | null>(null);
+  readonly loading = signal(false);
+
+  loginForm: FormGroup = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+
+  ngOnInit(): void {
+    // Si viene del registro, precargar el correo
+    const email = this.route.snapshot.queryParamMap.get('email');
+    if (email) {
+      this.loginForm.patchValue({ email });
+    }
   }
 
   onSubmit(): void {
-    if (this.loginForm.valid) {
-      this.errorMessage = '';
-      this.authService.login(this.loginForm.value).subscribe({
-        next: () => {
-          this.router.navigate(['/rutas']);
-        },
-        error: (err: unknown) => {
-          this.errorMessage = 'Correo o contraseña incorrectos.';
-        }
-      });
-    }
+    if (this.loginForm.invalid) return;
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
+    this.authService.login(this.loginForm.value).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/rutas']);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        const body = err.error as ProblemDetail | undefined;
+        this.errorMessage.set(body?.detail ?? 'Correo o contraseña incorrectos.');
+      },
+    });
   }
 }
