@@ -10,6 +10,8 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 
 **Equipo:** Santiago Bermúdez · Angélica Aranguren. Ambos trabajan todo el stack por exigencia del docente. Es la primera vez del equipo con Angular, así que las convenciones de este archivo se explican, no solo se enuncian.
 
+**Despliegue (desde SCRUM-172, Sprint 3):** frontend en Vercel, `https://fusaroute.vercel.app` (build de `main`); backend en Render, `https://fusaroute-backend.onrender.com` (tier gratis, cold start hasta ~60 s). `environment.prod.ts` compila la URL del backend dentro del bundle — no hay variables de entorno que configurar en Vercel. `CORS_ALLOWED_ORIGINS` en Render debe incluir el dominio de Vercel vigente.
+
 ## Stack
 
 - Angular 21 + **TypeScript** 5.9, con Angular CLI

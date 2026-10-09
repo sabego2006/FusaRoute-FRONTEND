@@ -32,6 +32,20 @@ npm start                 # http://localhost:4200
 `npm start` levanta el frontend contra el backend en `http://localhost:8080`, que es lo que
 declara `src/environments/environment.ts`. El backend tiene que estar corriendo aparte.
 
+## Producción
+
+| | |
+|---|---|
+| Frontend | [`https://fusaroute.vercel.app`](https://fusaroute.vercel.app) (Vercel, build de `main`) |
+| Backend | `https://fusaroute-backend.onrender.com` (Render, tier gratis) |
+
+`environment.prod.ts` compila la URL del backend **dentro** del bundle en tiempo de build —
+no hay variables de entorno en Vercel que leer ni que configurar. El `CORS_ALLOWED_ORIGINS`
+del backend en Render debe incluir el dominio de Vercel para que las peticiones no den `403`.
+
+**Cold start:** el backend duerme tras ~15 min de inactividad en el tier gratis de Render; el
+primer request tras eso puede tardar hasta ~60 s.
+
 ### Verificación rápida
 
 ```bash
