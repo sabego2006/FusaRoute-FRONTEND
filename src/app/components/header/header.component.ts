@@ -22,6 +22,7 @@ import { AuthService } from '../../services/auth.service';
 
         <div class="fr-header__links">
           <a routerLink="/rutas" class="fr-header__link">Rutas</a>
+          <a routerLink="/rutas/buscar" class="fr-header__link">Buscar ruta</a>
 
           @if (auth.isLoggedIn()) {
             <span class="fr-header__greeting">Hola, {{ auth.currentUser()?.name }}</span>

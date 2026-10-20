@@ -1,0 +1,87 @@
+<main class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
+  <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Buscar ruta</h1>
+  <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Dinos de dónde sales y a dónde vas.</p>
+
+  <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="fr-card" style="margin-bottom: var(--space-6);">
+    <div class="fr-campo">
+      <label class="fr-etiqueta" for="origin">Origen</label>
+      <input id="origin" class="fr-input fr-input-buscador" formControlName="originNeighborhood" type="text" placeholder="Barrio de salida, ej. Centro">
+    </div>
+
+    <div style="display: flex; gap: var(--space-3);">
+      <div class="fr-campo" style="flex: 1;">
+        <label class="fr-etiqueta" for="originLat">Latitud origen</label>
+        <input id="originLat" class="fr-input" formControlName="originLat" type="number" step="any" placeholder="4.3433">
+      </div>
+      <div class="fr-campo" style="flex: 1;">
+        <label class="fr-etiqueta" for="originLng">Longitud origen</label>
+        <input id="originLng" class="fr-input" formControlName="originLng" type="number" step="any" placeholder="-74.3661">
+      </div>
+    </div>
+
+    <div class="fr-campo">
+      <label class="fr-etiqueta" for="destination">Destino</label>
+      <input id="destination" class="fr-input fr-input-buscador" formControlName="destinationNeighborhood" type="text" placeholder="Barrio de llegada, ej. Terminal">
+    </div>
+
+    <div style="display: flex; gap: var(--space-3);">
+      <div class="fr-campo" style="flex: 1;">
+        <label class="fr-etiqueta" for="destinationLat">Latitud destino</label>
+        <input id="destinationLat" class="fr-input" formControlName="destinationLat" type="number" step="any" placeholder="4.3300">
+      </div>
+      <div class="fr-campo" style="flex: 1;">
+        <label class="fr-etiqueta" for="destinationLng">Longitud destino</label>
+        <input id="destinationLng" class="fr-input" formControlName="destinationLng" type="number" step="any" placeholder="-74.3600">
+      </div>
+    </div>
+    <p class="fr-texto-sm">Las coordenadas son temporales, a mano, hasta que el mapa para elegir el punto esté listo.</p>
+
+    <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="searchForm.invalid || loading()">
+      {{ loading() ? 'Buscando...' : 'Buscar' }}
+    </button>
+  </form>
+
+  @if (loading()) {
+    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
+      Buscando la mejor ruta...
+    </div>
+  }
+
+  @if (notFoundMessage()) {
+    <div class="fr-alerta" role="status" style="background: var(--lima); border-color: var(--borde);">
+      {{ notFoundMessage() }}
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="fr-alerta" role="alert">
+      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+    </div>
+  }
+
+  @if (result(); as r) {
+    <article class="fr-card">
+      <header style="margin-bottom: var(--space-4);">
+        <h2 class="fr-titulo-2">{{ r.route.name }}</h2>
+        <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+      </header>
+
+      <p class="fr-texto" style="margin-bottom: var(--space-4);">
+        <strong style="font: 700 24px/32px var(--font-display);">{{ r.estimatedMinutes }} min</strong>
+        <span class="fr-texto-sm"> · tiempo estimado</span>
+      </p>
+
+      <section>
+        <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h3>
+        <ol class="fr-lista">
+          @for (stop of steps(); track $index; let i = $index) {
+            <li class="fr-fila">
+              <span class="fr-chip-lugar" aria-hidden="true">{{ i + 1 }}</span>
+              <span class="barrio">{{ stop }}</span>
+            </li>
+          }
+        </ol>
+      </section>
+    </article>
+  }
+</main>

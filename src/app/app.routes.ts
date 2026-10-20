@@ -9,6 +9,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/routes/routes-list/routes-list.component').then(m => m.RoutesListComponent),
   },
   {
+    path: 'rutas/buscar',
+    loadComponent: () => import('./pages/routes/route-search/route-search.component').then(m => m.RouteSearchComponent),
+  },
+  {
     path: 'rutas/:id',
     loadComponent: () => import('./pages/routes/routes-detail/routes-detail.component').then(m => m.RoutesDetailComponent),
   },
