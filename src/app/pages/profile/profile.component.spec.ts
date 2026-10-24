@@ -20,9 +20,55 @@ describe('ProfileComponent', () => {
 
   afterEach(() => http.verify());
 
+  const totpUrl = `${environment.apiUrl}/api/users/me/totp`;
+
+  /** Al montar, el perfil también consulta el estado de la verificación en dos pasos. */
+  function flushTotpStatus(enabled = true) {
+    http.expectOne(totpUrl).flush({ enabled });
+  }
+
+  it('muestra la verificación en dos pasos como activada, sin opción de desactivar', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
+      id: 1, name: 'G', email: 'g@f.co', phone: null,
+    });
+    flushTotpStatus(true);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Verificación en dos pasos');
+    expect(text).toContain('Activada');
+    expect(text).not.toMatch(/desactivar/i);
+  });
+
+  it('re-enrolar monta el enrolamiento y, al terminar, vuelve a la vista de estado', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
+      id: 1, name: 'G', email: 'g@f.co', phone: null,
+    });
+    flushTotpStatus(true);
+
+    fixture.componentInstance.reenrolling.set(true);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-totp-enroll')).not.toBeNull();
+    http.expectOne(`${totpUrl}/enroll`).flush({
+      secret: 'S', otpauthUri: 'otpauth://totp/x', qrPngBase64: 'AAAA',
+    });
+
+    fixture.componentInstance.onReenrolled();
+    flushTotpStatus(true);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.reenrolling()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-totp-enroll')).toBeNull();
+  });
+
   it('se crea y carga el perfil del usuario', () => {
     const fixture = TestBed.createComponent(ProfileComponent);
     fixture.detectChanges();
+    flushTotpStatus();
 
     const req = http.expectOne(`${environment.apiUrl}/api/users/me`);
     expect(req.request.method).toBe('GET');
@@ -37,6 +83,7 @@ describe('ProfileComponent', () => {
   it('muestra errores por campo del backend al guardar perfil', () => {
     const fixture = TestBed.createComponent(ProfileComponent);
     fixture.detectChanges();
+    flushTotpStatus();
     http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
       id: 1, name: 'G', email: 'g@f.co', phone: null,
     });
@@ -63,6 +110,7 @@ describe('ProfileComponent', () => {
   it('muestra error 409 al duplicar correo', () => {
     const fixture = TestBed.createComponent(ProfileComponent);
     fixture.detectChanges();
+    flushTotpStatus();
     http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
       id: 1, name: 'G', email: 'g@f.co', phone: null,
     });
