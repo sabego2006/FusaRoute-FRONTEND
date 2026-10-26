@@ -31,11 +31,21 @@ export interface UserSummary {
   active: boolean;
 }
 
-/** Cuerpo de la petición POST /api/auth/login. */
+/** Cuerpo de la petición POST /api/auth/login. `totpCode` acepta también un código de respaldo. */
 export interface LoginCredentials {
   email: string;
   password: string;
+  totpCode?: string;
 }
+
+/**
+ * Cuerpo de los 401 de POST /api/auth/login que NO son "credenciales inválidas".
+ * Un 401 genérico llega sin `error` (o con uno desconocido) y se trata como credenciales incorrectas.
+ */
+export type LoginErrorBody =
+  | { error: 'TOTP_ENROLLMENT_REQUIRED'; enrollmentToken: string }
+  | { error: 'TOTP_REQUIRED' }
+  | { error: 'INVALID_TOTP' };
 
 /** Espeja UserProfileResponse del backend (GET/PUT /api/users/me). */
 export interface UserProfile {
