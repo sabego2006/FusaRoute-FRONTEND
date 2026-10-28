@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
-import { Route } from '../models/route.model';
+import { Route, RouteDetail } from '../models/route.model';
 
 /** Cliente del catálogo público de rutas (RF-15). Ambos endpoints son públicos: no requieren sesión. */
 @Injectable({
@@ -17,7 +17,8 @@ export class RouteService {
     return this.http.get<Route[]>(this.apiUrl);
   }
 
-  getRouteById(id: string): Observable<Route> {
-    return this.http.get<Route>(`${this.apiUrl}/${encodeURIComponent(id)}`);
+  /** El detalle trae además el trazado GeoJSON, que el listado no carga por peso. */
+  getRouteById(id: string): Observable<RouteDetail> {
+    return this.http.get<RouteDetail>(`${this.apiUrl}/${encodeURIComponent(id)}`);
   }
 }

@@ -29,7 +29,7 @@ describe('MapViewComponent', () => {
   });
 
   it('mientras carga la API de Maps, muestra un estado de carga en vez de romper', async () => {
-    const { el } = await render(() => new Promise<void>(() => {}));
+    const { el } = await render(() => new Promise<void>(() => undefined));
 
     expect(el.querySelector('[role="status"]')?.textContent).toContain('Cargando mapa');
     expect(el.querySelector('google-map')).toBeNull();
@@ -42,7 +42,7 @@ describe('MapViewComponent', () => {
   });
 
   it('arma la feature GeoJSON a partir de "path" sin inventar ni transformar coordenadas', async () => {
-    const { fixture } = await render(() => new Promise<void>(() => {}));
+    const { fixture } = await render(() => new Promise<void>(() => undefined));
 
     expect(fixture.componentInstance.buildPathFeature()).toEqual({
       type: 'Feature',
@@ -53,13 +53,13 @@ describe('MapViewComponent', () => {
 
   it('resuelve el token --muni-* del design system a su valor real, no al nombre del token', async () => {
     document.documentElement.style.setProperty('--muni-fusagasuga', '#4F46E5');
-    const { fixture } = await render(() => new Promise<void>(() => {}));
+    const { fixture } = await render(() => new Promise<void>(() => undefined));
 
     expect(fixture.componentInstance.resolveAccentColor()).toBe('#4F46E5');
   });
 
   it('con un token sin valor, cae a un color por defecto en vez de pintar vacío', async () => {
-    const { fixture } = await render(() => new Promise<void>(() => {}));
+    const { fixture } = await render(() => new Promise<void>(() => undefined));
     fixture.componentRef.setInput('accentColorToken', '--token-inexistente');
 
     expect(fixture.componentInstance.resolveAccentColor()).toBe('#4F46E5');

@@ -1,12 +1,9 @@
 import { Component, OnDestroy, inject, input, signal } from '@angular/core';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
+import { GeoJsonLineString } from '../../models/route.model';
 
-export interface GeoJsonLineString {
-  type: 'LineString';
-  coordinates: [number, number][];
-}
-
+/** La forma que espera Google Maps para un punto; no viene del backend. */
 export interface LatLngPoint {
   lat: number;
   lng: number;
