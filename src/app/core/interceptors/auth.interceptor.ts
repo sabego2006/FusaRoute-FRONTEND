@@ -16,6 +16,9 @@ import { catchError, throwError } from 'rxjs';
  * - Un 401 en `/api/auth/login` NO redirige: es "credenciales incorrectas",
  *   no "sesión expirada".
  * - Cualquier otro 401 sí limpia la sesión y redirige al login.
+ * - Durante el enrolamiento forzado de TOTP el usuario aún no tiene sesión: el `enrollmentToken`
+ *   (solo en memoria) se usa como Bearer en lugar del token completo, y un 401 en ese momento
+ *   no redirige; el componente de enrolamiento lo resuelve devolviendo al paso de credenciales.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -23,9 +26,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // No adjuntar token en rutas de autenticación
   const isAuthRoute = req.url.includes('/api/auth/');
+  const enrolling = auth.enrollmentToken() !== null;
   let authReq = req;
   if (!isAuthRoute) {
-    const token = auth.token();
+    const token = auth.enrollmentToken() ?? auth.token();
     if (token) {
       authReq = req.clone({
         setHeaders: { Authorization: `Bearer ${token}` },
@@ -36,7 +40,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // Un 401 en login/registro es "credenciales incorrectas", no redirigir
-      if (error.status === 401 && !isAuthRoute) {
+      if (error.status === 401 && !isAuthRoute && !enrolling) {
         auth.logout();
         router.navigate(['/login']);
       }
