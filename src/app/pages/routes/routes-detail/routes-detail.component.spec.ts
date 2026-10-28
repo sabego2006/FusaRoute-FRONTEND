@@ -5,7 +5,8 @@ import { throwError, of } from 'rxjs';
 import { describe, it, expect } from 'vitest';
 import { RoutesDetailComponent } from './routes-detail.component';
 import { RouteService } from '../../../services/route.service';
-import { Route } from '../../../models/route.model';
+import { GoogleMapsLoaderService } from '../../../core/google-maps-loader.service';
+import { RouteDetail } from '../../../models/route.model';
 
 async function render(getRouteById: () => unknown, id: string | null = '1') {
   await TestBed.configureTestingModule({
@@ -13,7 +14,11 @@ async function render(getRouteById: () => unknown, id: string | null = '1') {
     providers: [
       provideRouter([]),
       { provide: RouteService, useValue: { getRouteById } },
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } }
+      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } },
+      // El mapa no debe salir a la red en los tests: se simula que la API de Google
+      // nunca termina de cargar, que es el estado en el que el componente muestra
+      // "Cargando mapa..." y no intenta dibujar nada.
+      { provide: GoogleMapsLoaderService, useValue: { load: () => new Promise<void>(() => undefined) } }
     ]
   }).compileComponents();
 
@@ -24,15 +29,29 @@ async function render(getRouteById: () => unknown, id: string | null = '1') {
   return fixture.nativeElement as HTMLElement;
 }
 
-const urbana: Route = {
+/** Hoy la mayoría de las rutas sembradas no tiene trazado: `path` llega en null. */
+const urbana: RouteDetail = {
   id: 1,
   name: 'Camino Real - La Pampa',
   type: 'URBANA',
   neighborhoods: ['Camino Real', 'Centro', 'La Pampa'],
-  fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }]
+  fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }],
+  path: null
 };
 
-const intermunicipal: Route = {
+const urbanaConTrazado: RouteDetail = {
+  ...urbana,
+  // GeoJSON: [longitud, latitud], en ese orden.
+  path: {
+    type: 'LineString',
+    coordinates: [
+      [-74.3661, 4.3433],
+      [-74.36, 4.33]
+    ]
+  }
+};
+
+const intermunicipal: RouteDetail = {
   id: 8,
   name: 'Fusagasugá - Pasca',
   type: 'INTERMUNICIPAL',
@@ -41,7 +60,8 @@ const intermunicipal: Route = {
     { referencePoint: 'Corregimiento', amount: 3000, validFrom: '2025-01-16' },
     { referencePoint: 'Alaska', amount: 3550, validFrom: '2026-02-05' },
     { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
-  ]
+  ],
+  path: null
 };
 
 describe('RoutesDetailComponent', () => {
@@ -97,5 +117,23 @@ describe('RoutesDetailComponent', () => {
     const el = await render(() => throwError(() => new HttpErrorResponse({ status: 500 })));
 
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('No se pudo cargar');
+  });
+
+  it('con trazado cargado, monta el mapa del recorrido', async () => {
+    const el = await render(() => of(urbanaConTrazado));
+
+    expect(el.querySelector('app-map-view')).not.toBeNull();
+    expect(el.textContent).toContain('Recorrido en el mapa');
+    expect(el.textContent).not.toContain('todavía no tiene su recorrido dibujado');
+  });
+
+  it('sin trazado, lo dice en vez de dejar un hueco donde iría el mapa', async () => {
+    // El trazado de la mayoría de las rutas sigue sin dibujarse (SCRUM-166). La
+    // pantalla tiene que seguir siendo útil: barrios y tarifas se muestran igual.
+    const el = await render(() => of(urbana));
+
+    expect(el.querySelector('app-map-view')).toBeNull();
+    expect(el.textContent).toContain('todavía no tiene su recorrido dibujado');
+    expect(el.textContent).toContain('Camino Real');
   });
 });

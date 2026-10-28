@@ -2,23 +2,44 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RouteService } from '../../../services/route.service';
-import { Route } from '../../../models/route.model';
+import { RouteDetail } from '../../../models/route.model';
+import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { formatCop, formatDateEs } from '../../../lib/format';
 import { pickNeighborhoodSteps } from '../../../lib/route-steps';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, MapViewComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
-  route = signal<Route | null>(null);
+  route = signal<RouteDetail | null>(null);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
 
   steps = computed(() => pickNeighborhoodSteps(this.route()?.neighborhoods ?? []));
   isUrban = computed(() => this.route()?.type === 'URBANA');
+
+  /**
+   * Todo lo que el mapa necesita, o null mientras la ruta no tenga trazado cargado.
+   * Va junto en un solo computed para que la plantilla lo resuelva con un unico @if:
+   * los tres valores aparecen y desaparecen a la vez.
+   *
+   * Los extremos del trazado se usan como marcadores de inicio y fin del recorrido.
+   * Ojo: GeoJSON guarda [longitud, latitud], y Google Maps espera {lat, lng}.
+   */
+  readonly mapData = computed(() => {
+    const path = this.route()?.path;
+    if (!path?.coordinates.length) return null;
+
+    const toPoint = ([lng, lat]: [number, number]): LatLngPoint => ({ lat, lng });
+    return {
+      path,
+      start: toPoint(path.coordinates[0]),
+      end: toPoint(path.coordinates[path.coordinates.length - 1])
+    };
+  });
 
   readonly formatCop = formatCop;
   readonly formatDateEs = formatDateEs;

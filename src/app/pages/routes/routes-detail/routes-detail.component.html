@@ -23,6 +23,18 @@
       </header>
 
       <section style="margin-bottom: var(--space-6);">
+        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h2>
+        @if (mapData(); as mapa) {
+          <app-map-view [path]="mapa.path" [origin]="mapa.start" [destination]="mapa.end" />
+        } @else {
+          <p class="fr-texto-sm">
+            Esta ruta todavía no tiene su recorrido dibujado, así que aún no podemos mostrarla
+            en el mapa.
+          </p>
+        }
+      </section>
+
+      <section style="margin-bottom: var(--space-6);">
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
         <ol class="fr-lista">
           @for (stop of steps(); track $index; let i = $index) {
