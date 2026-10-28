@@ -3,6 +3,12 @@
 Interfaz web para el sistema de información de transporte público de Fusagasugá.
 Proyecto Integrador de Ingeniería de Software I, Universidad de Cundinamarca.
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sabego2006_FusaRoute-FRONTEND&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=sabego2006_FusaRoute-FRONTEND)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sabego2006_FusaRoute-FRONTEND&metric=coverage)](https://sonarcloud.io/summary/new_code?id=sabego2006_FusaRoute-FRONTEND)
+
+> Los badges quedan en gris hasta que el admin importe el repo en SonarQube Cloud y
+> guarde el secret `SONAR_TOKEN`. Ver [`docs/calidad/sonarqube.md`](docs/calidad/sonarqube.md).
+
 ## Stack
 
 | | Versión |

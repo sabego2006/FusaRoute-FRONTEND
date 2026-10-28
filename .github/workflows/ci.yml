@@ -9,9 +9,19 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # Secrets de SonarQube (SCRUM-182). Sin SONAR_TOKEN el paso de analisis
+      # queda SKIPPED, no FAILED: asi el CI no se enrojece antes de que el
+      # admin importe el repo y guarde el secret. Mismo patron que el backend.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     steps:
       - uses: actions/checkout@v4
+        # Sonar usa el historial para el blame y para decidir que es codigo
+        # nuevo; sin fetch-depth 0 las fechas de autoria quedan vacias.
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -23,5 +33,20 @@ jobs:
       - name: Build
         run: npx ng build
 
-      - name: Test
-        run: npx ng test
+      - name: Test con cobertura
+        # Genera coverage/fusaroute-frontend/lcov.info, que Sonar ingiere abajo
+        # (la ruta esta en sonar-project.properties). Reemplaza al 'ng test'
+        # pelado: la cobertura es parte de lo que se reporta en cada PR.
+        run: npm run test:ci
+
+      - name: Analisis SonarQube
+        # Guard: sin token el paso queda SKIPPED (ver env del job). Con token
+        # corre, pero el Quality Gate es informativo por ahora — no se espera
+        # su resultado, asi que un gate rojo no bloquea el merge. Cuando el
+        # equipo acuerde los umbrales se agrega sonar.qualitygate.wait=true.
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Vacio apunta a SonarQube Cloud; con valor, a la instancia propia.
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
