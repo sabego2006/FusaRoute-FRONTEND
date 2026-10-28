@@ -29,6 +29,23 @@ alguien mira el dashboard y se pregunta por qué no hay datos.
 
 Si algún día cambia el nombre del proyecto en `angular.json`, hay que cambiar esta ruta.
 
+### Dónde corre el análisis: SonarCloud en el CI, Docker en local
+
+Hay **dos** instancias y cumplen propósitos distintos. No compiten:
+
+| | SonarCloud | Docker local (`infra/sonarqube/` del backend) |
+|---|---|---|
+| Para qué | El análisis automático de cada PR (RNF-05) | Inspección local y demostrar el despliegue en contenedor |
+| Quién lo ve | Cualquiera, por URL pública | Quien levante el contenedor, en `localhost:9000` |
+| Cuándo corre | En cada PR y push a `main` | A mano, cuando se necesite |
+
+El CI apunta **solo a SonarCloud**; la instancia Docker no participa del pipeline.
+
+**Por qué SonarCloud para el CI:** ambos repos son públicos, así que el análisis es gratuito
+e ilimitado e incluye *branch analysis* y decoración de PRs. La Community Edition
+autohospedada **no** trae esas dos features — son de pago — así que Cloud cumple mejor el
+RNF-05, que pide análisis en cada PR, y no obliga a mantener un servidor.
+
 ### El paso de Sonar se salta si no hay token
 
 El workflow trae un guard:
@@ -39,6 +56,11 @@ if: env.SONAR_TOKEN != ''
 
 Sin el secret, el paso queda **SKIPPED, no FAILED**. Así el CI no se pone rojo mientras el
 admin todavía no ha importado el repo. Es el mismo patrón que usa el backend (SCRUM-181).
+
+**`SONAR_TOKEN` es el único secret.** El host **no** es un secret: va literal en el paso
+como `SONAR_HOST_URL: https://sonarcloud.io`. Ponerlo en un secret sería peor — si quedara
+vacío por olvido, la action caería a su default y el fallo sería silencioso. Siendo literal,
+solo hay una cosa que el admin puede olvidar, y su ausencia se ve como paso SKIPPED.
 
 ## Configuración de cobertura
 
