@@ -23,10 +23,18 @@ export class RouteService {
 
   /**
    * Busca la mejor ruta entre un origen y un destino (RF-04, SCRUM-54).
-   * El controller ya existe en la rama feature/SCRUM-53-route-latency-monitoring del
-   * backend; esta llamada funciona en cuanto esa rama se apruebe y llegue a main.
+   * Con red: el backend cronometra las candidatas contra Google y gana la más rápida.
    */
   searchRoute(params: RouteSearchParams): Observable<RouteSearchResult> {
     return this.http.get<RouteSearchResult>(`${this.apiUrl}/search`, { params: { ...params } });
+  }
+
+  /**
+   * Busca la mejor ruta sin conexión (RF-04 parte 2, SCRUM-51).
+   * Sin red el backend no puede preguntarle el tiempo a Google, así que elige por el
+   * recorrido más corto sobre el trazado propio y devuelve `estimatedMinutes` en null.
+   */
+  searchRouteOffline(params: RouteSearchParams): Observable<RouteSearchResult> {
+    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search/offline`, { params: { ...params } });
   }
 }

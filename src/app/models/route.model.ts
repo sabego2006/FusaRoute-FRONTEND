@@ -33,8 +33,30 @@ export interface RouteSearchParams {
   destinationLng: number;
 }
 
-/** Espeja RouteSearchResponse del backend (GET /api/routes/search → 200). */
+/**
+ * Espeja BoardingPointResponse del backend: la última milla de una punta del viaje.
+ * Dónde queda el punto del trazado más cercano y cuánto hay que caminar hasta él.
+ */
+export interface BoardingPoint {
+  latitude: number;
+  longitude: number;
+  distanceInMeters: number;
+  walkingMinutes: number;
+}
+
+/**
+ * Espeja RouteSearchResponse del backend (GET /api/routes/search y /search/offline).
+ *
+ * Los tres campos opcionales no son descuido: `estimatedMinutes` viene null en la
+ * búsqueda offline, porque sin red el backend no le pregunta el tiempo a Google y
+ * prefiere no dar un dato que no midió. `boarding` y `dropOff` vienen null en las
+ * rutas que todavía no tienen trazado GeoJSON cargado, que hoy son la mayoría; esas
+ * rutas se sugieren igual, solo que sin decir por dónde acercarse a pie.
+ */
 export interface RouteSearchResult {
   route: Route;
-  estimatedMinutes: number;
+  estimatedMinutes: number | null;
+  travelDistanceInMeters: number | null;
+  boarding: BoardingPoint | null;
+  dropOff: BoardingPoint | null;
 }

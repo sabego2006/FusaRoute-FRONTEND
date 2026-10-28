@@ -2,6 +2,12 @@
   <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Buscar ruta</h1>
   <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Dinos de dónde sales y a dónde vas.</p>
 
+  @if (!isOnline()) {
+    <div class="fr-alerta" role="status" style="margin-bottom: var(--space-4); background: var(--lima); border-color: var(--borde);">
+      Estás sin conexión. Podemos sugerirte la ruta más corta, pero no el tiempo de viaje.
+    </div>
+  }
+
   <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="fr-card" style="margin-bottom: var(--space-6);">
     <div class="fr-campo">
       <label class="fr-etiqueta" for="origin">Origen</label>
@@ -66,10 +72,51 @@
         <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
       </header>
 
-      <p class="fr-texto" style="margin-bottom: var(--space-4);">
-        <strong style="font: 700 24px/32px var(--font-display);">{{ r.estimatedMinutes }} min</strong>
-        <span class="fr-texto-sm"> · tiempo estimado</span>
-      </p>
+      @if (r.estimatedMinutes !== null) {
+        <p class="fr-texto" style="margin-bottom: var(--space-4);">
+          <strong style="font: 700 24px/32px var(--font-display);">{{ r.estimatedMinutes }} min</strong>
+          <span class="fr-texto-sm"> · tiempo estimado</span>
+        </p>
+      } @else {
+        <p class="fr-texto" style="margin-bottom: var(--space-2);">
+          @if (travelDistanceLabel(); as distancia) {
+            <strong style="font: 700 24px/32px var(--font-display);">{{ distancia }}</strong>
+            <span class="fr-texto-sm"> · recorrido en buseta</span>
+          } @else {
+            <span class="fr-texto-sm">Esta ruta aún no tiene su recorrido cargado.</span>
+          }
+        </p>
+        <p class="fr-texto-sm" style="margin-bottom: var(--space-4);">
+          Sin conexión no podemos calcular el tiempo de viaje, solo la distancia.
+        </p>
+      }
+
+      <section style="margin-bottom: var(--space-4);">
+        <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Cómo acercarte</h3>
+        @if (r.boarding && r.dropOff) {
+          <ul class="fr-lista">
+            <li class="fr-fila">
+              <span class="fr-chip-lugar" aria-hidden="true">↑</span>
+              <span>
+                Tómala caminando <strong>{{ r.boarding.distanceInMeters }} m</strong>
+                (unos {{ r.boarding.walkingMinutes }} min).
+              </span>
+            </li>
+            <li class="fr-fila">
+              <span class="fr-chip-lugar" aria-hidden="true">↓</span>
+              <span>
+                Al bajarte te quedan <strong>{{ r.dropOff.distanceInMeters }} m</strong>
+                (unos {{ r.dropOff.walkingMinutes }} min) hasta tu destino.
+              </span>
+            </li>
+          </ul>
+        } @else {
+          <p class="fr-texto-sm">
+            Esta ruta todavía no tiene su trazado cargado, así que no podemos decirte el punto
+            exacto donde tomarla.
+          </p>
+        }
+      </section>
 
       <section>
         <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h3>

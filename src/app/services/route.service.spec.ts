@@ -36,6 +36,46 @@ describe('RouteService', () => {
     req.flush({ id: 8, name: 'Ruta', type: 'INTERMUNICIPAL', neighborhoods: [], fares: [] });
   });
 
+  it('la búsqueda con red manda barrio y coordenadas al endpoint online', () => {
+    service
+      .searchRoute({
+        originNeighborhood: 'Centro',
+        originLat: 4.3433,
+        originLng: -74.3661,
+        destinationNeighborhood: 'La Pampa',
+        destinationLat: 4.33,
+        destinationLng: -74.36
+      })
+      .subscribe();
+
+    const req = http.expectOne((r) => r.url === `${environment.apiUrl}/api/routes/search`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('originNeighborhood')).toBe('Centro');
+    expect(req.request.params.get('originLat')).toBe('4.3433');
+    req.flush({ route: {}, estimatedMinutes: 18, travelDistanceInMeters: 2400, boarding: null, dropOff: null });
+  });
+
+  it('la búsqueda sin red va a /search/offline, que es otro endpoint', () => {
+    let result: unknown;
+    service
+      .searchRouteOffline({
+        originNeighborhood: 'Centro',
+        originLat: 4.3433,
+        originLng: -74.3661,
+        destinationNeighborhood: 'La Pampa',
+        destinationLat: 4.33,
+        destinationLng: -74.36
+      })
+      .subscribe((r) => (result = r));
+
+    const req = http.expectOne((r) => r.url === `${environment.apiUrl}/api/routes/search/offline`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ route: {}, estimatedMinutes: null, travelDistanceInMeters: 2400, boarding: null, dropOff: null });
+
+    // Sin red el backend no consulta a Google, así que no manda tiempo estimado.
+    expect((result as { estimatedMinutes: number | null }).estimatedMinutes).toBeNull();
+  });
+
   it('propaga el error del backend en vez de inventar datos', () => {
     let status: number | undefined;
     service.getRouteById('999').subscribe({ error: (e) => (status = e.status) });
