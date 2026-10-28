@@ -2,14 +2,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
+import { TotpService } from '../../services/totp.service';
 import { ToastService } from '../../components/toast/toast.service';
+import { TotpEnrollComponent } from '../../components/totp-enroll/totp-enroll.component';
 import { UserProfile, FieldViolation, ProblemDetail } from '../../models/auth.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TotpEnrollComponent],
   template: `
     <div class="fr-card" style="max-width: 480px; margin: 2rem auto;">
       <h1 class="fr-titulo-1" style="margin-bottom: var(--space-6);">Mi perfil</h1>
@@ -80,6 +82,42 @@ import { HttpErrorResponse } from '@angular/common/http';
           {{ savingPassword() ? 'Cambiando...' : 'Cambiar contraseña' }}
         </button>
       </form>
+
+      <!-- Seguridad: verificación en dos pasos (obligatoria, no se puede desactivar) -->
+      <hr style="margin: var(--space-8) 0; border: 0; border-top: var(--trazo-1) solid var(--borde);">
+      <h2 class="fr-titulo-2" style="margin-bottom: var(--space-4);">Verificación en dos pasos</h2>
+
+      @if (reenrolling()) {
+        <app-totp-enroll (enrolled)="onReenrolled()" />
+        <button type="button" class="fr-btn fr-btn-bloque" style="margin-top: var(--space-4);" (click)="reenrolling.set(false)">
+          Cancelar
+        </button>
+      } @else {
+        @switch (totpEnabled()) {
+          @case (true) {
+            <p class="fr-texto" role="status" style="margin-bottom: var(--space-2);">
+              Estado: <strong>Activada</strong>
+            </p>
+          }
+          @case (false) {
+            <p class="fr-texto" role="status" style="margin-bottom: var(--space-2);">
+              Estado: <strong>Sin configurar</strong>
+            </p>
+          }
+          @default {
+            <p class="fr-texto-sm" role="status" style="margin-bottom: var(--space-2);">
+              {{ totpStatusError() ? 'No pudimos consultar el estado.' : 'Consultando estado...' }}
+            </p>
+          }
+        }
+        <p class="fr-texto-sm" style="margin-bottom: var(--space-4);">
+          Es obligatoria para entrar a FusaRoute. Si cambiaste de teléfono, vuelve a configurarla.
+        </p>
+        <button type="button" class="fr-btn fr-btn-bloque" (click)="reenrolling.set(true)"
+                style="background: var(--superficie); border: var(--trazo-2) solid var(--borde);">
+          Volver a configurar mi app autenticadora
+        </button>
+      }
     </div>
   `,
   styles: [],
@@ -87,6 +125,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export class ProfileComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
+  private readonly totpService = inject(TotpService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -107,8 +146,13 @@ export class ProfileComponent implements OnInit {
   readonly profileError = signal<string | null>(null);
   readonly passwordError = signal<string | null>(null);
   private readonly fieldErrors = signal<FieldViolation[]>([]);
+  readonly totpEnabled = signal<boolean | null>(null);
+  readonly totpStatusError = signal(false);
+  readonly reenrolling = signal(false);
 
   ngOnInit(): void {
+    this.loadTotpStatus();
+
     this.userService.getMe().subscribe({
       next: (profile: UserProfile) => {
         this.profileForm.patchValue({
@@ -119,6 +163,20 @@ export class ProfileComponent implements OnInit {
       },
       error: () => this.toast.show('No se pudo cargar el perfil', 'error'),
     });
+  }
+
+  private loadTotpStatus(): void {
+    this.totpService.getStatus().subscribe({
+      next: (status) => this.totpEnabled.set(status.enabled),
+      error: () => this.totpStatusError.set(true),
+    });
+  }
+
+  /** El componente de enrolamiento ya dejó la sesión con el token nuevo; solo se vuelve a la vista. */
+  onReenrolled(): void {
+    this.reenrolling.set(false);
+    this.loadTotpStatus();
+    this.toast.show('Verificación en dos pasos actualizada', 'success');
   }
 
   /** Devuelve el mensaje de error del backend para un campo, si existe. */

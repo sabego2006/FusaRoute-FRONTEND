@@ -25,6 +25,12 @@ export class AuthService {
   readonly token = signal<string | null>(this.loadToken());
   private readonly expiresAt = signal<string | null>(this.loadExpiry());
 
+  /**
+   * Token de vida corta que solo sirve para enrolar/confirmar TOTP. Vive únicamente en memoria:
+   * nunca se escribe en localStorage, así que recargar la página lo descarta.
+   */
+  readonly enrollmentToken = signal<string | null>(null);
+
   readonly isLoggedIn = computed(() => {
     const t = this.token();
     const exp = this.expiresAt();
@@ -37,7 +43,28 @@ export class AuthService {
   login(credentials: LoginCredentials): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.authUrl}/login`, credentials)
-      .pipe(tap((res) => this.saveSession(res)));
+      .pipe(tap((res) => this.applySession(res)));
+  }
+
+  setEnrollmentToken(token: string): void {
+    this.enrollmentToken.set(token);
+  }
+
+  clearEnrollmentToken(): void {
+    this.enrollmentToken.set(null);
+  }
+
+  /** Guarda la sesión completa (login o confirmación de TOTP) y descarta el enrollmentToken. */
+  applySession(res: LoginResponse): void {
+    try {
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('expiresAt', res.expiresAt);
+      localStorage.setItem('user', JSON.stringify(res.user));
+    } catch { /* entorno sin localStorage (test, incógnito) */ }
+    this.token.set(res.token);
+    this.expiresAt.set(res.expiresAt);
+    this.currentUser.set(res.user);
+    this.enrollmentToken.set(null);
   }
 
   register(data: RegisterRequest): Observable<RegisterResponse> {
@@ -62,17 +89,6 @@ export class AuthService {
 
   // --- Persistencia en localStorage ---
 
-  private saveSession(res: LoginResponse): void {
-    try {
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('expiresAt', res.expiresAt);
-      localStorage.setItem('user', JSON.stringify(res.user));
-    } catch { /* entorno sin localStorage (test, incógnito) */ }
-    this.token.set(res.token);
-    this.expiresAt.set(res.expiresAt);
-    this.currentUser.set(res.user);
-  }
-
   private clearSession(): void {
     try {
       localStorage.removeItem('token');
@@ -82,6 +98,7 @@ export class AuthService {
     this.token.set(null);
     this.expiresAt.set(null);
     this.currentUser.set(null);
+    this.enrollmentToken.set(null);
   }
 
   private loadToken(): string | null {

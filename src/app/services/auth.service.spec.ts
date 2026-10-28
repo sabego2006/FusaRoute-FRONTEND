@@ -88,6 +88,42 @@ describe('AuthService', () => {
     expect(service.isLoggedIn()).toBe(false);
   });
 
+  it('login envía totpCode cuando se le pasa', () => {
+    service.login({ email: 'a@b.co', password: 'x', totpCode: '123456' }).subscribe({ error: () => undefined });
+
+    const req = http.expectOne(`${environment.apiUrl}/api/auth/login`);
+    expect(req.request.body).toEqual({ email: 'a@b.co', password: 'x', totpCode: '123456' });
+    req.flush({ error: 'INVALID_TOTP' }, { status: 401, statusText: 'Unauthorized' });
+  });
+
+  it('el enrollmentToken vive solo en memoria y nunca toca localStorage', () => {
+    service.setEnrollmentToken('enroll-token');
+
+    expect(service.enrollmentToken()).toBe('enroll-token');
+    expect(JSON.stringify({ ...localStorage })).not.toContain('enroll-token');
+    expect(service.isLoggedIn()).toBe(false);
+  });
+
+  it('applySession guarda la sesión y descarta el enrollmentToken', () => {
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    service.setEnrollmentToken('enroll-token');
+
+    service.applySession({
+      token: 'full-token', tokenType: 'Bearer', expiresAt: futureDate,
+      user: { id: 1, name: 'A', email: 'a@b.co', role: 'USER', active: true },
+    });
+
+    expect(service.enrollmentToken()).toBeNull();
+    expect(service.isLoggedIn()).toBe(true);
+    expect(localStorage.getItem('token')).toBe('full-token');
+  });
+
+  it('logout también descarta el enrollmentToken', () => {
+    service.setEnrollmentToken('enroll-token');
+    service.logout();
+    expect(service.enrollmentToken()).toBeNull();
+  });
+
   it('patchUserName actualiza el nombre del signal sin HTTP', () => {
     const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     service.login({ email: 'a@b.co', password: 'x' }).subscribe();

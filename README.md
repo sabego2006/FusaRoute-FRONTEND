@@ -135,6 +135,88 @@ endpoint del backend que calcula la ruta por distancia sobre los GeoJSON.
 navegador y es inspeccionable; los secretos viven solo en el backend. `.env.example` está
 versionado con los valores vacíos y es la lista de las variables que existen.
 
+## Mapa del repo
+
+Pedido del comité del 28-sep: dar entrada rápida al código para quien lo abre por primera
+vez. Lo que sigue es lo que **ya existe** en el repo hoy; no hay carpetas placeholder.
+
+### Árbol
+
+```
+src/
+├── app/
+│   ├── pages/                       pantallas enrutadas (lo que ve el usuario)
+│   │   ├── auth/
+│   │   │   ├── login/               LoginComponent
+│   │   │   └── register/            RegisterComponent
+│   │   ├── health-check/            HealthCheckComponent (/health)
+│   │   ├── profile/                 ProfileComponent (protegida)
+│   │   └── routes/
+│   │       ├── routes-list/         catálogo público (/rutas)
+│   │       └── routes-detail/       detalle de una ruta (/rutas/:id)
+│   ├── components/                  piezas de UI reutilizables
+│   │   ├── header/                  HeaderComponent (barra superior)
+│   │   └── toast/                   ToastComponent + ToastService (avisos)
+│   ├── services/                    clientes HTTP; único lugar que llama al backend
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   ├── route.service.ts
+│   │   └── health.service.ts
+│   ├── core/
+│   │   ├── guards/
+│   │   │   └── auth.guard.ts        protege /perfil
+│   │   └── interceptors/
+│   │       └── auth.interceptor.ts  adjunta JWT y maneja 401
+│   ├── models/                      interfaces TypeScript del dominio
+│   │   ├── auth.model.ts
+│   │   └── route.model.ts
+│   ├── lib/                         utilidades puras, sin estado
+│   │   ├── format.ts                formato de moneda COP, horas
+│   │   └── route-steps.ts           reducción de barrios a ≤7 pasos
+│   ├── app.config.ts                providers de la aplicación
+│   ├── app.routes.ts                tabla de rutas
+│   └── app.ts / app.html / app.css  shell raíz
+├── environments/
+│   ├── environment.ts               DEV: apunta a http://localhost:8080
+│   └── environment.prod.ts          PROD: apunta a Render
+public/
+├── favicon.ico
+└── manifest.webmanifest             PWA (nombre, íconos, theme-color)
+.github/workflows/
+├── ci.yml                           build + test en cada PR
+└── security.yml                     escaneo de dependencias
+```
+
+### Para qué sirve cada carpeta
+
+| Carpeta | Qué hay y para qué |
+|---|---|
+| `src/app/pages/` | Una carpeta por pantalla con ruta propia. Los componentes son `standalone` y se cargan con `loadComponent` (lazy). |
+| `src/app/components/` | UI que se reutiliza entre pantallas (header, toast). No tienen ruta propia. |
+| `src/app/services/` | Clientes HTTP tipados. Es el **único** sitio que usa `HttpClient`; si una página necesita datos del backend, los pide a un service. |
+| `src/app/core/guards/` | `CanActivateFn` que decide si una ruta se puede abrir. Hoy solo `authGuard` para `/perfil`. |
+| `src/app/core/interceptors/` | Middleware HTTP funcional. `authInterceptor` adjunta el `Authorization: Bearer` y centraliza la respuesta a `401`. |
+| `src/app/models/` | `interface` / `type` que reflejan el dominio del backend (usuario, ruta, respuesta de login). Sin `any`. |
+| `src/app/lib/` | Utilidades puras: formateo de pesos colombianos, reducción de la lista de barrios a los 7 pasos que exige la UI. |
+| `src/environments/` | Configuración por ambiente que se compila **dentro** del bundle (`apiUrl`, `production`). No es un `.env` en runtime. |
+| `public/` | Activos servidos tal cual en la raíz: `favicon.ico` y el `manifest.webmanifest` que convierte la app en PWA instalable. |
+| `.github/workflows/` | Pipelines de CI. `ci.yml` corre `ng build` + `ng test` en cada PR; `security.yml` revisa vulnerabilidades de dependencias. |
+
+### Recorrido punta a punta del login
+
+Flujo real cuando alguien envía el formulario en `/login`:
+
+1. **Formulario reactivo** — [`src/app/pages/auth/login/login.component.ts`](src/app/pages/auth/login/login.component.ts). El `FormGroup` valida correo y contraseña; `onSubmit()` corta si el form está inválido y llama a `authService.login(this.loginForm.value)`.
+2. **Servicio de auth** — [`src/app/services/auth.service.ts`](src/app/services/auth.service.ts). `login()` hace `POST ${environment.apiUrl}/api/auth/login` con `HttpClient`.
+3. **Interceptor HTTP** — [`src/app/core/interceptors/auth.interceptor.ts`](src/app/core/interceptors/auth.interceptor.ts), registrado en [`src/app/app.config.ts`](src/app/app.config.ts) vía `withInterceptors`. Como la URL contiene `/api/auth/`, el interceptor **no** adjunta token (evita rebotes por un JWT viejo); la petición sale limpia.
+4. **Backend** — responde `{ token, expiresAt, user }` (ver `LoginResponse` en `src/app/models/auth.model.ts`).
+5. **Persistencia** — el `tap` del `login()` llama a `saveSession()`, que escribe `token`, `expiresAt` y `user` en `localStorage` y actualiza los `signal` de `AuthService` (`token`, `expiresAt`, `currentUser`). El `computed` `isLoggedIn` recalcula y queda en `true`.
+6. **Redirect** — el componente de login hace `router.navigate(['/rutas'])`.
+7. **Guard de ruta** — más tarde, al abrir `/perfil`, Angular ejecuta [`src/app/core/guards/auth.guard.ts`](src/app/core/guards/auth.guard.ts) (declarado en `canActivate` de `/perfil` en [`src/app/app.routes.ts`](src/app/app.routes.ts)). El guard inyecta `AuthService` y lee `isLoggedIn()`: si es `true` deja pasar; si es `false` devuelve `router.createUrlTree(['/login'])` y el usuario cae de vuelta al paso 1.
+8. **401 posterior** — si cualquier petición autenticada (p. ej. `GET /api/users/me`) recibe `401`, el interceptor llama `auth.logout()` (limpia `localStorage` y los signals) y redirige a `/login`.
+
+Un token válido dura una semana (RNF-04); al vencer, `isLoggedIn` pasa a `false` solo por el chequeo de fecha, sin necesidad de respuesta `401`.
+
 ## Troubleshooting
 
 | Problema | Solución |
