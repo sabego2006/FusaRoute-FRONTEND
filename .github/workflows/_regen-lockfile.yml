@@ -1,7 +1,8 @@
 name: Regenerate lockfile (temporal)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [feature/SCRUM-127-lighthouse-bundle]
 
 jobs:
   regen:
