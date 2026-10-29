@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, input, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, input } from '@angular/core';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
 import { GeoJsonLineString } from '../../models/route.model';
@@ -25,7 +25,12 @@ interface GeoJsonFeature {
   standalone: true,
   imports: [GoogleMap, MapMarker],
   template: `
-    @if (loadError()) {
+    @if (notConfigured()) {
+      <p class="fr-texto-sm" role="status">
+        El mapa no está configurado en este ambiente. El resto de la información de la ruta
+        sigue disponible.
+      </p>
+    } @else if (loadError()) {
       <p class="fr-alerta" role="alert">No se pudo cargar el mapa. Intenta de nuevo en un momento.</p>
     } @else if (!mapsReady()) {
       <p class="fr-texto-sm" role="status">Cargando mapa...</p>
@@ -52,17 +57,20 @@ export class MapViewComponent implements OnDestroy {
   accentColorToken = input<string>('--muni-fusagasuga');
 
   private readonly loader = inject(GoogleMapsLoaderService);
-  protected readonly mapsReady = signal(false);
-  protected readonly loadError = signal(false);
+  /**
+   * Los tres estados se leen del signal del servicio, no de la promesa de `load()`: Google
+   * puede llamar `gm_authFailure` después de que el script ya hizo `onload`, y solo un signal
+   * vivo refleja ese cambio tardío. La promesa solo dispara la carga.
+   */
+  protected readonly notConfigured = computed(() => this.loader.status() === 'sin-clave');
+  protected readonly loadError = computed(() => this.loader.status() === 'error');
+  protected readonly mapsReady = computed(() => this.loader.status() === 'listo');
   protected readonly mapOptions: google.maps.MapOptions = { disableDefaultUI: true, clickableIcons: false };
 
   private mapInstance?: google.maps.Map;
 
   constructor() {
-    this.loader.load().then(
-      () => this.mapsReady.set(true),
-      () => this.loadError.set(true)
-    );
+    this.loader.load().catch(() => undefined);
   }
 
   onMapInitialized(map: google.maps.Map): void {

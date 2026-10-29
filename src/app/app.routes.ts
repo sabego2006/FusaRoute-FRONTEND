@@ -23,6 +23,9 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard],
   },
-  { path: '', redirectTo: 'rutas', pathMatch: 'full' },
+  // La raiz cae en el buscador y no en el listado (RNF-04): abrir la app ya cuenta
+  // como la primera de las 4 acciones del flujo, asi que tiene que aterrizar donde
+  // el usuario va a buscar, no en el catalogo.
+  { path: '', redirectTo: 'rutas/buscar', pathMatch: 'full' },
   { path: '**', redirectTo: 'rutas' },
 ];
