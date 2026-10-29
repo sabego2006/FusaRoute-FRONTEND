@@ -7,6 +7,7 @@ import { ConnectivityService } from '../../../core/connectivity.service';
 import { RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { ProblemDetail } from '../../../models/auth.model';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
+import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 
 /**
@@ -20,7 +21,7 @@ import { LetreroComponent } from '../../../components/letrero/letrero.component'
 @Component({
   selector: 'app-route-search',
   standalone: true,
-  imports: [ReactiveFormsModule, RouteStepsComponent, LetreroComponent],
+  imports: [ReactiveFormsModule, RouteStepsComponent, FareTableComponent, LetreroComponent],
   templateUrl: './route-search.component.html',
 })
 export class RouteSearchComponent {
