@@ -72,6 +72,13 @@
         <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
       </header>
 
+      @if (signs().length) {
+        <section style="margin-bottom: var(--space-4);">
+          <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Letrero de la buseta</h3>
+          <app-letrero [signs]="signs()" />
+        </section>
+      }
+
       @if (r.estimatedMinutes !== null) {
         <p class="fr-texto" style="margin-bottom: var(--space-4);">
           <strong style="font: 700 24px/32px var(--font-display);">{{ r.estimatedMinutes }} min</strong>

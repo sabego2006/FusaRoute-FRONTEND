@@ -1,0 +1,29 @@
+@if (signs().length) {
+  <div class="letrero-grupo">
+    @for (sign of signs(); track sign.fieldId) {
+      <div class="letrero">
+        @if (senseLabel(sign.sense); as sentido) {
+          <span class="fr-chip-lugar letrero-sentido">{{ sentido }}</span>
+        }
+        <div class="letrero-placas">
+          @for (plate of sign.plates; track $index) {
+            <div [class]="plateClass(plate.template)">
+              @if (plate.code) {
+                <span class="letrero-codigo">{{ plate.code }}</span>
+              }
+              @for (line of plate.lines; track $index) {
+                <div
+                  class="letrero-linea"
+                  [style.background]="line.background ?? 'transparent'"
+                  [style.color]="line.foreground ?? 'inherit'"
+                >
+                  {{ line.text }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
