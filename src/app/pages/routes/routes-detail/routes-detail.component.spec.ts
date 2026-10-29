@@ -37,7 +37,8 @@ const urbana: RouteDetail = {
   neighborhoods: ['Camino Real', 'Centro', 'La Pampa'],
   fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }],
   path: null,
-  congestionSectors: []
+  congestionSectors: [],
+  lastUpdatedAt: '2026-02-05'
 };
 
 const urbanaConTrazado: RouteDetail = {
@@ -63,7 +64,8 @@ const intermunicipal: RouteDetail = {
     { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
   ],
   path: null,
-  congestionSectors: []
+  congestionSectors: [],
+  lastUpdatedAt: '2026-02-05'
 };
 
 describe('RoutesDetailComponent', () => {
@@ -91,6 +93,33 @@ describe('RoutesDetailComponent', () => {
     expect(rows[2]).toContain('Pasca');
     expect(rows[1]).toContain('5 de febrero de 2026');
     expect(rows[2]).toContain('16 de enero de 2025');
+
+    // El orden de menor a mayor (RF-06) lo decide el backend; la vista nunca reordena.
+    const amounts = Array.from(el.querySelectorAll('tbody tr td:nth-child(2)')).map((c) =>
+      Number((c.textContent ?? '').replace(/\D/g, ''))
+    );
+    expect(amounts).toEqual([3000, 3550, 4300]);
+    expect(amounts).toEqual([...amounts].sort((a, b) => a - b));
+  });
+
+  it('ruta intermunicipal: muestra la última actualización de la ruta sin borrar la fecha de cada fila', async () => {
+    const el = await render(() => of(intermunicipal), '8');
+
+    const seccion = el.querySelector('section:has(table)')?.textContent ?? '';
+    expect(seccion).toContain('Última actualización');
+    expect(seccion).toContain('5 de febrero de 2026');
+    // Siete de ocho precios pueden ser más viejos que el más nuevo: sin la fecha por fila,
+    // la pantalla afirmaría que todos se revisaron en febrero de 2026.
+    const rows = Array.from(el.querySelectorAll('tbody tr')).map((r) => r.textContent ?? '');
+    expect(rows[0]).toContain('16 de enero de 2025');
+  });
+
+  it('si el backend no manda lastUpdatedAt (build viejo), no muestra la línea ni se rompe', async () => {
+    const { lastUpdatedAt: _omitida, ...sinClave } = urbana;
+    const el = await render(() => of(sinClave));
+
+    expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
+    expect(el.textContent).not.toContain('Actualizada el');
   });
 
   it('con más de 7 barrios muestra solo 7, con el primero y el último', async () => {
