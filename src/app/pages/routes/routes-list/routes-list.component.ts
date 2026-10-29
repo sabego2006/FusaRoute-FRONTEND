@@ -4,11 +4,12 @@ import { RouteService } from '../../../services/route.service';
 import { Route } from '../../../models/route.model';
 import { formatCop } from '../../../lib/format';
 import { pickNeighborhoodSteps } from '../../../lib/route-steps';
+import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 
 @Component({
   selector: 'app-routes-list',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, TrafficBadgeComponent],
   templateUrl: './routes-list.component.html'
 })
 export class RoutesListComponent implements OnInit {

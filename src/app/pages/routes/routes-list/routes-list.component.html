@@ -38,6 +38,8 @@
               <span class="fr-texto-sm">{{ pickNeighborhoodSteps(route.neighborhoods).join(' → ') }}</span>
             </div>
 
+            <app-traffic-badge [sectors]="route.congestionSectors" variant="compact" />
+
             <a class="fr-btn fr-btn-primario fr-btn-bloque" style="margin-top: var(--space-4);" [routerLink]="['/rutas', route.id]">
               Ver detalle
             </a>
