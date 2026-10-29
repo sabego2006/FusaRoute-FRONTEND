@@ -33,7 +33,14 @@ describe('RouteService', () => {
 
     const req = http.expectOne(`${environment.apiUrl}/api/routes/8`);
     expect(req.request.method).toBe('GET');
-    req.flush({ id: 8, name: 'Ruta', type: 'INTERMUNICIPAL', neighborhoods: [], fares: [] });
+    req.flush({
+      id: 8,
+      name: 'Ruta',
+      type: 'INTERMUNICIPAL',
+      neighborhoods: [],
+      fares: [],
+      lastUpdatedAt: null
+    });
   });
 
   it('la búsqueda con red manda barrio y coordenadas al endpoint online', () => {
