@@ -94,9 +94,11 @@ export class RegisterComponent {
         this.loading.set(false);
         this.toast.show('Cuenta creada con éxito', 'success');
         // Paso al login con el correo precargado
-        this.router.navigate(['/login'], {
-          queryParams: { email: this.registerForm.value.email },
-        });
+        this.router
+          .navigate(['/login'], {
+            queryParams: { email: this.registerForm.value.email },
+          })
+          .catch((err) => console.error('Navegación al login fallida', err));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

@@ -42,7 +42,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // Un 401 en login/registro es "credenciales incorrectas", no redirigir
       if (error.status === 401 && !isAuthRoute && !enrolling) {
         auth.logout();
-        router.navigate(['/login']);
+        router
+          .navigate(['/login'])
+          .catch((navErr) => console.error('Redirección al login fallida', navErr));
       }
       return throwError(() => error);
     }),
