@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCop, formatDateEs } from './format';
+import { formatCop, formatDateEs, formatTime } from './format';
 import { pickNeighborhoodSteps } from './route-steps';
 
 describe('formatCop', () => {
@@ -13,6 +13,13 @@ describe('formatDateEs', () => {
   it('escribe la fecha en español sin correrla de día por la zona horaria', () => {
     expect(formatDateEs('2026-02-05')).toBe('5 de febrero de 2026');
     expect(formatDateEs('2025-01-16')).toBe('16 de enero de 2025');
+  });
+});
+
+describe('formatTime', () => {
+  it('quita los segundos de la hora que manda el backend', () => {
+    expect(formatTime('07:00:00')).toBe('07:00');
+    expect(formatTime('18:30:00')).toBe('18:30');
   });
 });
 

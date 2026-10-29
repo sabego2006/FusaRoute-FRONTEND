@@ -36,7 +36,8 @@ const urbana: RouteDetail = {
   type: 'URBANA',
   neighborhoods: ['Camino Real', 'Centro', 'La Pampa'],
   fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }],
-  path: null
+  path: null,
+  congestionSectors: []
 };
 
 const urbanaConTrazado: RouteDetail = {
@@ -61,7 +62,8 @@ const intermunicipal: RouteDetail = {
     { referencePoint: 'Alaska', amount: 3550, validFrom: '2026-02-05' },
     { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
   ],
-  path: null
+  path: null,
+  congestionSectors: []
 };
 
 describe('RoutesDetailComponent', () => {
@@ -135,5 +137,33 @@ describe('RoutesDetailComponent', () => {
     expect(el.querySelector('app-map-view')).toBeNull();
     expect(el.textContent).toContain('todavía no tiene su recorrido dibujado');
     expect(el.textContent).toContain('Camino Real');
+  });
+
+  it('con sectores en trancón, avisa que puede haber congestión y da la franja sin segundos', async () => {
+    const el = await render(() =>
+      of({
+        ...urbana,
+        congestionSectors: [{ name: 'Centro - Carrera 1', startsAt: '17:00:00', endsAt: '19:00:00' }]
+      })
+    );
+
+    const aviso = el.querySelector('[role="status"]');
+    expect(aviso?.textContent).toContain('Puede haber congestión');
+    expect(el.querySelector('.congestion-sector')?.textContent).toContain('Centro - Carrera 1 (17:00–19:00)');
+  });
+
+  it('sin sectores en trancón, no muestra ningún aviso', async () => {
+    const el = await render(() => of(urbana));
+
+    expect(el.textContent).not.toContain('Puede haber congestión');
+    expect(el.querySelector('.congestion-sector')).toBeNull();
+  });
+
+  it('si el backend no manda la clave (build viejo), no muestra aviso ni se rompe', async () => {
+    const { congestionSectors: _omitida, ...sinClave } = urbana;
+    const el = await render(() => of(sinClave));
+
+    expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
+    expect(el.textContent).not.toContain('Puede haber congestión');
   });
 });
