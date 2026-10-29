@@ -53,3 +53,27 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+
+  lighthouse:
+    # RNF-01 (SCRUM-127): LCP < 2.5s en la pantalla de resultado de busqueda
+    # (/rutas/buscar), medido con Lighthouse CI mobile Slow 4G. Corre despues del job
+    # de build-and-test para no gastar el runner de Chrome si el build/test ya fallo.
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build de produccion
+        # El budget de bundle inicial (angular.json, "initial": maximumError 1MB) se
+        # verifica aqui mismo: ng build falla si el bundle inicial lo excede.
+        run: npx ng build
+
+      - name: Lighthouse CI
+        run: npx lhci autorun
