@@ -7,13 +7,22 @@ export interface Fare {
   validFrom: string;
 }
 
-/** Espeja RouteResponse del backend (GET /api/routes). */
+/**
+ * Espeja RouteResponse del backend (GET /api/routes).
+ *
+ * `congestionSectors` es opcional, no requerido: el listado hoy no lo manda (SCRUM-154, por
+ * decisión de rendimiento — el backend evalúa el aviso por ruta y el listado no, para no cargar
+ * el detalle completo en cada tarjeta). Que el tipo lo admita como opcional, en vez de omitirlo
+ * del todo, deja listo el lado del frontend para el día en que el backend lo agregue, sin volver
+ * a tocar este archivo.
+ */
 export interface Route {
   id: number;
   name: string;
   type: RouteType;
   neighborhoods: string[];
   fares: Fare[];
+  congestionSectors?: CongestionSector[];
 }
 
 /**

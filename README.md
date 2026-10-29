@@ -38,6 +38,30 @@ npm start                 # http://localhost:4200
 `npm start` levanta el frontend contra el backend en `http://localhost:8080`, que es lo que
 declara `src/environments/environment.ts`. El backend tiene que estar corriendo aparte.
 
+## Google Maps
+
+El mapa del detalle de ruta (`MapViewComponent`) necesita una API key de **Google Maps
+JavaScript API**. Dos cosas importantes sobre esa clave:
+
+- **Es distinta de la del backend.** El backend usa su propia clave contra la Directions API
+  para simular cada ruta; esta es solo para pintar el mapa en el navegador.
+- **Es pública por naturaleza**, porque viaja en el bundle que se descarga al navegador — no
+  hay forma de ocultarla en una SPA. Lo que la protege no es el secreto, sino la **restricción
+  por dominio** configurada en la consola de Google Cloud: la clave solo funciona si la
+  petición viene de un dominio autorizado (`localhost` en DEV, `fusaroute.vercel.app` en PROD).
+
+`environment.ts` (DEV) y `environment.prod.ts` (PROD) ya traen la clave del equipo. Si falta,
+está vacía, o Google la rechaza (dominio no autorizado, cuota agotada), el frontend **no se
+rompe**: `GoogleMapsLoaderService` no intenta inyectar el script sin clave, y si Google la
+rechaza después de cargar (`gm_authFailure`), el mapa se reemplaza por un aviso en vez de
+quedar en el cartel gris de error de Google. El resto de la pantalla — barrios, tarifa, aviso
+de congestión — sigue funcionando igual: el mapa es la única pieza que depende de esta clave.
+
+Para desarrollar con tu propia clave: crearla en la [consola de Google
+Cloud](https://console.cloud.google.com/), habilitar "Maps JavaScript API", restringirla por
+dominio (`localhost` sirve para DEV) y pegarla en `googleMapsApiKey` dentro de
+`src/environments/environment.ts`.
+
 ## Producción
 
 | | |
@@ -141,6 +165,10 @@ endpoint del backend que calcula la ruta por distancia sobre los GeoJSON.
 navegador y es inspeccionable; los secretos viven solo en el backend. `.env.example` está
 versionado con los valores vacíos y es la lista de las variables que existen.
 
+La API key de Google Maps es la excepción visible: es pública por naturaleza (ver
+[Google Maps](#google-maps)), así que no es un secreto que proteger sino una clave restringida
+por dominio.
+
 ## Mapa del repo
 
 Pedido del comité del 28-sep: dar entrada rápida al código para quien lo abre por primera
@@ -231,3 +259,5 @@ Un token válido dura una semana (RNF-04); al vencer, `isLoggedIn` pasa a `false
 | Token vencido y la app no carga | Limpiar localStorage: `localStorage.clear()` en la consola del navegador, recargar |
 | `npm ci` falla por peer deps | El `.npmrc` ya tiene `legacy-peer-deps=true` — si se borró, recrearlo |
 | Los mensajes de error no se ven | Verificar que el componente use `signal()`, no una variable normal (Angular 21 es zoneless) |
+| El mapa del detalle dice "no está configurado" | Falta `googleMapsApiKey` en `environment.ts` — ver [Google Maps](#google-maps) |
+| El mapa del detalle dice "no se pudo cargar" | Google rechazó la clave: revisar que el dominio actual esté autorizado en la consola de Google Cloud — ver [Google Maps](#google-maps) |
