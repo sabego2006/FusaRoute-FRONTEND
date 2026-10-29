@@ -120,14 +120,7 @@
 
       <section>
         <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h3>
-        <ol class="fr-lista">
-          @for (stop of steps(); track $index; let i = $index) {
-            <li class="fr-fila">
-              <span class="fr-chip-lugar" aria-hidden="true">{{ i + 1 }}</span>
-              <span class="barrio">{{ stop }}</span>
-            </li>
-          }
-        </ol>
+        <app-route-steps [neighborhoods]="r.route.neighborhoods" />
       </section>
     </article>
   }

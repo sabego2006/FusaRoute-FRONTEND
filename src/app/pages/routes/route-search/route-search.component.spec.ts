@@ -83,6 +83,22 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('tiempo estimado');
   });
 
+  it('con más de 7 barrios muestra 7 pasos, con el primero y el último (RF-05)', async () => {
+    const barrios = Array.from({ length: 12 }, (_, i) => `Barrio ${i + 1}`);
+    const rutaLarga: RouteSearchResult = {
+      ...conTrazado,
+      route: { ...conTrazado.route, neighborhoods: barrios }
+    };
+    const { buscar, el } = await render({ online: true, searchRoute: () => of(rutaLarga) });
+
+    await buscar();
+
+    const steps = Array.from(el.querySelectorAll('.barrio')).map((n) => n.textContent?.trim());
+    expect(steps).toHaveLength(7);
+    expect(steps[0]).toBe('Barrio 1');
+    expect(steps[6]).toBe('Barrio 12');
+  });
+
   it('muestra la última milla: dónde tomarla y cuánto queda al bajarse', async () => {
     const { buscar, el } = await render({ online: true });
 
