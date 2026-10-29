@@ -22,6 +22,13 @@
         <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
       </header>
 
+      @if (signs().length) {
+        <section style="margin-bottom: var(--space-6);">
+          <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Letrero de la buseta</h2>
+          <app-letrero [signs]="signs()" />
+        </section>
+      }
+
       <section style="margin-bottom: var(--space-6);">
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h2>
         @if (mapData(); as mapa) {

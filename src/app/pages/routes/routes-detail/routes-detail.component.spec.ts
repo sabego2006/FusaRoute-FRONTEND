@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { RoutesDetailComponent } from './routes-detail.component';
 import { RouteService } from '../../../services/route.service';
 import { GoogleMapsLoaderService } from '../../../core/google-maps-loader.service';
-import { RouteDetail } from '../../../models/route.model';
+import { RouteDetail, RouteSign } from '../../../models/route.model';
 
 async function render(getRouteById: () => unknown, id: string | null = '1') {
   await TestBed.configureTestingModule({
@@ -37,7 +37,27 @@ const urbana: RouteDetail = {
   neighborhoods: ['Camino Real', 'Centro', 'La Pampa'],
   fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }],
   path: null,
-  congestionSectors: []
+  congestionSectors: [],
+  signs: []
+};
+
+/** Caso real de V11 (SCRUM-176): un letrero con dos placas, en el sentido SUBIENDO. */
+const letreroSubiendo: RouteSign = {
+  fieldId: 'LC-008',
+  sense: 'SUBIENDO',
+  sourcePhoto: '20260927_150814.jpg',
+  evidenceCrop: '20260927_150814.jpg',
+  observedOn: '2026-09-27',
+  plates: [
+    {
+      template: 'TABLA_FRANJAS',
+      code: null,
+      lines: [
+        { text: 'CAMINO REAL', background: '#2F8F6A', foreground: '#E8F5EE' },
+        { text: 'CALLE 22', background: '#BFE0DA', foreground: '#222222' }
+      ]
+    }
+  ]
 };
 
 const urbanaConTrazado: RouteDetail = {
@@ -63,7 +83,9 @@ const intermunicipal: RouteDetail = {
     { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
   ],
   path: null,
-  congestionSectors: []
+  congestionSectors: [],
+  // Caso real (V11): ningún letrero fotografiado respalda esta ruta todavía.
+  signs: []
 };
 
 describe('RoutesDetailComponent', () => {
@@ -165,5 +187,31 @@ describe('RoutesDetailComponent', () => {
 
     expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
     expect(el.textContent).not.toContain('Puede haber congestión');
+  });
+
+  it('con letrero fotografiado, muestra la sección y el texto de la placa (SCRUM-176)', async () => {
+    const el = await render(() => of({ ...urbana, signs: [letreroSubiendo] }));
+
+    expect(el.textContent).toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).not.toBeNull();
+    expect(el.textContent).toContain('Subiendo');
+    expect(el.textContent).toContain('CAMINO REAL');
+  });
+
+  it('sin evidencia de campo, no muestra la sección del letrero', async () => {
+    // Es el caso real de 'Fusagasugá - Pasca' (V11): ningún letrero la respalda.
+    const el = await render(() => of(intermunicipal), '8');
+
+    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).toBeNull();
+  });
+
+  it('si el backend no manda la clave "signs" (build viejo), no muestra letrero ni se rompe', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- se destruye solo para omitir la clave
+    const { signs: _omitida, ...sinClave } = urbana;
+    const el = await render(() => of(sinClave));
+
+    expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
+    expect(el.textContent).not.toContain('Letrero de la buseta');
   });
 });

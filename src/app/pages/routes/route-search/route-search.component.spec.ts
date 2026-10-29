@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
-import { RouteSearchResult } from '../../../models/route.model';
+import { RouteSearchResult, RouteSign } from '../../../models/route.model';
 
 const conTrazado: RouteSearchResult = {
   route: {
@@ -19,7 +19,20 @@ const conTrazado: RouteSearchResult = {
   estimatedMinutes: 18,
   travelDistanceInMeters: 2400,
   boarding: { latitude: 4.343, longitude: -74.3658, distanceInMeters: 240, walkingMinutes: 3 },
-  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 }
+  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 },
+  signs: []
+};
+
+/** Caso real de V11 (SCRUM-176). */
+const letreroArbelaez: RouteSign = {
+  fieldId: 'LC-025',
+  sense: null,
+  sourcePhoto: '20260927_152133.jpg',
+  evidenceCrop: '20260927_152133.jpg',
+  observedOn: '2026-09-27',
+  plates: [
+    { template: 'PLACA_ARCO', code: null, lines: [{ text: 'ARBELAEZ', background: '#C23A32', foreground: '#FFFFFF' }] }
+  ]
 };
 
 /** Lo que devuelve el endpoint offline: nunca trae tiempo estimado. */
@@ -150,6 +163,28 @@ describe('RouteSearchComponent', () => {
 
     expect(el.textContent).toContain('Camino Real - La Pampa');
     expect(el.textContent).toContain('no tiene su trazado cargado');
+  });
+
+  it('con letrero fotografiado en el resultado, lo muestra (criterio de aceptación SCRUM-176)', async () => {
+    const { buscar, el } = await render({
+      online: true,
+      searchRoute: () => of({ ...conTrazado, signs: [letreroArbelaez] })
+    });
+
+    await buscar();
+
+    expect(el.textContent).toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).not.toBeNull();
+    expect(el.textContent).toContain('ARBELAEZ');
+  });
+
+  it('sin evidencia de campo para la ruta sugerida, no muestra la sección del letrero', async () => {
+    const { buscar, el } = await render({ online: true });
+
+    await buscar();
+
+    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).toBeNull();
   });
 
   it('cuando ninguna ruta conecta los barrios muestra el mensaje del backend', async () => {

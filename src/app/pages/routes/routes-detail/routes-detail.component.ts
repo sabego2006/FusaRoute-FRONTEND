@@ -5,12 +5,13 @@ import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
+import { LetreroComponent } from '../../../components/letrero/letrero.component';
 import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink, MapViewComponent, RouteStepsComponent],
+  imports: [RouterLink, MapViewComponent, RouteStepsComponent, LetreroComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
@@ -23,6 +24,9 @@ export class RoutesDetailComponent implements OnInit {
   // El `?? []` cubre un backend sin RF-09 desplegado, que no manda la clave. Se hace aquí
   // y no con `?.` en la plantilla porque el tipo dice que siempre viene (NG8107).
   congestionSectors = computed(() => this.route()?.congestionSectors ?? []);
+
+  // Mismo motivo que arriba: un backend sin SCRUM-176 desplegado no manda `signs`.
+  signs = computed(() => this.route()?.signs ?? []);
 
   /**
    * Todo lo que el mapa necesita, o null mientras la ruta no tenga trazado cargado.
