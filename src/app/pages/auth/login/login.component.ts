@@ -161,7 +161,9 @@ export class LoginComponent implements OnInit {
   }
 
   onEnrolled(): void {
-    this.router.navigate(['/rutas']);
+    this.router
+      .navigate(['/rutas'])
+      .catch((err) => console.error('Navegación a /rutas fallida', err));
   }
 
   onEnrollmentExpired(): void {
@@ -180,7 +182,9 @@ export class LoginComponent implements OnInit {
     this.authService.login({ email, password, ...(totpCode ? { totpCode } : {}) }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/rutas']);
+        this.router
+          .navigate(['/rutas'])
+          .catch((err) => console.error('Navegación a /rutas fallida', err));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
