@@ -95,8 +95,8 @@ describe('RouteSearchComponent', () => {
 
     const steps = Array.from(el.querySelectorAll('.barrio')).map((n) => n.textContent?.trim());
     expect(steps).toHaveLength(7);
-    expect(steps[0]).toBe('Barrio 1');
-    expect(steps[6]).toBe('Barrio 12');
+    expect(steps[0]).toBe('Neighborhood 1');
+    expect(steps[6]).toBe('Neighborhood 12');
   });
 
   it('shows last mile: where to take it and how much remains on drop-off', async () => {
