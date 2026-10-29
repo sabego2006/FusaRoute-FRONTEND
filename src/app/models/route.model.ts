@@ -165,6 +165,12 @@ export interface RouteSearchResult {
   travelDistanceInMeters: number | null;
   boarding: BoardingPoint | null;
   dropOff: BoardingPoint | null;
+  /**
+   * Trazado para pintar el mapa en el resultado de la búsqueda, igual que el detalle.
+   * `null` si la ruta todavía no tiene su GeoJSON cargado; opcional para tolerar un
+   * backend anterior a este campo (no manda la clave).
+   */
+  path?: GeoJsonLineString | null;
   lastUpdatedAt: string | null;
   signs: RouteSign[];
 }

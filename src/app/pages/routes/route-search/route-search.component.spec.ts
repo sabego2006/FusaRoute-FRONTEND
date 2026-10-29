@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
-import { Route, RouteSearchParams, RouteSearchResult, RouteSign } from '../../../models/route.model';
+import { GoogleMapsLoaderService, MapsStatus } from '../../../core/google-maps-loader.service';
+import { GeoJsonLineString, Route, RouteSearchParams, RouteSearchResult, RouteSign } from '../../../models/route.model';
 
 const catalogo: Route[] = [
   {
@@ -53,10 +55,18 @@ const sinTrazado: RouteSearchResult = {
 
 interface Opciones {
   online?: boolean;
+  mapsStatus?: MapsStatus;
   searchRoute?: () => unknown;
   searchRouteOffline?: () => unknown;
   getAllPublicRoutes?: () => unknown;
 }
+
+const trazadoCaminoReal: GeoJsonLineString = {
+  type: 'LineString',
+  coordinates: [[-74.3661, 4.3433], [-74.3600, 4.3300]]
+};
+/** Como {@link conTrazado} pero con el `path` del backend ya incluido. */
+const conTrazadoYMapa: RouteSearchResult = { ...conTrazado, path: trazadoCaminoReal };
 
 async function render(opciones: Opciones) {
   const searchRoute = vi.fn<(params: RouteSearchParams) => unknown>(opciones.searchRoute ?? (() => of(conTrazado)));
@@ -64,12 +74,18 @@ async function render(opciones: Opciones) {
     opciones.searchRouteOffline ?? (() => of(sinRed)),
   );
   const getAllPublicRoutes = vi.fn(opciones.getAllPublicRoutes ?? (() => of(catalogo)));
+  const mapsLoader = {
+    status: signal<MapsStatus>(opciones.mapsStatus ?? 'sin-clave'),
+    load: () => new Promise<void>(() => undefined),
+  };
 
   await TestBed.configureTestingModule({
     imports: [RouteSearchComponent],
     providers: [
+      provideRouter([]),
       { provide: RouteService, useValue: { searchRoute, searchRouteOffline, getAllPublicRoutes } },
-      { provide: ConnectivityService, useValue: { isOnline: signal(opciones.online ?? true) } }
+      { provide: ConnectivityService, useValue: { isOnline: signal(opciones.online ?? true) } },
+      { provide: GoogleMapsLoaderService, useValue: mapsLoader },
     ]
   }).compileComponents();
 
@@ -94,6 +110,8 @@ async function render(opciones: Opciones) {
     searchRouteOffline,
     getAllPublicRoutes,
     el: fixture.nativeElement as HTMLElement,
+    component: fixture.componentInstance,
+    fixture,
   };
 }
 
@@ -331,5 +349,105 @@ describe('RouteSearchComponent', () => {
     await triggerSearch();
 
     expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  // --- Mapa en el resultado, selector de punto, degradación 503 ---
+
+  it('con trazado, pinta el mapa en el resultado reusando MapViewComponent', async () => {
+    // Sin clave de Maps aquí a propósito: MapViewComponent muestra su propio aviso en
+    // ese caso y no intenta renderizar <google-map> (eso rompe en jsdom, que no trae el
+    // namespace google). Lo que valida este test es que la sección se cablee cuando
+    // viene `path`, no que Google pinte.
+    const { triggerSearch, el } = await render({
+      online: true,
+      searchRoute: () => of(conTrazadoYMapa),
+    });
+
+    await triggerSearch();
+
+    expect(el.textContent).toContain('Recorrido en el mapa');
+    expect(el.querySelector('app-map-view')).not.toBeNull();
+  });
+
+  it('sin trazado, no muestra la sección del mapa', async () => {
+    const sinPath: RouteSearchResult = { ...conTrazadoYMapa, path: null };
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(sinPath) });
+
+    await triggerSearch();
+
+    expect(el.textContent).not.toContain('Recorrido en el mapa');
+    expect(el.querySelector('app-map-view')).toBeNull();
+  });
+
+  it('online con tiempo null (degradación), muestra el texto online y no el de "sin conexión"', async () => {
+    // Fase 1 del backend: si Google falla, el online responde sin tiempo. No es lo
+    // mismo que "sin conexión" y no debe mentirle al usuario.
+    const degradado: RouteSearchResult = { ...conTrazadoYMapa, estimatedMinutes: null };
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(degradado) });
+
+    await triggerSearch();
+
+    expect(el.textContent).toContain('No pudimos calcular el tiempo ahora');
+    expect(el.textContent).not.toContain('Sin conexión no podemos calcular');
+  });
+
+  it('un 503 del endpoint online dispara el reintento offline', async () => {
+    // Cubre un backend viejo todavía desplegado que propaga el fallo de Google como
+    // 503. El front degrada por su cuenta sin mostrar error.
+    const { triggerSearch, searchRouteOffline, el } = await render({
+      online: true,
+      searchRoute: () => throwError(() => new HttpErrorResponse({ status: 503 })),
+    });
+
+    await triggerSearch();
+
+    expect(searchRouteOffline).toHaveBeenCalledOnce();
+    expect(el.textContent).toContain('recorrido en buseta');
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('con destino fijado en el mapa, los params llevan lat/lng del destino', async () => {
+    const { triggerSearch, searchRoute, component } = await render({ online: true });
+
+    component.onPickedPointsChange({ origin: null, destination: { lat: 4.33, lng: -74.36 } });
+    await triggerSearch();
+
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.destinationLat).toBe(4.33);
+    expect(params.destinationLng).toBe(-74.36);
+  });
+
+  it('sin puntos fijados, los params no llevan destinationLat/Lng', async () => {
+    const { triggerSearch, searchRoute } = await render({ online: true });
+
+    await triggerSearch();
+
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.destinationLat).toBeUndefined();
+    expect(params.destinationLng).toBeUndefined();
+  });
+
+  it('un origen fijado en el mapa pisa a la geolocalización del navegador', async () => {
+    const geoCall = vi.fn<GetCurrentPosition>();
+    stubGeolocation(geoCall);
+    const { triggerSearch, searchRoute, component } = await render({ online: true });
+
+    component.onPickedPointsChange({ origin: { lat: 4.3400, lng: -74.3650 }, destination: null });
+    await triggerSearch();
+
+    expect(geoCall).not.toHaveBeenCalled();
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.originLat).toBe(4.3400);
+    expect(params.originLng).toBe(-74.3650);
+  });
+
+  it('el enlace al detalle de la ruta sugerida apunta a /rutas/{id}', async () => {
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(conTrazadoYMapa) });
+
+    await triggerSearch();
+
+    const link = el.querySelector<HTMLAnchorElement>('a[href="/rutas/4"]');
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toContain('Ver detalle de la ruta');
   });
 });

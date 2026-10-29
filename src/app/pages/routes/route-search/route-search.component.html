@@ -35,6 +35,15 @@
       </p>
     }
 
+    <details style="margin-top: var(--space-3);">
+      <summary class="fr-texto-sm" style="cursor: pointer;">
+        Afinar origen o destino en el mapa (opcional)
+      </summary>
+      <div style="margin-top: var(--space-3);">
+        <app-map-point-picker (pointsChange)="onPickedPointsChange($event)" />
+      </div>
+    </details>
+
     <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="searchForm.invalid || loading()">
       {{ loading() ? 'Buscando...' : 'Buscar' }}
     </button>
@@ -87,8 +96,19 @@
           }
         </p>
         <p class="fr-texto-sm" style="margin-bottom: var(--space-4);">
-          Sin conexión no podemos calcular el tiempo de viaje, solo la distancia.
+          @if (servedOffline()) {
+            Sin conexión no podemos calcular el tiempo de viaje, solo la distancia.
+          } @else {
+            No pudimos calcular el tiempo ahora; esta es la ruta que conecta tus barrios.
+          }
         </p>
+      }
+
+      @if (resultMap(); as mapa) {
+        <section style="margin-bottom: var(--space-4);">
+          <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h3>
+          <app-map-view [path]="mapa.path" [origin]="mapa.start" [destination]="mapa.end" />
+        </section>
       }
 
       <section style="margin-bottom: var(--space-4);">
@@ -123,10 +143,14 @@
         <app-route-steps [neighborhoods]="r.route.neighborhoods" />
       </section>
 
-      <section>
+      <section style="margin-bottom: var(--space-4);">
         <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Tarifa</h3>
         <app-fare-table [fares]="r.route.fares" [type]="r.route.type" [lastUpdatedAt]="r.lastUpdatedAt" />
       </section>
+
+      <a [routerLink]="['/rutas', r.route.id]" class="fr-btn fr-btn-bloque">
+        Ver detalle de la ruta
+      </a>
     </article>
   }
 </main>

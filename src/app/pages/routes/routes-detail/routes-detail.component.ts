@@ -3,7 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
-import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
+import { MapViewComponent } from '../../../components/map-view/map-view.component';
+import { linestringEnds } from '../../../lib/linestring-ends';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
@@ -39,19 +40,14 @@ export class RoutesDetailComponent implements OnInit {
    * Va junto en un solo computed para que la plantilla lo resuelva con un unico @if:
    * los tres valores aparecen y desaparecen a la vez.
    *
-   * Los extremos del trazado se usan como marcadores de inicio y fin del recorrido.
-   * Ojo: GeoJSON guarda [longitud, latitud], y Google Maps espera {lat, lng}.
+   * El cruce entre GeoJSON y Google Maps vive en {@link linestringEnds}: lo usan
+   * también el buscador y cualquier otra pieza que pinte el trazado del backend.
    */
   readonly mapData = computed(() => {
     const path = this.route()?.path;
-    if (!path?.coordinates.length) return null;
-
-    const toPoint = ([lng, lat]: [number, number]): LatLngPoint => ({ lat, lng });
-    return {
-      path,
-      start: toPoint(path.coordinates[0]),
-      end: toPoint(path.coordinates[path.coordinates.length - 1])
-    };
+    const ends = linestringEnds(path);
+    if (!path || !ends) return null;
+    return { path, start: ends.start, end: ends.end };
   });
 
   readonly formatTime = formatTime;
