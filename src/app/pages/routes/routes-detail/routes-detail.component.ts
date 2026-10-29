@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
-import { formatCop, formatDateEs } from '../../../lib/format';
+import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
 import { pickNeighborhoodSteps } from '../../../lib/route-steps';
 
 @Component({
@@ -20,6 +20,10 @@ export class RoutesDetailComponent implements OnInit {
 
   steps = computed(() => pickNeighborhoodSteps(this.route()?.neighborhoods ?? []));
   isUrban = computed(() => this.route()?.type === 'URBANA');
+
+  // El `?? []` cubre un backend sin RF-09 desplegado, que no manda la clave. Se hace aquí
+  // y no con `?.` en la plantilla porque el tipo dice que siempre viene (NG8107).
+  congestionSectors = computed(() => this.route()?.congestionSectors ?? []);
 
   /**
    * Todo lo que el mapa necesita, o null mientras la ruta no tenga trazado cargado.
@@ -43,6 +47,7 @@ export class RoutesDetailComponent implements OnInit {
 
   readonly formatCop = formatCop;
   readonly formatDateEs = formatDateEs;
+  readonly formatTime = formatTime;
 
   constructor(
     private routeService: RouteService,
