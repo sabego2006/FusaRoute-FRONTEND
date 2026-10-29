@@ -10,11 +10,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     env:
-      # Secrets de SonarQube (SCRUM-182). Sin SONAR_TOKEN el paso de analisis
+      # Secret de SonarCloud (SCRUM-182). Sin el token el paso de analisis
       # queda SKIPPED, no FAILED: asi el CI no se enrojece antes de que el
-      # admin importe el repo y guarde el secret. Mismo patron que el backend.
+      # admin importe el repo y guarde el secret. Con el token presente el
+      # paso corre y un fallo del scanner tumba el CI. El host ya no es un
+      # secret: es siempre https://sonarcloud.io (ver el paso de analisis).
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,14 +40,16 @@ jobs:
         # pelado: la cobertura es parte de lo que se reporta en cada PR.
         run: npm run test:ci
 
-      - name: Analisis SonarQube
-        # Guard: sin token el paso queda SKIPPED (ver env del job). Con token
-        # corre, pero el Quality Gate es informativo por ahora — no se espera
-        # su resultado, asi que un gate rojo no bloquea el merge. Cuando el
-        # equipo acuerde los umbrales se agrega sonar.qualitygate.wait=true.
+      - name: Analisis SonarCloud
+        # Guard: sin token el paso queda SKIPPED (ver env del job). Con
+        # token el paso es bloqueante: un fallo del scanner tumba el CI.
+        # El host va explicito y no por secret: es siempre el mismo, y
+        # dejarlo en un secret vacio apagaria el analisis en silencio.
+        # El Quality Gate es informativo por ahora — no se espera su
+        # resultado, asi que un gate rojo no bloquea el merge. Cuando el
+        # equipo acuerde umbrales se agrega sonar.qualitygate.wait=true.
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Vacio apunta a SonarQube Cloud; con valor, a la instancia propia.
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: https://sonarcloud.io
