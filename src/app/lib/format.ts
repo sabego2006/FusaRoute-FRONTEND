@@ -22,3 +22,8 @@ export function formatDateEs(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number);
   return `${day} de ${MONTHS[month - 1]} de ${year}`;
 }
+
+/** "08:30:00" → "08:30". El backend manda la hora con segundos; al usuario le sobran. */
+export function formatTime(time: string): string {
+  return time.slice(0, 5);
+}

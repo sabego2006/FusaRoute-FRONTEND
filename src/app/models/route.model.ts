@@ -29,15 +29,32 @@ export interface GeoJsonLineString {
 }
 
 /**
+ * Espeja CongestionSectorResponse del backend (RF-09): un sector que el recorrido
+ * atraviesa y que está en su franja de trancón ahora mismo. Viajan los hechos (qué
+ * sector y en qué franja), no una frase: el texto en condicional ("puede haber
+ * congestión") lo arma el frontend, porque el dato es histórico, no una medición en vivo.
+ * `startsAt` y `endsAt` llegan como "HH:mm:ss".
+ */
+export interface CongestionSector {
+  name: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+/**
  * Espeja RouteDetailResponse del backend (GET /api/routes/{id}): lo mismo que trae el
- * listado más el trazado para pintarlo en el mapa.
+ * listado más el trazado para pintarlo en el mapa y los sectores con posible congestión.
  *
  * `path` es null mientras la ruta no tenga su GeoJSON cargado, que hoy es el caso de
  * la mayoría. El backend manda null y no un LineString vacío porque un LineString sin
  * puntos no es GeoJSON válido.
+ *
+ * `congestionSectors` es lista vacía si ningún sector está en franja de trancón; el
+ * backend nunca manda null.
  */
 export interface RouteDetail extends Route {
   path: GeoJsonLineString | null;
+  congestionSectors: CongestionSector[];
 }
 
 /**
