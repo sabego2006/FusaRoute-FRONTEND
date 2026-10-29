@@ -75,7 +75,7 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 | Atributo | Métrica | Cómo se verifica |
 |---|---|---|
 | Usabilidad | flujo principal (buscar ruta) en máximo **4 acciones** sin contar login | recorrido manual del flujo + prueba con ≥ 5 usuarios externos al equipo |
-| Rendimiento | LCP < 2.5 s en Lighthouse mobile Slow 4G sobre la pantalla de resultado de búsqueda | Lighthouse en CI en cada Pull Request — **pendiente**: el CI actual no lo ejecuta (la pantalla de resultado existe recién con la búsqueda, Sprint 4; ver `SCRUM-127`) |
+| Rendimiento | LCP < 2.5 s en Lighthouse mobile Slow 4G sobre `/rutas/buscar` (pantalla de resultado de búsqueda) | Lighthouse CI en cada Pull Request (`npm run lighthouse`, job `lighthouse` en `ci.yml`), umbral versionado en `budgets.json` (SCRUM-127/SCRUM-136) |
 | Mantenibilidad | 0 llamadas HTTP fuera de `services/`; sin `any` | revisión en PR |
 | Accesibilidad | HTML semántico, formularios con `<label>`, navegable por teclado | revisión en PR |
 
@@ -93,7 +93,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 - **Pull Request obligatorio**, revisado por el otro integrante; nadie mergea su propio PR sin revisión. Es donde ambos aprenden el código del otro, que es justo lo que el docente busca.
 - Conventional Commits en español con key de Jira: `feat(SCRUM-N): descripción`, `fix(SCRUM-N): descripción`, etc.
 - **Ningún commit ni PR lleva atribución a Claude** (`Co-Authored-By: Claude...`, `Claude-Session: ...`, "Hecho por Claude" ni ninguna frase o alegoría equivalente). Regla general de los 3 repos, en el `CLAUDE.md` de la carpeta del curso, sección Git.
-- CI en GitHub Actions: `ng build` + `ng test` en cada PR (todavía sin lint ni Lighthouse). Si el CI falla, no se mergea.
+- CI en GitHub Actions: `ng build` + `ng test` en cada PR, más el job `lighthouse` (Lighthouse CI sobre `/rutas/buscar`, SCRUM-127) — todavía sin lint. Si el CI falla, no se mergea.
 - Backlog en Jira; cada sustentación quincenal ante el comité cierra un hito.
 
 ## Convenciones de código

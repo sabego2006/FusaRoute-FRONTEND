@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Reportes de Lighthouse CI (SCRUM-127/SCRUM-136), generados en cada corrida
+/.lighthouseci
+
 # System files
 .DS_Store
 Thumbs.db
