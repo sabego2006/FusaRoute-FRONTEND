@@ -95,11 +95,16 @@ export interface RouteSign {
  * `congestionSectors` es lista vacía si ningún sector está en franja de trancón; el
  * backend nunca manda null. `signs` (SCRUM-176) es igual: lista vacía si ningún
  * letrero fotografiado respalda esta ruta todavía — no se inventa uno para rellenarla.
+ *
+ * `lastUpdatedAt` es el `validFrom` más reciente entre las tarifas vigentes (RF-06); null
+ * significa que la ruta no tiene ninguna tarifa vigente. En una intermunicipal es la fecha
+ * del precio que cambió más recientemente, no la de todos los de la tabla.
  */
 export interface RouteDetail extends Route {
   path: GeoJsonLineString | null;
   congestionSectors: CongestionSector[];
   signs: RouteSign[];
+  lastUpdatedAt: string | null;
 }
 
 /**

@@ -1,0 +1,19 @@
+@if (list().length) {
+  @switch (variant()) {
+    @case ('compact') {
+      <p class="fr-aviso-congestion fr-aviso-congestion--compacto">
+        <strong>Puede haber congestión</strong> en este recorrido a esta hora
+      </p>
+    }
+    @default {
+      <div class="fr-aviso-congestion" role="status">
+        <strong>Puede haber congestión</strong> en este recorrido a esta hora:
+        <ul class="fr-lista">
+          @for (sector of list(); track sector.name) {
+            <li class="congestion-sector">{{ sector.name }} ({{ formatTime(sector.startsAt) }}–{{ formatTime(sector.endsAt) }})</li>
+          }
+        </ul>
+      </div>
+    }
+  }
+}

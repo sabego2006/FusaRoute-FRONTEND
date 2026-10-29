@@ -6,12 +6,13 @@ import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
+import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink, MapViewComponent, RouteStepsComponent, LetreroComponent],
+  imports: [RouterLink, MapViewComponent, RouteStepsComponent, LetreroComponent, TrafficBadgeComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
@@ -27,6 +28,10 @@ export class RoutesDetailComponent implements OnInit {
 
   // Mismo motivo que arriba: un backend sin SCRUM-176 desplegado no manda `signs`.
   signs = computed(() => this.route()?.signs ?? []);
+
+  // Mismo `?? null` y por la misma razón: un backend anterior a SCRUM-17 no manda la clave,
+  // y entonces la pantalla simplemente no muestra la línea de última actualización.
+  readonly lastFareUpdate = computed(() => this.route()?.lastUpdatedAt ?? null);
 
   /**
    * Todo lo que el mapa necesita, o null mientras la ruta no tenga trazado cargado.

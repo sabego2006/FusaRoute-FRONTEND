@@ -75,20 +75,20 @@ async function render(opciones: Opciones) {
   });
   fixture.detectChanges();
 
-  const buscar = async () => {
+  const triggerSearch = async () => {
     fixture.componentInstance.onSubmit();
     await fixture.whenStable();
     fixture.detectChanges();
   };
 
-  return { buscar, searchRoute, searchRouteOffline, el: fixture.nativeElement as HTMLElement };
+  return { triggerSearch, searchRoute, searchRouteOffline, el: fixture.nativeElement as HTMLElement };
 }
 
 describe('RouteSearchComponent', () => {
-  it('con red usa el endpoint online y muestra el tiempo estimado', async () => {
-    const { buscar, searchRoute, searchRouteOffline, el } = await render({ online: true });
+  it('with network uses online endpoint and shows estimated time', async () => {
+    const { triggerSearch, searchRoute, searchRouteOffline, el } = await render({ online: true });
 
-    await buscar();
+    await triggerSearch();
 
     expect(searchRoute).toHaveBeenCalledOnce();
     expect(searchRouteOffline).not.toHaveBeenCalled();
@@ -96,36 +96,36 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('tiempo estimado');
   });
 
-  it('con más de 7 barrios muestra 7 pasos, con el primero y el último (RF-05)', async () => {
-    const barrios = Array.from({ length: 12 }, (_, i) => `Barrio ${i + 1}`);
-    const rutaLarga: RouteSearchResult = {
+  it('with more than 7 neighborhoods shows 7 steps, with first and last (RF-05)', async () => {
+    const neighborhoods = Array.from({ length: 12 }, (_, i) => `Neighborhood ${i + 1}`);
+    const longRoute: RouteSearchResult = {
       ...conTrazado,
-      route: { ...conTrazado.route, neighborhoods: barrios }
+      route: { ...conTrazado.route, neighborhoods: neighborhoods }
     };
-    const { buscar, el } = await render({ online: true, searchRoute: () => of(rutaLarga) });
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(longRoute) });
 
-    await buscar();
+    await triggerSearch();
 
     const steps = Array.from(el.querySelectorAll('.barrio')).map((n) => n.textContent?.trim());
     expect(steps).toHaveLength(7);
-    expect(steps[0]).toBe('Barrio 1');
-    expect(steps[6]).toBe('Barrio 12');
+    expect(steps[0]).toBe('Neighborhood 1');
+    expect(steps[6]).toBe('Neighborhood 12');
   });
 
-  it('muestra la última milla: dónde tomarla y cuánto queda al bajarse', async () => {
-    const { buscar, el } = await render({ online: true });
+  it('shows last mile: where to take it and how much remains on drop-off', async () => {
+    const { triggerSearch, el } = await render({ online: true });
 
-    await buscar();
+    await triggerSearch();
 
     expect(el.textContent).toContain('240 m');
     expect(el.textContent).toContain('3 min');
     expect(el.textContent).toContain('90 m');
   });
 
-  it('sin red usa el endpoint offline y NO inventa un tiempo estimado', async () => {
-    const { buscar, searchRoute, searchRouteOffline, el } = await render({ online: false });
+  it('without network uses offline endpoint and DOES NOT invent estimated time', async () => {
+    const { triggerSearch, searchRoute, searchRouteOffline, el } = await render({ online: false });
 
-    await buscar();
+    await triggerSearch();
 
     expect(searchRouteOffline).toHaveBeenCalledOnce();
     expect(searchRoute).not.toHaveBeenCalled();
@@ -134,44 +134,44 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('recorrido en buseta');
   });
 
-  it('sin red avisa antes de buscar que no habrá tiempo de viaje', async () => {
+  it('without network warns before searching that there will be no travel time', async () => {
     const { el } = await render({ online: false });
 
     expect(el.textContent).toContain('Estás sin conexión');
   });
 
-  it('si la red falla pese a que el navegador la daba por buena, reintenta sin conexión', async () => {
-    // navigator.onLine dice que hay interfaz de red, no que haya internet. Si la
-    // llamada no sale de la máquina (status 0), el usuario no tiene por qué ver un
-    // error: el endpoint offline no necesita salir a Google.
-    const { buscar, searchRouteOffline, el } = await render({
+  it('if network fails despite browser reporting it as good, retry offline', async () => {
+    // navigator.onLine says there is a network interface, not that there is internet. If the
+    // call does not leave the machine (status 0), the user should not see an
+    // error: the offline endpoint does not need to go to Google.
+    const { triggerSearch, searchRouteOffline, el } = await render({
       online: true,
       searchRoute: () => throwError(() => new HttpErrorResponse({ status: 0 }))
     });
 
-    await buscar();
+    await triggerSearch();
 
     expect(searchRouteOffline).toHaveBeenCalledOnce();
     expect(el.textContent).toContain('recorrido en buseta');
     expect(el.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('una ruta sin trazado se sugiere igual, avisando que no hay punto de abordaje', async () => {
-    const { buscar, el } = await render({ online: true, searchRoute: () => of(sinTrazado) });
+  it('a route without a path is still suggested, warning that there is no boarding point', async () => {
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(sinTrazado) });
 
-    await buscar();
+    await triggerSearch();
 
     expect(el.textContent).toContain('Camino Real - La Pampa');
     expect(el.textContent).toContain('no tiene su trazado cargado');
   });
 
   it('con letrero fotografiado en el resultado, lo muestra (criterio de aceptación SCRUM-176)', async () => {
-    const { buscar, el } = await render({
+    const { triggerSearch, el } = await render({
       online: true,
       searchRoute: () => of({ ...conTrazado, signs: [letreroArbelaez] })
     });
 
-    await buscar();
+    await triggerSearch();
 
     expect(el.textContent).toContain('Letrero de la buseta');
     expect(el.querySelector('app-letrero')).not.toBeNull();
@@ -179,16 +179,16 @@ describe('RouteSearchComponent', () => {
   });
 
   it('sin evidencia de campo para la ruta sugerida, no muestra la sección del letrero', async () => {
-    const { buscar, el } = await render({ online: true });
+    const { triggerSearch, el } = await render({ online: true });
 
-    await buscar();
+    await triggerSearch();
 
     expect(el.textContent).not.toContain('Letrero de la buseta');
     expect(el.querySelector('app-letrero')).toBeNull();
   });
 
-  it('cuando ninguna ruta conecta los barrios muestra el mensaje del backend', async () => {
-    const { buscar, el } = await render({
+  it('when no route connects the neighborhoods, show the backend message', async () => {
+    const { triggerSearch, el } = await render({
       online: true,
       searchRoute: () =>
         throwError(
@@ -200,7 +200,7 @@ describe('RouteSearchComponent', () => {
         )
     });
 
-    await buscar();
+    await triggerSearch();
 
     expect(el.textContent).toContain('No hay rutas disponibles que conecten Centro con Pasca');
   });

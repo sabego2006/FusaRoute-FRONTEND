@@ -91,6 +91,10 @@ export class HeaderComponent {
 
   logout(): void {
     this.auth.logout();
-    this.router.navigate(['/rutas']);
+    // navigate() rechaza si falla la carga diferida del chunk de destino (por ejemplo,
+    // un despliegue nuevo invalidó el hash). Se registra en vez de dejar la promesa suelta.
+    this.router
+      .navigate(['/rutas'])
+      .catch((err) => console.error('Navegación a /rutas fallida', err));
   }
 }

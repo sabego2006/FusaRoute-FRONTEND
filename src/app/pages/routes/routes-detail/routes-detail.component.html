@@ -41,19 +41,7 @@
         }
       </section>
 
-      <!-- Siempre en condicional: el dato de congestión es histórico, no una medición en vivo. -->
-      @if (congestionSectors().length) {
-        <section style="margin-bottom: var(--space-6);">
-          <div class="fr-alerta" role="status">
-            <strong>Puede haber congestión</strong> en este recorrido a esta hora:
-            <ul class="fr-lista">
-              @for (sector of congestionSectors(); track sector.name) {
-                <li class="congestion-sector">{{ sector.name }} ({{ formatTime(sector.startsAt) }}–{{ formatTime(sector.endsAt) }})</li>
-              }
-            </ul>
-          </div>
-        </section>
-      }
+      <app-traffic-badge [sectors]="congestionSectors()" />
 
       <section style="margin-bottom: var(--space-6);">
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
@@ -69,7 +57,9 @@
             <strong style="font: 700 24px/32px var(--font-display);">{{ formatCop(r.fares[0].amount) }}</strong>
             <span class="fr-texto-sm"> · precio único, sin importar dónde te subas o bajes</span>
           </p>
-          <p class="fr-texto-sm">Actualizada el {{ formatDateEs(r.fares[0].validFrom) }}</p>
+          @if (lastFareUpdate(); as fecha) {
+            <p class="fr-texto-sm">Actualizada el {{ formatDateEs(fecha) }}</p>
+          }
         } @else {
           <table style="width: 100%; border-collapse: collapse;">
             <caption class="fr-texto-sm" style="text-align: left; margin-bottom: var(--space-2);">
@@ -92,6 +82,11 @@
               }
             </tbody>
           </table>
+          @if (lastFareUpdate(); as fecha) {
+            <p class="fr-texto-sm" style="margin-top: var(--space-3);">
+              Última actualización: {{ formatDateEs(fecha) }} · cada precio trae la fecha en la que cambió.
+            </p>
+          }
         }
       </section>
     </article>
