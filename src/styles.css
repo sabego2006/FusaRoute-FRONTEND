@@ -213,3 +213,60 @@ body {
   background: var(--superficie);
   font: 500 14px/20px var(--font-sans);
 }
+
+/*
+ * Letrero de buseta (SCRUM-176). Las tres formas (arco, rectangulo, tabla de
+ * franjas) espejan las plantillas de docs/investigacion/letreros-estilos.json: ese
+ * archivo fija forma y grosor de borde por plantilla (son siempre los mismos, no
+ * cambian por letrero), mientras que el color de cada linea sí es dato — viene
+ * resuelto del backend y se aplica inline por `[style.background]`/`[style.color]`.
+ */
+.letrero-grupo { display: flex; flex-direction: column; gap: var(--space-4); }
+.letrero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.letrero-sentido { text-transform: uppercase; letter-spacing: .5px; }
+.letrero-placas { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-start; }
+
+.letrero-placa {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 140px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-dura-sm);
+  font: 700 13px/1.3 var(--font-display);
+  text-align: center;
+}
+.letrero-codigo {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  padding: 1px 6px;
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-full);
+  font: 700 10px/14px var(--font-sans);
+}
+.letrero-linea { padding: var(--space-2) var(--space-3); }
+
+/* Arco: curva arriba, base recta y gruesa abajo — como la placa principal real. */
+.letrero-placa--placa-arco {
+  border-radius: 999px 999px var(--radius-sm) var(--radius-sm);
+  border: var(--trazo-2) solid var(--borde);
+  border-bottom-width: 6px;
+  padding-top: var(--space-2);
+}
+
+/* Rectangular: la placa pequeña que acompaña a la principal. */
+.letrero-placa--placa-rect {
+  border-radius: var(--radius-sm);
+  border: 3px solid var(--borde);
+}
+
+/* Tabla de franjas: un solo sentido, cada linea es una franja de color propia. */
+.letrero-placa--tabla-franjas {
+  border-radius: var(--radius-sm);
+  border: var(--trazo-2) solid var(--borde);
+}

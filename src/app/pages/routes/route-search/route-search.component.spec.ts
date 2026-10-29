@@ -6,10 +6,16 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
-import { Route, RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
+import { Route, RouteSearchParams, RouteSearchResult, RouteSign } from '../../../models/route.model';
 
 const catalogo: Route[] = [
-  { id: 4, name: 'Camino Real - La Pampa', type: 'URBANA', neighborhoods: ['Camino Real', 'La Pampa'], fares: [] },
+  {
+    id: 4,
+    name: 'Camino Real - La Pampa',
+    type: 'URBANA',
+    neighborhoods: ['Camino Real', 'La Pampa'],
+    fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }]
+  },
 ];
 
 const conTrazado: RouteSearchResult = {
@@ -17,7 +23,21 @@ const conTrazado: RouteSearchResult = {
   estimatedMinutes: 18,
   travelDistanceInMeters: 2400,
   boarding: { latitude: 4.343, longitude: -74.3658, distanceInMeters: 240, walkingMinutes: 3 },
-  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 }
+  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 },
+  lastUpdatedAt: '2026-02-05',
+  signs: []
+};
+
+/** Caso real de V11 (SCRUM-176). */
+const letreroArbelaez: RouteSign = {
+  fieldId: 'LC-025',
+  sense: null,
+  sourcePhoto: '20260927_152133.jpg',
+  evidenceCrop: '20260927_152133.jpg',
+  observedOn: '2026-09-27',
+  plates: [
+    { template: 'PLACA_ARCO', code: null, lines: [{ text: 'ARBELAEZ', background: '#C23A32', foreground: '#FFFFFF' }] }
+  ]
 };
 
 /** Lo que devuelve el endpoint offline: nunca trae tiempo estimado. */
@@ -133,6 +153,39 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('90 m');
   });
 
+  it('shows the fare of the suggested route (RF-06)', async () => {
+    const { triggerSearch, el } = await render({ online: true });
+
+    await triggerSearch();
+
+    expect(el.textContent).toMatch(/\$\s?2\.600/);
+    expect(el.textContent).toContain('5 de febrero de 2026');
+  });
+
+  it('intermunicipal: shows the fare table ordered by the backend, not reordered here', async () => {
+    const intermunicipal: RouteSearchResult = {
+      ...conTrazado,
+      route: {
+        ...conTrazado.route,
+        type: 'INTERMUNICIPAL',
+        fares: [
+          { referencePoint: 'Corregimiento', amount: 3000, validFrom: '2025-01-16' },
+          { referencePoint: 'Alaska', amount: 3550, validFrom: '2026-02-05' },
+          { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
+        ]
+      }
+    };
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(intermunicipal) });
+
+    await triggerSearch();
+
+    const rows = Array.from(el.querySelectorAll('tbody tr')).map((r) => r.textContent ?? '');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toContain('Corregimiento');
+    expect(rows[1]).toContain('Alaska');
+    expect(rows[2]).toContain('Pasca');
+  });
+
   it('without network uses offline endpoint and DOES NOT invent estimated time', async () => {
     const { triggerSearch, searchRoute, searchRouteOffline, el } = await render({ online: false });
 
@@ -174,6 +227,28 @@ describe('RouteSearchComponent', () => {
 
     expect(el.textContent).toContain('Camino Real - La Pampa');
     expect(el.textContent).toContain('no tiene su trazado cargado');
+  });
+
+  it('con letrero fotografiado en el resultado, lo muestra (criterio de aceptación SCRUM-176)', async () => {
+    const { triggerSearch, el } = await render({
+      online: true,
+      searchRoute: () => of({ ...conTrazado, signs: [letreroArbelaez] })
+    });
+
+    await triggerSearch();
+
+    expect(el.textContent).toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).not.toBeNull();
+    expect(el.textContent).toContain('ARBELAEZ');
+  });
+
+  it('sin evidencia de campo para la ruta sugerida, no muestra la sección del letrero', async () => {
+    const { triggerSearch, el } = await render({ online: true });
+
+    await triggerSearch();
+
+    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.querySelector('app-letrero')).toBeNull();
   });
 
   it('when no route connects the neighborhoods, show the backend message', async () => {

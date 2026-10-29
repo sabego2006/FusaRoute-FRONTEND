@@ -8,6 +8,8 @@ import { RouteSearchParams, RouteSearchResult } from '../../../models/route.mode
 import { ProblemDetail } from '../../../models/auth.model';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { distinctNeighborhoods } from '../../../lib/neighborhoods';
+import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
+import { LetreroComponent } from '../../../components/letrero/letrero.component';
 
 /**
  * Pantalla de resultado de búsqueda (SCRUM-54, SCRUM-130): origen/destino, ruta
@@ -21,7 +23,7 @@ import { distinctNeighborhoods } from '../../../lib/neighborhoods';
 @Component({
   selector: 'app-route-search',
   standalone: true,
-  imports: [ReactiveFormsModule, RouteStepsComponent],
+  imports: [ReactiveFormsModule, RouteStepsComponent, FareTableComponent, LetreroComponent],
   templateUrl: './route-search.component.html',
 })
 export class RouteSearchComponent implements OnInit {
@@ -41,6 +43,10 @@ export class RouteSearchComponent implements OnInit {
   // en un signal aparte que podria quedar desincronizado del resultado en pantalla.
   readonly isOnline = this.connectivity.isOnline;
   readonly isUrban = computed(() => this.result()?.route.type === 'URBANA');
+
+  // Igual que congestionSectors en el detalle: un backend sin SCRUM-176 desplegado
+  // no manda la clave `signs`.
+  readonly signs = computed(() => this.result()?.signs ?? []);
 
   /** En km cuando pasa del kilómetro, que es como se lee de un vistazo. */
   readonly travelDistanceLabel = computed(() => {
