@@ -13,5 +13,5 @@
 export const environment = {
   production: true,
   apiUrl: 'https://fusaroute-backend.onrender.com',
-  googleMapsApiKey: '',
+  googleMapsApiKey: 'AIzaSyB43vsKM3B9vlCyxkikPuMI3rl-3F-uMe8',
 };
