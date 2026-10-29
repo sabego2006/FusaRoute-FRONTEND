@@ -27,7 +27,7 @@ export class RouteService {
    * Con red: el backend cronometra las candidatas contra Google y gana la más rápida.
    */
   searchRoute(params: RouteSearchParams): Observable<RouteSearchResult> {
-    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search`, { params: { ...params } });
+    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search`, { params: searchQueryParams(params) });
   }
 
   /**
@@ -36,6 +36,18 @@ export class RouteService {
    * recorrido más corto sobre el trazado propio y devuelve `estimatedMinutes` en null.
    */
   searchRouteOffline(params: RouteSearchParams): Observable<RouteSearchResult> {
-    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search/offline`, { params: { ...params } });
+    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search/offline`, { params: searchQueryParams(params) });
   }
+}
+
+/**
+ * Query params de una búsqueda, sin las claves de coordenadas ausentes (SCRUM-130:
+ * son opcionales desde que el usuario ya no las escribe a mano). `HttpClient` serializa
+ * un valor `undefined` como el texto literal "undefined", que el backend no sabría
+ * distinguir de un valor real — mejor omitir la clave por completo.
+ */
+function searchQueryParams(params: RouteSearchParams): Record<string, string | number> {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined),
+  ) as Record<string, string | number>;
 }

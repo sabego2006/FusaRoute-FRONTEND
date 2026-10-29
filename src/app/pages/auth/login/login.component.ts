@@ -162,8 +162,8 @@ export class LoginComponent implements OnInit {
 
   onEnrolled(): void {
     this.router
-      .navigate(['/rutas'])
-      .catch((err) => console.error('Navegación a /rutas fallida', err));
+      .navigate(['/rutas/buscar'])
+      .catch((err) => console.error('Navegación a /rutas/buscar fallida', err));
   }
 
   onEnrollmentExpired(): void {
@@ -183,8 +183,8 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.loading.set(false);
         this.router
-          .navigate(['/rutas'])
-          .catch((err) => console.error('Navegación a /rutas fallida', err));
+          .navigate(['/rutas/buscar'])
+          .catch((err) => console.error('Navegación a /rutas/buscar fallida', err));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

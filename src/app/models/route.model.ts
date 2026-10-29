@@ -63,20 +63,21 @@ export interface RouteDetail extends Route {
 }
 
 /**
- * Cuerpo de la petición GET /api/routes/search (RF-04, SCRUM-54).
- * El backend necesita coordenadas exactas, no solo el nombre del barrio, porque
- * TravelTimePort calcula el tiempo desde el punto preciso de origen/destino sobre el
- * trazado de cada ruta candidata — el barrio solo decide qué rutas conectan.
- * TODO(SCRUM-169): hoy el formulario pide estas coordenadas a mano; cuando el
- * componente de mapa (map-view-component) esté listo, deberían salir de ahí.
+ * Cuerpo de la petición GET /api/routes/search (RF-04, SCRUM-54, SCRUM-130).
+ *
+ * El usuario nunca escribe una coordenada: origen y destino se eligen de la lista de
+ * barrios del catálogo, que es también lo único que el backend necesita para filtrar
+ * qué rutas conectan. Las coordenadas son un dato aparte y opcional — hoy solo llegan
+ * del origen, cuando el navegador autoriza la geolocalización, y afinan la última
+ * milla; sin ellas el backend deriva un punto aproximado del nombre del barrio.
  */
 export interface RouteSearchParams {
   originNeighborhood: string;
-  originLat: number;
-  originLng: number;
+  originLat?: number;
+  originLng?: number;
   destinationNeighborhood: string;
-  destinationLat: number;
-  destinationLng: number;
+  destinationLat?: number;
+  destinationLng?: number;
 }
 
 /**

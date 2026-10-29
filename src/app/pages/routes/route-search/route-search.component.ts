@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,14 +7,16 @@ import { ConnectivityService } from '../../../core/connectivity.service';
 import { RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { ProblemDetail } from '../../../models/auth.model';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
+import { distinctNeighborhoods } from '../../../lib/neighborhoods';
 
 /**
- * Pantalla de resultado de búsqueda (SCRUM-54): origen/destino, ruta sugerida, última
- * milla y mensaje de "no hay ruta" cuando aplique.
+ * Pantalla de resultado de búsqueda (SCRUM-54, SCRUM-130): origen/destino, ruta
+ * sugerida, última milla y mensaje de "no hay ruta" cuando aplique.
  *
- * El origen/destino pide lat/lng además del barrio porque el backend calcula el
- * tiempo desde el punto exacto, no desde el centro del barrio. Hasta que el mapa
- * (SCRUM-169) esté listo, esas coordenadas se piden como campos numéricos.
+ * Origen y destino se eligen de la lista de barrios del catálogo — el usuario nunca
+ * escribe una coordenada (RNF-04: el flujo completo cabe en 4 acciones). En línea, la
+ * geolocalización del navegador afina el origen por detrás; sin ella, o sin
+ * conexión, el backend deriva un punto aproximado del nombre del barrio.
  */
 @Component({
   selector: 'app-route-search',
@@ -22,7 +24,7 @@ import { RouteStepsComponent } from '../../../components/route-steps/route-steps
   imports: [ReactiveFormsModule, RouteStepsComponent],
   templateUrl: './route-search.component.html',
 })
-export class RouteSearchComponent {
+export class RouteSearchComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly routeService = inject(RouteService);
   private readonly connectivity = inject(ConnectivityService);
@@ -31,6 +33,8 @@ export class RouteSearchComponent {
   readonly result = signal<RouteSearchResult | null>(null);
   readonly notFoundMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
+  readonly neighborhoods = signal<string[]>([]);
+  readonly neighborhoodsError = signal(false);
 
   // Que el resultado venga del modo offline se sabe por el dato mismo: el endpoint
   // online siempre trae tiempo estimado, y el offline nunca. No hace falta recordarlo
@@ -47,12 +51,15 @@ export class RouteSearchComponent {
 
   searchForm = this.fb.group({
     originNeighborhood: ['', Validators.required],
-    originLat: [null as number | null, Validators.required],
-    originLng: [null as number | null, Validators.required],
     destinationNeighborhood: ['', Validators.required],
-    destinationLat: [null as number | null, Validators.required],
-    destinationLng: [null as number | null, Validators.required],
   });
+
+  ngOnInit(): void {
+    this.routeService.getAllPublicRoutes().subscribe({
+      next: (routes) => this.neighborhoods.set(distinctNeighborhoods(routes)),
+      error: () => this.neighborhoodsError.set(true),
+    });
+  }
 
   onSubmit(): void {
     if (this.searchForm.invalid) return;
@@ -62,7 +69,36 @@ export class RouteSearchComponent {
     this.notFoundMessage.set(null);
     this.errorMessage.set(null);
 
-    const params = this.toParams();
+    const { originNeighborhood, destinationNeighborhood } = this.searchForm.getRawValue();
+    const base: RouteSearchParams = {
+      originNeighborhood: originNeighborhood!,
+      destinationNeighborhood: destinationNeighborhood!,
+    };
+
+    if (this.isOnline()) {
+      // Solo el origen: no existe geolocalización del destino de otra persona. Si el
+      // navegador no la soporta, el usuario la niega o se agota el tiempo, se busca
+      // igual sin coordenadas — nunca bloquea la búsqueda por esto.
+      this.locateOrigin((origin) => this.search({ ...base, ...origin }));
+    } else {
+      this.search(base);
+    }
+  }
+
+  private locateOrigin(onSettled: (origin: Partial<RouteSearchParams>) => void): void {
+    if (!('geolocation' in navigator)) {
+      onSettled({});
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        onSettled({ originLat: position.coords.latitude, originLng: position.coords.longitude }),
+      () => onSettled({}),
+      { timeout: 5_000 },
+    );
+  }
+
+  private search(params: RouteSearchParams): void {
     const offline = !this.connectivity.isOnline();
     this.run(offline ? this.routeService.searchRouteOffline(params) : this.routeService.searchRoute(params), offline, params);
   }
@@ -96,17 +132,5 @@ export class RouteSearchComponent {
       return;
     }
     this.errorMessage.set(body?.detail ?? 'No se pudo completar la búsqueda. Intenta de nuevo.');
-  }
-
-  private toParams(): RouteSearchParams {
-    const value = this.searchForm.getRawValue();
-    return {
-      originNeighborhood: value.originNeighborhood!,
-      originLat: value.originLat!,
-      originLng: value.originLng!,
-      destinationNeighborhood: value.destinationNeighborhood!,
-      destinationLat: value.destinationLat!,
-      destinationLng: value.destinationLng!,
-    };
   }
 }

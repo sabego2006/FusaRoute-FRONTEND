@@ -68,7 +68,7 @@ describe('LoginComponent', () => {
       return fixture;
     }
 
-    it('éxito: guarda la sesión y navega a /rutas', () => {
+    it('éxito: guarda la sesión y navega al buscador', () => {
       const fixture = submitCredentials();
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
@@ -79,7 +79,9 @@ describe('LoginComponent', () => {
       });
 
       expect(TestBed.inject(AuthService).token()).toBe('jwt');
-      expect(navigate).toHaveBeenCalledWith(['/rutas']);
+      // Y no a /rutas: el login no debe devolver al usuario al catálogo, sino al
+      // buscador, para que no le cueste un clic extra (RNF-04).
+      expect(navigate).toHaveBeenCalledWith(['/rutas/buscar']);
       expect(fixture.componentInstance.step()).toBe('credentials');
     });
 

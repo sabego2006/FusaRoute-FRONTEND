@@ -23,7 +23,7 @@ El contexto completo del curso, el alcance del proyecto y las métricas de calid
 
 El frontend **presenta y captura**, no decide. Concretamente:
 
-- Interacción con el usuario y formularios (login, registro, búsqueda de ruta, caja de comentarios).
+- Interacción con el usuario y formularios (login, registro, búsqueda de ruta, caja de comentarios). **El usuario nunca escribe coordenadas** (SCRUM-130): origen y destino se eligen siempre de una lista de barrios; las coordenadas, cuando hacen falta, las aporta la geolocalización del navegador o las deriva el backend del nombre del barrio. Un campo de latitud o longitud en un formulario de usuario es un error de diseño, no una solución temporal.
 - Visualización de rutas: trazado en el mapa (sin paradas formales — en Fusagasugá se para la buseta con la mano), barrios por los que pasa como **secuencia de pasos** (máximo 7: todos si son ≤7, o 7 distribuidos uniformemente incluyendo siempre primero y último si son más), costo del pasaje (precio único si es urbana; tabla de precios por punto de referencia de bajada, ordenada de menor a mayor, si es intermunicipal), y aviso de congestión presentado siempre como posibilidad ("puede haber congestión"), nunca como afirmación.
 - Consumo de la API REST del backend.
 - Detección de conectividad para usar el endpoint **online** (simulación en Google Maps) o el **offline** (cálculo por distancia sobre GeoJSON, sin tiempo estimado).
@@ -74,7 +74,7 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 
 | Atributo | Métrica | Cómo se verifica |
 |---|---|---|
-| Usabilidad | flujo principal (buscar ruta) en máximo **4 acciones** sin contar login | recorrido manual del flujo + prueba con ≥ 5 usuarios externos al equipo |
+| Usabilidad | flujo principal (buscar ruta) en máximo **4 acciones** sin contar login, con tasa de éxito ≥ 80 % al primer intento | recorrido manual del flujo (verificado, ver `docs/comite-3/evidencias/verificacion-rnf-04-usabilidad.md` en la carpeta del curso) + prueba con ≥ 5 usuarios externos al equipo (instrumento listo, pendiente de ejecución) |
 | Rendimiento | LCP < 2.5 s en Lighthouse mobile Slow 4G sobre la pantalla de resultado de búsqueda | Lighthouse en CI en cada Pull Request — **pendiente**: el CI actual no lo ejecuta (la pantalla de resultado existe recién con la búsqueda, Sprint 4; ver `SCRUM-127`) |
 | Mantenibilidad | 0 llamadas HTTP fuera de `services/`; sin `any` | revisión en PR |
 | Accesibilidad | HTML semántico, formularios con `<label>`, navegable por teclado | revisión en PR |
