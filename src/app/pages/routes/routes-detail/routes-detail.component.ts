@@ -4,13 +4,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
+import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
-import { pickNeighborhoodSteps } from '../../../lib/route-steps';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink, MapViewComponent],
+  imports: [RouterLink, MapViewComponent, RouteStepsComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
@@ -18,7 +18,6 @@ export class RoutesDetailComponent implements OnInit {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
 
-  steps = computed(() => pickNeighborhoodSteps(this.route()?.neighborhoods ?? []));
   isUrban = computed(() => this.route()?.type === 'URBANA');
 
   // El `?? []` cubre un backend sin RF-09 desplegado, que no manda la clave. Se hace aquí

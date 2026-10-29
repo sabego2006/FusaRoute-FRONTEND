@@ -1,0 +1,8 @@
+<ol class="fr-lista">
+  @for (stop of steps(); track $index; let i = $index) {
+    <li class="fr-fila">
+      <span class="fr-chip-lugar" aria-hidden="true">{{ i + 1 }}</span>
+      <span class="barrio">{{ stop }}</span>
+    </li>
+  }
+</ol>

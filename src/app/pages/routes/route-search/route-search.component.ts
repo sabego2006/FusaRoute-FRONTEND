@@ -6,7 +6,7 @@ import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
 import { RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { ProblemDetail } from '../../../models/auth.model';
-import { pickNeighborhoodSteps } from '../../../lib/route-steps';
+import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 
 /**
  * Pantalla de resultado de búsqueda (SCRUM-54): origen/destino, ruta sugerida, última
@@ -19,7 +19,7 @@ import { pickNeighborhoodSteps } from '../../../lib/route-steps';
 @Component({
   selector: 'app-route-search',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouteStepsComponent],
   templateUrl: './route-search.component.html',
 })
 export class RouteSearchComponent {
@@ -36,7 +36,6 @@ export class RouteSearchComponent {
   // online siempre trae tiempo estimado, y el offline nunca. No hace falta recordarlo
   // en un signal aparte que podria quedar desincronizado del resultado en pantalla.
   readonly isOnline = this.connectivity.isOnline;
-  readonly steps = computed(() => pickNeighborhoodSteps(this.result()?.route.neighborhoods ?? []));
   readonly isUrban = computed(() => this.result()?.route.type === 'URBANA');
 
   /** En km cuando pasa del kilómetro, que es como se lee de un vistazo. */
