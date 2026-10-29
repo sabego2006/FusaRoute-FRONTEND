@@ -5,12 +5,13 @@ import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
-import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
+import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
+import { formatCop, formatDateEs } from '../../../lib/format';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink, MapViewComponent, RouteStepsComponent],
+  imports: [RouterLink, MapViewComponent, RouteStepsComponent, TrafficBadgeComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
@@ -50,7 +51,6 @@ export class RoutesDetailComponent implements OnInit {
 
   readonly formatCop = formatCop;
   readonly formatDateEs = formatDateEs;
-  readonly formatTime = formatTime;
 
   constructor(
     private routeService: RouteService,

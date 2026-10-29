@@ -34,19 +34,7 @@
         }
       </section>
 
-      <!-- Siempre en condicional: el dato de congestión es histórico, no una medición en vivo. -->
-      @if (congestionSectors().length) {
-        <section style="margin-bottom: var(--space-6);">
-          <div class="fr-alerta" role="status">
-            <strong>Puede haber congestión</strong> en este recorrido a esta hora:
-            <ul class="fr-lista">
-              @for (sector of congestionSectors(); track sector.name) {
-                <li class="congestion-sector">{{ sector.name }} ({{ formatTime(sector.startsAt) }}–{{ formatTime(sector.endsAt) }})</li>
-              }
-            </ul>
-          </div>
-        </section>
-      }
+      <app-traffic-badge [sectors]="congestionSectors()" />
 
       <section style="margin-bottom: var(--space-6);">
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
