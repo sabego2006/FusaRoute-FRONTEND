@@ -5,12 +5,13 @@ import { RouteService } from '../../../services/route.service';
 import { RouteDetail } from '../../../models/route.model';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
-import { formatCop, formatDateEs, formatTime } from '../../../lib/format';
+import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
+import { formatTime } from '../../../lib/format';
 
 @Component({
   selector: 'app-routes-detail',
   standalone: true,
-  imports: [RouterLink, MapViewComponent, RouteStepsComponent],
+  imports: [RouterLink, MapViewComponent, RouteStepsComponent, FareTableComponent],
   templateUrl: './routes-detail.component.html'
 })
 export class RoutesDetailComponent implements OnInit {
@@ -48,8 +49,6 @@ export class RoutesDetailComponent implements OnInit {
     };
   });
 
-  readonly formatCop = formatCop;
-  readonly formatDateEs = formatDateEs;
   readonly formatTime = formatTime;
 
   constructor(

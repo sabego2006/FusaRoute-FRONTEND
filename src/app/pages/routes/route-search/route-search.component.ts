@@ -7,6 +7,7 @@ import { ConnectivityService } from '../../../core/connectivity.service';
 import { RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { ProblemDetail } from '../../../models/auth.model';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
+import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 
 /**
  * Pantalla de resultado de búsqueda (SCRUM-54): origen/destino, ruta sugerida, última
@@ -19,7 +20,7 @@ import { RouteStepsComponent } from '../../../components/route-steps/route-steps
 @Component({
   selector: 'app-route-search',
   standalone: true,
-  imports: [ReactiveFormsModule, RouteStepsComponent],
+  imports: [ReactiveFormsModule, RouteStepsComponent, FareTableComponent],
   templateUrl: './route-search.component.html',
 })
 export class RouteSearchComponent {

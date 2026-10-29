@@ -14,12 +14,13 @@ const conTrazado: RouteSearchResult = {
     name: 'Camino Real - La Pampa',
     type: 'URBANA',
     neighborhoods: ['Camino Real', 'La Pampa'],
-    fares: []
+    fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }]
   },
   estimatedMinutes: 18,
   travelDistanceInMeters: 2400,
   boarding: { latitude: 4.343, longitude: -74.3658, distanceInMeters: 240, walkingMinutes: 3 },
-  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 }
+  dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 },
+  lastUpdatedAt: '2026-02-05'
 };
 
 /** Lo que devuelve el endpoint offline: nunca trae tiempo estimado. */
@@ -107,6 +108,39 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('240 m');
     expect(el.textContent).toContain('3 min');
     expect(el.textContent).toContain('90 m');
+  });
+
+  it('shows the fare of the suggested route (RF-06)', async () => {
+    const { triggerSearch, el } = await render({ online: true });
+
+    await triggerSearch();
+
+    expect(el.textContent).toMatch(/\$\s?2\.600/);
+    expect(el.textContent).toContain('5 de febrero de 2026');
+  });
+
+  it('intermunicipal: shows the fare table ordered by the backend, not reordered here', async () => {
+    const intermunicipal: RouteSearchResult = {
+      ...conTrazado,
+      route: {
+        ...conTrazado.route,
+        type: 'INTERMUNICIPAL',
+        fares: [
+          { referencePoint: 'Corregimiento', amount: 3000, validFrom: '2025-01-16' },
+          { referencePoint: 'Alaska', amount: 3550, validFrom: '2026-02-05' },
+          { referencePoint: 'Pasca', amount: 4300, validFrom: '2025-01-16' }
+        ]
+      }
+    };
+    const { triggerSearch, el } = await render({ online: true, searchRoute: () => of(intermunicipal) });
+
+    await triggerSearch();
+
+    const rows = Array.from(el.querySelectorAll('tbody tr')).map((r) => r.textContent ?? '');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toContain('Corregimiento');
+    expect(rows[1]).toContain('Alaska');
+    expect(rows[2]).toContain('Pasca');
   });
 
   it('without network uses offline endpoint and DOES NOT invent estimated time', async () => {

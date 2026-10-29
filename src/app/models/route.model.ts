@@ -93,11 +93,13 @@ export interface BoardingPoint {
 /**
  * Espeja RouteSearchResponse del backend (GET /api/routes/search y /search/offline).
  *
- * Los tres campos opcionales no son descuido: `estimatedMinutes` viene null en la
+ * Los campos opcionales no son descuido: `estimatedMinutes` viene null en la
  * búsqueda offline, porque sin red el backend no le pregunta el tiempo a Google y
  * prefiere no dar un dato que no midió. `boarding` y `dropOff` vienen null en las
  * rutas que todavía no tienen trazado GeoJSON cargado, que hoy son la mayoría; esas
- * rutas se sugieren igual, solo que sin decir por dónde acercarse a pie.
+ * rutas se sugieren igual, solo que sin decir por dónde acercarse a pie. `lastUpdatedAt`
+ * es el `validFrom` más reciente entre las tarifas vigentes de la ruta sugerida (RF-06);
+ * null si no tiene ninguna.
  */
 export interface RouteSearchResult {
   route: Route;
@@ -105,4 +107,5 @@ export interface RouteSearchResult {
   travelDistanceInMeters: number | null;
   boarding: BoardingPoint | null;
   dropOff: BoardingPoint | null;
+  lastUpdatedAt: string | null;
 }
