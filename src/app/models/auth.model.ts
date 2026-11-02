@@ -47,6 +47,15 @@ export type LoginErrorBody =
   | { error: 'TOTP_REQUIRED' }
   | { error: 'INVALID_TOTP' };
 
+/**
+ * Cuerpo del 423 de POST /api/auth/login al quinto intento fallido (SCRUM-155).
+ * Se discrimina por el status HTTP, no por este `error`; el tipo documenta el
+ * contrato del backend (`GlobalExceptionHandler.handleAccountLocked`).
+ */
+export interface AccountLockedBody {
+  error: 'ACCOUNT_LOCKED';
+}
+
 /** Espeja UserProfileResponse del backend (GET/PUT /api/users/me). */
 export interface UserProfile {
   id: number;
