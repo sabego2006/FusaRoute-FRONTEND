@@ -2,20 +2,24 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
-import { RouteSearchResult, RouteSign } from '../../../models/route.model';
+import { Route, RouteSearchParams, RouteSearchResult, RouteSign } from '../../../models/route.model';
 
-const conTrazado: RouteSearchResult = {
-  route: {
+const catalogo: Route[] = [
+  {
     id: 4,
     name: 'Camino Real - La Pampa',
     type: 'URBANA',
     neighborhoods: ['Camino Real', 'La Pampa'],
     fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }]
   },
+];
+
+const conTrazado: RouteSearchResult = {
+  route: catalogo[0],
   estimatedMinutes: 18,
   travelDistanceInMeters: 2400,
   boarding: { latitude: 4.343, longitude: -74.3658, distanceInMeters: 240, walkingMinutes: 3 },
@@ -51,28 +55,30 @@ interface Opciones {
   online?: boolean;
   searchRoute?: () => unknown;
   searchRouteOffline?: () => unknown;
+  getAllPublicRoutes?: () => unknown;
 }
 
 async function render(opciones: Opciones) {
-  const searchRoute = vi.fn(opciones.searchRoute ?? (() => of(conTrazado)));
-  const searchRouteOffline = vi.fn(opciones.searchRouteOffline ?? (() => of(sinRed)));
+  const searchRoute = vi.fn<(params: RouteSearchParams) => unknown>(opciones.searchRoute ?? (() => of(conTrazado)));
+  const searchRouteOffline = vi.fn<(params: RouteSearchParams) => unknown>(
+    opciones.searchRouteOffline ?? (() => of(sinRed)),
+  );
+  const getAllPublicRoutes = vi.fn(opciones.getAllPublicRoutes ?? (() => of(catalogo)));
 
   await TestBed.configureTestingModule({
     imports: [RouteSearchComponent],
     providers: [
-      { provide: RouteService, useValue: { searchRoute, searchRouteOffline } },
+      { provide: RouteService, useValue: { searchRoute, searchRouteOffline, getAllPublicRoutes } },
       { provide: ConnectivityService, useValue: { isOnline: signal(opciones.online ?? true) } }
     ]
   }).compileComponents();
 
   const fixture = TestBed.createComponent(RouteSearchComponent);
+  fixture.detectChanges(); // dispara ngOnInit: carga los barrios del catálogo
+
   fixture.componentInstance.searchForm.setValue({
     originNeighborhood: 'Camino Real',
-    originLat: 4.3433,
-    originLng: -74.3661,
     destinationNeighborhood: 'La Pampa',
-    destinationLat: 4.33,
-    destinationLng: -74.36
   });
   fixture.detectChanges();
 
@@ -82,10 +88,34 @@ async function render(opciones: Opciones) {
     fixture.detectChanges();
   };
 
-  return { triggerSearch, searchRoute, searchRouteOffline, el: fixture.nativeElement as HTMLElement };
+  return {
+    triggerSearch,
+    searchRoute,
+    searchRouteOffline,
+    getAllPublicRoutes,
+    el: fixture.nativeElement as HTMLElement,
+  };
+}
+
+type GetCurrentPosition = (
+  success: PositionCallback,
+  error?: PositionErrorCallback,
+) => void;
+
+/** Instala navigator.geolocation para una prueba y la retira al terminar. */
+function stubGeolocation(getCurrentPosition: GetCurrentPosition) {
+  Object.defineProperty(navigator, 'geolocation', {
+    value: { getCurrentPosition },
+    configurable: true,
+  });
 }
 
 describe('RouteSearchComponent', () => {
+  afterEach(() => {
+    // jsdom no trae geolocation por defecto; se retira lo que cada prueba instaló.
+    delete (navigator as unknown as Record<string, unknown>)['geolocation'];
+  });
+
   it('with network uses online endpoint and shows estimated time', async () => {
     const { triggerSearch, searchRoute, searchRouteOffline, el } = await render({ online: true });
 
@@ -237,5 +267,69 @@ describe('RouteSearchComponent', () => {
     await triggerSearch();
 
     expect(el.textContent).toContain('No hay rutas disponibles que conecten Centro con Pasca');
+  });
+
+  // --- SCRUM-130: selectores de barrio y geolocalización opcional del origen ---
+
+  it('puebla los selectores de origen y destino con los barrios del catálogo', async () => {
+    const { el } = await render({ online: true });
+
+    const opciones = Array.from(el.querySelector('#origin')?.querySelectorAll('option') ?? [])
+      .map((o) => o.textContent?.trim())
+      .filter((text) => text !== 'Elige tu barrio de salida');
+
+    expect(opciones).toEqual(['Camino Real', 'La Pampa']);
+  });
+
+  it('si el catálogo de barrios no carga, lo avisa sin bloquear el formulario', async () => {
+    const { el } = await render({ online: true, getAllPublicRoutes: () => throwError(() => new Error('red caída')) });
+
+    expect(el.textContent).toContain('No pudimos cargar la lista de barrios');
+  });
+
+  it('en línea, usa la geolocalización concedida para afinar el origen', async () => {
+    stubGeolocation((success) =>
+      success({ coords: { latitude: 4.3433, longitude: -74.3661 } } as GeolocationPosition));
+    const { triggerSearch, searchRoute } = await render({ online: true });
+
+    await triggerSearch();
+
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.originLat).toBe(4.3433);
+    expect(params.originLng).toBe(-74.3661);
+    // Nunca hay geolocalización del destino de otra persona.
+    expect(params.destinationLat).toBeUndefined();
+    expect(params.destinationLng).toBeUndefined();
+  });
+
+  it('si el usuario niega la ubicación, busca igual sin coordenadas', async () => {
+    stubGeolocation((_success, error) => error?.({ code: 1 } as GeolocationPositionError));
+    const { triggerSearch, searchRoute, el } = await render({ online: true });
+
+    await triggerSearch();
+
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.originLat).toBeUndefined();
+    expect(el.textContent).toContain('18 min');
+  });
+
+  it('sin soporte de geolocalización en el navegador, busca igual sin coordenadas', async () => {
+    // jsdom no define navigator.geolocation por defecto: este es justo ese caso.
+    const { triggerSearch, searchRoute } = await render({ online: true });
+
+    await triggerSearch();
+
+    const params = searchRoute.mock.calls[0][0];
+    expect(params.originLat).toBeUndefined();
+  });
+
+  it('sin conexión nunca pide la ubicación', async () => {
+    const getCurrentPosition = vi.fn<GetCurrentPosition>();
+    stubGeolocation(getCurrentPosition);
+    const { triggerSearch } = await render({ online: false });
+
+    await triggerSearch();
+
+    expect(getCurrentPosition).not.toHaveBeenCalled();
   });
 });

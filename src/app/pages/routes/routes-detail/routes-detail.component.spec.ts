@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { throwError, of } from 'rxjs';
 import { describe, it, expect } from 'vitest';
 import { RoutesDetailComponent } from './routes-detail.component';
@@ -18,7 +19,10 @@ async function render(getRouteById: () => unknown, id: string | null = '1') {
       // El mapa no debe salir a la red en los tests: se simula que la API de Google
       // nunca termina de cargar, que es el estado en el que el componente muestra
       // "Cargando mapa..." y no intenta dibujar nada.
-      { provide: GoogleMapsLoaderService, useValue: { load: () => new Promise<void>(() => undefined) } }
+      {
+        provide: GoogleMapsLoaderService,
+        useValue: { status: signal('cargando'), load: () => new Promise<void>(() => undefined) }
+      }
     ]
   }).compileComponents();
 

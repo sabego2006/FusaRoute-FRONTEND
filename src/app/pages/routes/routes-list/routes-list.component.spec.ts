@@ -71,4 +71,24 @@ describe('RoutesListComponent', () => {
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('No se pudo cargar');
     expect(el.querySelectorAll('li')).toHaveLength(0);
   });
+
+  it('con sectores en trancón, la tarjeta de esa ruta avisa posible congestión y la otra no', async () => {
+    const conSectores: Route[] = [
+      { ...routes[0], congestionSectors: [{ name: 'Centro - Carrera 1', startsAt: '17:00:00', endsAt: '19:00:00' }] },
+      routes[1]
+    ];
+    const el = await render(() => of(conSectores));
+
+    const cards = Array.from(el.querySelectorAll('li'));
+    expect(cards[0].textContent).toContain('Puede haber congestión');
+    expect(cards[1].textContent).not.toContain('Puede haber congestión');
+  });
+
+  it('si el backend no manda el campo (build viejo), la tarjeta no muestra aviso y no se rompe', async () => {
+    // `routes` no trae `congestionSectors` en ninguna de las dos: es justo ese backend viejo.
+    const el = await render(() => of(routes));
+
+    expect(el.textContent).not.toContain('Puede haber congestión');
+    expect(el.querySelectorAll('li')).toHaveLength(2);
+  });
 });
