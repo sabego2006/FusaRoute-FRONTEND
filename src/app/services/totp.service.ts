@@ -6,6 +6,7 @@ import {
   TotpConfirmRequest,
   TotpConfirmResponse,
   TotpEnrollResponse,
+  RecoveryCodesResponse,
   TotpStatus,
 } from '../models/totp.model';
 
@@ -31,5 +32,14 @@ export class TotpService {
   confirm(code: string): Observable<TotpConfirmResponse> {
     const body: TotpConfirmRequest = { code };
     return this.http.post<TotpConfirmResponse>(`${this.url}/confirm`, body);
+  }
+
+  /**
+   * Reemplaza los 10 códigos de respaldo por un conjunto nuevo. Exige el token completo,
+   * así que solo sirve desde el perfil, con sesión abierta — no es una vía de recuperación
+   * para quien ya quedó fuera.
+   */
+  regenerateRecoveryCodes(): Observable<RecoveryCodesResponse> {
+    return this.http.post<RecoveryCodesResponse>(`${this.url}/recovery-codes`, {});
   }
 }

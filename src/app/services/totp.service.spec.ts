@@ -47,4 +47,15 @@ describe('TotpService', () => {
     expect(req.request.body).toEqual({ code: '123456' });
     req.flush({});
   });
+
+  it('regenerateRecoveryCodes hace POST /totp/recovery-codes', () => {
+    let codes: string[] | undefined;
+    service.regenerateRecoveryCodes().subscribe((r) => (codes = r.recoveryCodes));
+
+    const req = http.expectOne(`${base}/recovery-codes`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ recoveryCodes: ['AAAA1111BB', 'CCCC2222DD'] });
+
+    expect(codes).toEqual(['AAAA1111BB', 'CCCC2222DD']);
+  });
 });

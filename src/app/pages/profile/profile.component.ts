@@ -7,6 +7,8 @@ import { ToastService } from '../../components/toast/toast.service';
 import { TotpEnrollComponent } from '../../components/totp-enroll/totp-enroll.component';
 import { UserProfile, FieldViolation, ProblemDetail } from '../../models/auth.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { copyText } from '../../lib/clipboard';
+import { downloadText } from '../../lib/download';
 
 @Component({
   selector: 'app-profile',
@@ -117,6 +119,41 @@ import { HttpErrorResponse } from '@angular/common/http';
                 style="background: var(--superficie); border: var(--trazo-2) solid var(--borde);">
           Volver a configurar mi app autenticadora
         </button>
+
+        <!-- Códigos de respaldo: solo tienen sentido con el factor ya activo -->
+        @if (totpEnabled() === true) {
+          <h3 class="fr-titulo-3" style="margin: var(--space-6) 0 var(--space-2);">Códigos de respaldo</h3>
+
+          @if (newRecoveryCodes(); as codes) {
+            <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
+              <strong>Guárdalos ahora:</strong> no se volverán a mostrar, y tus códigos anteriores
+              dejaron de servir.
+            </div>
+            <ul class="fr-lista" style="margin-bottom: var(--space-4);" aria-label="Códigos de respaldo nuevos">
+              @for (code of codes; track code) {
+                <li><code style="font-size: 16px; user-select: all;">{{ code }}</code></li>
+              }
+            </ul>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+              <button type="button" class="fr-btn" (click)="copyRecoveryCodes()">Copiar códigos</button>
+              <button type="button" class="fr-btn" (click)="downloadRecoveryCodes()">Descargar .txt</button>
+              <button type="button" class="fr-btn" (click)="newRecoveryCodes.set(null)">Ya los guardé</button>
+            </div>
+          } @else {
+            <p class="fr-texto-sm" style="margin-bottom: var(--space-4);">
+              Son tu única salida si pierdes el teléfono, y cada uno sirve una sola vez. Si ya los
+              gastaste o no sabes dónde están, genera unos nuevos.
+            </p>
+            @if (recoveryCodesError()) {
+              <p class="fr-alerta" role="alert">{{ recoveryCodesError() }}</p>
+            }
+            <button type="button" class="fr-btn fr-btn-bloque" [disabled]="regeneratingCodes()"
+                    (click)="regenerateRecoveryCodes()"
+                    style="background: var(--superficie); border: var(--trazo-2) solid var(--borde);">
+              {{ regeneratingCodes() ? 'Generando...' : 'Generar códigos de respaldo nuevos' }}
+            </button>
+          }
+        }
       }
     </div>
   `,
@@ -149,6 +186,10 @@ export class ProfileComponent implements OnInit {
   readonly totpEnabled = signal<boolean | null>(null);
   readonly totpStatusError = signal(false);
   readonly reenrolling = signal(false);
+  /** Códigos recién generados, en claro. Solo viven en memoria y se descartan al salir de la vista. */
+  readonly newRecoveryCodes = signal<string[] | null>(null);
+  readonly regeneratingCodes = signal(false);
+  readonly recoveryCodesError = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadTotpStatus();
@@ -176,7 +217,36 @@ export class ProfileComponent implements OnInit {
   onReenrolled(): void {
     this.reenrolling.set(false);
     this.loadTotpStatus();
+    // Confirmar el enrolamiento ya reemplazó los respaldos y el componente los mostró:
+    // volver a pintarlos aquí sería mostrar un conjunto viejo.
+    this.newRecoveryCodes.set(null);
     this.toast.show('Verificación en dos pasos actualizada', 'success');
+  }
+
+  regenerateRecoveryCodes(): void {
+    this.regeneratingCodes.set(true);
+    this.recoveryCodesError.set(null);
+
+    this.totpService.regenerateRecoveryCodes().subscribe({
+      next: (res) => {
+        this.regeneratingCodes.set(false);
+        this.newRecoveryCodes.set(res.recoveryCodes);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.regeneratingCodes.set(false);
+        const body = err.error as ProblemDetail | undefined;
+        this.recoveryCodesError.set(body?.detail ?? 'No pudimos generar códigos nuevos. Inténtalo de nuevo.');
+      },
+    });
+  }
+
+  async copyRecoveryCodes(): Promise<void> {
+    const ok = await copyText((this.newRecoveryCodes() ?? []).join('\n'));
+    this.toast.show(ok ? 'Códigos copiados' : 'No se pudo copiar', ok ? 'success' : 'error');
+  }
+
+  downloadRecoveryCodes(): void {
+    downloadText('fusaroute-codigos-de-respaldo.txt', (this.newRecoveryCodes() ?? []).join('\n'));
   }
 
   /** Devuelve el mensaje de error del backend para un campo, si existe. */

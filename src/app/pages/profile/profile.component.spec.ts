@@ -65,6 +65,66 @@ describe('ProfileComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('app-totp-enroll')).toBeNull();
   });
 
+  it('ofrece regenerar los códigos de respaldo solo con la verificación activada', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
+      id: 1, name: 'G', email: 'g@f.co', phone: null,
+    });
+    flushTotpStatus(false);
+    fixture.detectChanges();
+
+    // Sin factor activo no hay nada que respaldar: el backend responde 409.
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '')
+      .not.toContain('Códigos de respaldo');
+  });
+
+  it('regenerar muestra los códigos nuevos una sola vez', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
+      id: 1, name: 'G', email: 'g@f.co', phone: null,
+    });
+    flushTotpStatus(true);
+    fixture.detectChanges();
+
+    fixture.componentInstance.regenerateRecoveryCodes();
+    http.expectOne(`${totpUrl}/recovery-codes`).flush({
+      recoveryCodes: ['AAAA1111BB', 'CCCC2222DD'],
+    });
+    fixture.detectChanges();
+
+    const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text()).toContain('AAAA1111BB');
+    expect(text()).toContain('CCCC2222DD');
+    expect(text()).toContain('no se volverán a mostrar');
+
+    // "Ya los guardé" los descarta: no quedan pintados en la vista.
+    fixture.componentInstance.newRecoveryCodes.set(null);
+    fixture.detectChanges();
+    expect(text()).not.toContain('AAAA1111BB');
+  });
+
+  it('muestra el error del backend si no se pueden regenerar', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/users/me`).flush({
+      id: 1, name: 'G', email: 'g@f.co', phone: null,
+    });
+    flushTotpStatus(true);
+    fixture.detectChanges();
+
+    fixture.componentInstance.regenerateRecoveryCodes();
+    http.expectOne(`${totpUrl}/recovery-codes`).flush(
+      { type: 'about:blank', title: 'Conflict', status: 409, detail: 'El segundo factor no esta activo' },
+      { status: 409, statusText: 'Conflict' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recoveryCodesError()).toBe('El segundo factor no esta activo');
+    expect(fixture.componentInstance.newRecoveryCodes()).toBeNull();
+  });
+
   it('se crea y carga el perfil del usuario', () => {
     const fixture = TestBed.createComponent(ProfileComponent);
     fixture.detectChanges();

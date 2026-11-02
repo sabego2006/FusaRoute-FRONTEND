@@ -22,3 +22,12 @@ export interface TotpConfirmRequest {
 export interface TotpConfirmResponse extends LoginResponse {
   recoveryCodes: string[];
 }
+
+/**
+ * Respuesta de POST /api/users/me/totp/recovery-codes: el conjunto nuevo de
+ * códigos de respaldo. Los anteriores dejan de servir y estos se muestran una
+ * sola vez, igual que al confirmar el enrolamiento.
+ */
+export interface RecoveryCodesResponse {
+  recoveryCodes: string[];
+}
