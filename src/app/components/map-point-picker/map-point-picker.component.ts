@@ -1,4 +1,4 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, output, signal } from '@angular/core';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
 import { LatLngPoint } from '../map-view/map-view.component';
@@ -81,7 +81,7 @@ export interface PickedPoints {
     }
   `,
 })
-export class MapPointPickerComponent {
+export class MapPointPickerComponent implements OnInit {
   /** Se emite en cada cambio para que el formulario padre lea la última versión. */
   readonly pointsChange = output<PickedPoints>();
 
@@ -100,7 +100,7 @@ export class MapPointPickerComponent {
   protected readonly center: LatLngPoint = { lat: 4.3364, lng: -74.3638 };
   protected readonly mapOptions: google.maps.MapOptions = { disableDefaultUI: true, clickableIcons: false };
 
-  constructor() {
+  ngOnInit(): void {
     this.loader.load().catch(() => undefined);
   }
 

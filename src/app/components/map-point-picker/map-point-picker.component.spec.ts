@@ -1,11 +1,39 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MapPointPickerComponent, PickedPoints } from './map-point-picker.component';
 import { GoogleMapsLoaderService, MapsStatus } from '../../core/google-maps-loader.service';
 
 function fakeLoader(estadoInicial: MapsStatus = 'cargando') {
   return { status: signal<MapsStatus>(estadoInicial), load: () => new Promise<void>(() => undefined) };
+}
+
+// `@angular/google-maps` usa `google.maps.Map`/`google.maps.Marker` directamente cuando
+// ya estan definidos (sin pasar por `importLibrary`, que requiere red de verdad) — ver
+// GoogleMap#ngOnInit y MapMarker#ngOnInit en el paquete. Con este doble minimo, la rama
+// "listo" del template (la que trae <google-map>/<map-marker>) renderiza en jsdom sin
+// tener que simular la API completa de Maps ni salir a la red.
+class FakeGoogleMap {
+  setOptions(): void {}
+  setCenter(): void {}
+  setZoom(): void {}
+  setMapTypeId(): void {}
+  addListener(): { remove: () => void } {
+    return { remove: () => undefined };
+  }
+}
+class FakeMarker {
+  setMap(): void {}
+  setOptions(): void {}
+  addListener(): { remove: () => void } {
+    return { remove: () => undefined };
+  }
+}
+
+function stubGoogleMaps(): void {
+  (window as unknown as { google: unknown }).google = {
+    maps: { Map: FakeGoogleMap, Marker: FakeMarker },
+  };
 }
 
 async function render(estado: MapsStatus) {
@@ -22,6 +50,17 @@ async function render(estado: MapsStatus) {
 }
 
 describe('MapPointPickerComponent', () => {
+  afterEach(() => {
+    delete (window as unknown as { google?: unknown }).google;
+  });
+
+  it('mientras carga la API de Maps, muestra un estado de carga en vez de romper', async () => {
+    const { el } = await render('cargando');
+
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('Cargando mapa');
+    expect(el.querySelector('google-map')).toBeNull();
+  });
+
   it('sin clave de Maps, muestra un aviso y no intenta renderizar el mapa', async () => {
     const { el } = await render('sin-clave');
 
@@ -89,5 +128,53 @@ describe('MapPointPickerComponent', () => {
     component.onMapClick({ latLng: null } as unknown as google.maps.MapMouseEvent);
 
     expect(emits).toHaveLength(0);
+  });
+
+  it('con el mapa listo y sin puntos fijados, muestra el selector de modo sin marcadores ni botones de quitar', async () => {
+    stubGoogleMaps();
+    const { el } = await render('listo');
+
+    expect(el.querySelector('[role="status"]')).toBeNull();
+    expect(el.querySelector('google-map')).not.toBeNull();
+    expect(el.querySelector('input[value="origin"]')).not.toBeNull();
+    expect(el.querySelector('input[value="destination"]')).not.toBeNull();
+    expect(el.querySelector('map-marker')).toBeNull();
+    expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('Quitar'))).toBe(false);
+  });
+
+  it('con el mapa listo, los radios de "Origen" y "Destino" cambian el modo activo', async () => {
+    stubGoogleMaps();
+    const { component, el } = await render('listo');
+
+    el.querySelector<HTMLInputElement>('input[value="destination"]')?.dispatchEvent(new Event('change'));
+    expect(component.mode()).toBe('destination');
+
+    el.querySelector<HTMLInputElement>('input[value="origin"]')?.dispatchEvent(new Event('change'));
+    expect(component.mode()).toBe('origin');
+  });
+
+  it('con el mapa listo y puntos fijados, pinta un marcador por punta y permite quitarlos desde el boton', async () => {
+    stubGoogleMaps();
+    const { component, fixture, el } = await render('listo');
+
+    component.onMapClick({ latLng: { lat: () => 4.34, lng: () => -74.36 } as google.maps.LatLng } as google.maps.MapMouseEvent);
+    component.onMapClick({ latLng: { lat: () => 4.33, lng: () => -74.35 } as google.maps.LatLng } as google.maps.MapMouseEvent);
+    fixture.detectChanges();
+
+    expect(el.querySelectorAll('map-marker').length).toBe(2);
+    const quitarOrigen = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Quitar origen'));
+    expect(quitarOrigen).toBeDefined();
+
+    quitarOrigen?.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(component.points().origin).toBeNull();
+    expect(component.points().destination).not.toBeNull();
+
+    const quitarDestino = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Quitar destino'));
+    quitarDestino?.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(component.points().destination).toBeNull();
   });
 });
