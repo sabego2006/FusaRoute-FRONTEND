@@ -1,0 +1,11 @@
+[
+  {
+    "path": "/rutas/buscar",
+    "timings": [
+      {
+        "metric": "largest-contentful-paint",
+        "budget": 2500
+      }
+    ]
+  }
+]
