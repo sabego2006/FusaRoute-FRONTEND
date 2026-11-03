@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { RoutesDetailComponent } from './routes-detail.component';
 import { RouteService } from '../../../services/route.service';
 import { GoogleMapsLoaderService } from '../../../core/google-maps-loader.service';
-import { RouteDetail, RouteSign } from '../../../models/route.model';
+import { RouteDetail } from '../../../models/route.model';
 
 async function render(getRouteById: () => unknown, id: string | null = '1') {
   await TestBed.configureTestingModule({
@@ -42,27 +42,7 @@ const urbana: RouteDetail = {
   fares: [{ referencePoint: null, amount: 2600, validFrom: '2026-02-05' }],
   path: null,
   congestionSectors: [],
-  signs: [],
   lastUpdatedAt: '2026-02-05'
-};
-
-/** Caso real de V11 (SCRUM-176): un letrero con dos placas, en el sentido SUBIENDO. */
-const letreroSubiendo: RouteSign = {
-  fieldId: 'LC-008',
-  sense: 'SUBIENDO',
-  sourcePhoto: '20260927_150814.jpg',
-  evidenceCrop: '20260927_150814.jpg',
-  observedOn: '2026-09-27',
-  plates: [
-    {
-      template: 'TABLA_FRANJAS',
-      code: null,
-      lines: [
-        { text: 'CAMINO REAL', background: '#2F8F6A', foreground: '#E8F5EE' },
-        { text: 'CALLE 22', background: '#BFE0DA', foreground: '#222222' }
-      ]
-    }
-  ]
 };
 
 const urbanaConTrazado: RouteDetail = {
@@ -89,8 +69,8 @@ const intermunicipal: RouteDetail = {
   ],
   path: null,
   congestionSectors: [],
-  // Caso real (V11): ningún letrero fotografiado respalda esta ruta todavía.
-  signs: [],
+  // Caso real: 'Fusagasugá - Pasca' es una de las tres rutas del catálogo sin letrero.
+  signFile: null,
   lastUpdatedAt: '2026-02-05'
 };
 
@@ -141,6 +121,7 @@ describe('RoutesDetailComponent', () => {
   });
 
   it('si el backend no manda lastUpdatedAt (build viejo), no muestra la línea ni se rompe', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- se destruye solo para omitir la clave
     const { lastUpdatedAt: _omitida, ...sinClave } = urbana;
     const el = await render(() => of(sinClave));
 
@@ -215,6 +196,7 @@ describe('RoutesDetailComponent', () => {
   });
 
   it('si el backend no manda la clave (build viejo), no muestra aviso ni se rompe', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- se destruye solo para omitir la clave
     const { congestionSectors: _omitida, ...sinClave } = urbana;
     const el = await render(() => of(sinClave));
 
@@ -222,29 +204,46 @@ describe('RoutesDetailComponent', () => {
     expect(el.textContent).not.toContain('Puede haber congestión');
   });
 
-  it('con letrero fotografiado, muestra la sección y el texto de la placa (SCRUM-176)', async () => {
-    const el = await render(() => of({ ...urbana, signs: [letreroSubiendo] }));
+  it('con letrero, muestra la sección y el SVG de esa ruta (SCRUM-184)', async () => {
+    const el = await render(() => of({ ...urbana, signFile: 'HOSPITAL_BATALLON_LA_PAMPA_LLANO_GRANDE' }));
 
     expect(el.textContent).toContain('Letrero de la buseta');
-    expect(el.querySelector('app-letrero')).not.toBeNull();
-    expect(el.textContent).toContain('Subiendo');
-    expect(el.textContent).toContain('CAMINO REAL');
+    expect(el.querySelector('app-letrero img')?.getAttribute('src'))
+      .toBe('letreros/HOSPITAL_BATALLON_LA_PAMPA_LLANO_GRANDE.svg');
   });
 
-  it('sin evidencia de campo, no muestra la sección del letrero', async () => {
-    // Es el caso real de 'Fusagasugá - Pasca' (V11): ningún letrero la respalda.
+  it('sin letrero fotografiado, no muestra la sección del letrero', async () => {
+    // Caso real de 'Fusagasugá - Pasca': es una de las tres rutas sin letrero.
     const el = await render(() => of(intermunicipal), '8');
 
     expect(el.textContent).not.toContain('Letrero de la buseta');
     expect(el.querySelector('app-letrero')).toBeNull();
   });
 
-  it('si el backend no manda la clave "signs" (build viejo), no muestra letrero ni se rompe', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- se destruye solo para omitir la clave
-    const { signs: _omitida, ...sinClave } = urbana;
-    const el = await render(() => of(sinClave));
+  it('si el backend no manda la clave signFile (build anterior), no muestra letrero ni se rompe', async () => {
+    // El frontend se mergea antes que el backend: durante esa ventana la clave no viene.
+    const el = await render(() => of(urbana));
 
     expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
     expect(el.textContent).not.toContain('Letrero de la buseta');
+  });
+
+  it('el orden en pantalla es nombre, letrero, lugares y mapa', async () => {
+    // Es el orden que pidió Santiago y el que vuelve legible el detalle en el celular:
+    // primero reconoces la buseta, después por dónde pasa, y solo entonces el mapa.
+    const el = await render(() => of({
+      ...urbana,
+      signFile: 'HOSPITAL_BATALLON_LA_PAMPA_LLANO_GRANDE',
+      path: { type: 'LineString' as const, coordinates: [[-74.36, 4.34], [-74.35, 4.33]] as [number, number][] }
+    }));
+
+    const texto = el.textContent ?? '';
+    const letrero = texto.indexOf('Letrero de la buseta');
+    const lugares = texto.indexOf('Barrios por los que pasa');
+    const mapa = texto.indexOf('Recorrido en el mapa');
+
+    expect(letrero).toBeGreaterThan(-1);
+    expect(lugares).toBeGreaterThan(letrero);
+    expect(mapa).toBeGreaterThan(lugares);
   });
 });

@@ -8,7 +8,7 @@ import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
 import { GoogleMapsLoaderService, MapsStatus } from '../../../core/google-maps-loader.service';
-import { GeoJsonLineString, Route, RouteSearchParams, RouteSearchResult, RouteSign } from '../../../models/route.model';
+import { GeoJsonLineString, Route, RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 
 const catalogo: Route[] = [
   {
@@ -27,19 +27,6 @@ const conTrazado: RouteSearchResult = {
   boarding: { latitude: 4.343, longitude: -74.3658, distanceInMeters: 240, walkingMinutes: 3 },
   dropOff: { latitude: 4.33, longitude: -74.3602, distanceInMeters: 90, walkingMinutes: 1 },
   lastUpdatedAt: '2026-02-05',
-  signs: []
-};
-
-/** Caso real de V11 (SCRUM-176). */
-const letreroArbelaez: RouteSign = {
-  fieldId: 'LC-025',
-  sense: null,
-  sourcePhoto: '20260927_152133.jpg',
-  evidenceCrop: '20260927_152133.jpg',
-  observedOn: '2026-09-27',
-  plates: [
-    { template: 'PLACA_ARCO', code: null, lines: [{ text: 'ARBELAEZ', background: '#C23A32', foreground: '#FFFFFF' }] }
-  ]
 };
 
 /** Lo que devuelve el endpoint offline: nunca trae tiempo estimado. */
@@ -247,20 +234,19 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('no tiene su trazado cargado');
   });
 
-  it('con letrero fotografiado en el resultado, lo muestra (criterio de aceptación SCRUM-176)', async () => {
+  it('con letrero, el resultado muestra el SVG de esa ruta (SCRUM-184)', async () => {
     const { triggerSearch, el } = await render({
       online: true,
-      searchRoute: () => of({ ...conTrazado, signs: [letreroArbelaez] })
+      searchRoute: () => of({ ...conTrazado, route: { ...conTrazado.route, signFile: 'ARBELAEZ' } })
     });
 
     await triggerSearch();
 
     expect(el.textContent).toContain('Letrero de la buseta');
-    expect(el.querySelector('app-letrero')).not.toBeNull();
-    expect(el.textContent).toContain('ARBELAEZ');
+    expect(el.querySelector('app-letrero img')?.getAttribute('src')).toBe('letreros/ARBELAEZ.svg');
   });
 
-  it('sin evidencia de campo para la ruta sugerida, no muestra la sección del letrero', async () => {
+  it('sin letrero en la ruta sugerida, no muestra la sección del letrero', async () => {
     const { triggerSearch, el } = await render({ online: true });
 
     await triggerSearch();

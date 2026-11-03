@@ -5,8 +5,16 @@ declare global {
   interface Window {
     /** Google la invoca cuando rechaza la clave o el dominio. La define este servicio, no Google. */
     gm_authFailure?: () => void;
+    /** Callback que Google invoca cuando la API terminó de instalarse. La define este servicio. */
+    [CALLBACK_GOOGLE_MAPS]?: () => void;
   }
 }
+
+/**
+ * Nombre del callback que se le pasa a Google en la URL. Tiene que ser una propiedad global
+ * con un nombre estable, porque Google lo resuelve por texto desde `window`.
+ */
+const CALLBACK_GOOGLE_MAPS = '__fusarouteGoogleMapsReady' as const;
 
 /**
  * Estado público de la carga de la API de Google Maps. `MapViewComponent` (y cualquier otra
@@ -62,16 +70,29 @@ export class GoogleMapsLoaderService {
         }
       };
 
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(environment.googleMapsApiKey)}&v=weekly&loading=async`;
-      script.async = true;
-      script.onload = () => {
+      // El estado 'listo' se fija en el CALLBACK de Google, no en `script.onload` (SCRUM-184).
+      //
+      // Con `loading=async`, `onload` dispara cuando el ARCHIVO termina de bajar, no cuando la
+      // API termina de instalarse. En esa ventana `window.google.maps` ya existe pero todavía
+      // le faltan piezas, y `<google-map>` de @angular/google-maps reventaba con
+      // "TypeError: google.maps.importLibrary is not a function". El sintoma era un hueco en
+      // blanco bajo "Recorrido en el mapa": ni mapa ni aviso de error, porque desde el punto de
+      // vista del servicio la carga habia ido bien.
+      //
+      // El parametro `callback` es el contrato que Google documenta para `loading=async`, y es
+      // lo unico que garantiza que la API esta completa antes de que nadie la use.
+      window[CALLBACK_GOOGLE_MAPS] = () => {
         this.status.set('listo');
         if (!settled) {
           settled = true;
           resolve();
         }
       };
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(environment.googleMapsApiKey)}`
+        + `&v=weekly&loading=async&callback=${CALLBACK_GOOGLE_MAPS}`;
+      script.async = true;
       script.onerror = () => {
         this.status.set('error');
         if (!settled) {

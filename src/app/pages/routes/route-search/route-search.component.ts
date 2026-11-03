@@ -56,10 +56,6 @@ export class RouteSearchComponent implements OnInit {
   readonly isOnline = this.connectivity.isOnline;
   readonly isUrban = computed(() => this.result()?.route.type === 'URBANA');
 
-  // Igual que congestionSectors en el detalle: un backend sin SCRUM-176 desplegado
-  // no manda la clave `signs`.
-  readonly signs = computed(() => this.result()?.signs ?? []);
-
   /** En km cuando pasa del kilómetro, que es como se lee de un vistazo. */
   readonly travelDistanceLabel = computed(() => {
     const meters = this.result()?.travelDistanceInMeters;

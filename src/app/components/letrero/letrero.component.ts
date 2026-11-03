@@ -1,20 +1,20 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouteSign } from '../../models/route.model';
-
-/** Texto legible para el sentido que documenta un letrero; `null` no se pinta. */
-const SENSE_LABEL: Record<NonNullable<RouteSign['sense']>, string> = {
-  SUBIENDO: 'Subiendo',
-  BAJANDO: 'Bajando',
-};
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
- * Letreros fisicos de una ruta (SCRUM-176): la placa que el pasajero ve en el
- * parabrisas de la buseta, para que pueda reconocerla. El dato viene del trabajo de
- * campo de SCRUM-174/175 — texto y colores reales, no un icono generico.
+ * Letrero de una ruta (SCRUM-184): la placa que el pasajero ve en el parabrisas de la
+ * buseta, para que pueda reconocerla. Es el SVG que se dibujó encima de la foto de
+ * campo, con la misma forma, los mismos colores y la fuente libre más parecida.
  *
- * Misma pieza en el detalle de la ruta y en el resultado de busqueda. Si la ruta no
- * tiene ningun letrero con evidencia de campo todavia (el estado real de la mayoria),
- * no pinta nada: ni un hueco ni un letrero inventado.
+ * Antes (SCRUM-176) el letrero se armaba en vivo aquí, con tres plantillas fijas y los
+ * colores que mandaba el backend. No se parecía a la foto, y eso fue justo lo que el
+ * docente señaló. Ahora el backend manda un solo nombre de archivo y esta pieza lo
+ * resuelve a `public/letreros/<signFile>.svg`.
+ *
+ * Una ruta = un letrero = un sentido: por eso es un archivo y no una lista.
+ *
+ * Misma pieza en el catálogo, en el detalle de la ruta y en el resultado de búsqueda.
+ * Si la ruta no tiene letrero fotografiado (las tres del catálogo que no se pudieron
+ * documentar), no pinta nada: ni un hueco ni un letrero inventado.
  */
 @Component({
   selector: 'app-letrero',
@@ -23,11 +23,13 @@ const SENSE_LABEL: Record<NonNullable<RouteSign['sense']>, string> = {
   templateUrl: './letrero.component.html',
 })
 export class LetreroComponent {
-  readonly signs = input.required<RouteSign[]>();
+  /** Nombre del archivo sin extensión, en MAYÚSCULAS con guion bajo. */
+  readonly signFile = input<string | null | undefined>(null);
 
-  readonly senseLabel = (sense: RouteSign['sense']): string | null => (sense ? SENSE_LABEL[sense] : null);
+  /** Nombre legible de la ruta, solo para el texto alternativo. */
+  readonly routeName = input.required<string>();
 
-  /** Clase CSS por plantilla de placa: el nombre del backend ya coincide con el sufijo. */
-  readonly plateClass = (template: RouteSign['plates'][number]['template']): string =>
-    `letrero-placa letrero-placa--${template.toLowerCase().replace(/_/g, '-')}`;
+  readonly src = computed(() => `letreros/${this.signFile()}.svg`);
+
+  readonly alt = computed(() => `Letrero de la ruta ${this.routeName()}`);
 }

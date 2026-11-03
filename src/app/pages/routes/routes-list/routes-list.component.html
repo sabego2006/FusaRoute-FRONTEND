@@ -33,6 +33,12 @@
               <strong style="font: 700 18px/24px var(--font-display); white-space: nowrap;">{{ fareLabel(route) }}</strong>
             </div>
 
+            @if (route.signFile) {
+              <div style="max-width: 220px; margin-bottom: var(--space-3);">
+                <app-letrero [signFile]="route.signFile" [routeName]="route.name" />
+              </div>
+            }
+
             <div>
               <strong class="fr-etiqueta" style="margin: 0; text-transform: none; font-size: 14px;">Barrios:</strong>
               <span class="fr-texto-sm">{{ pickNeighborhoodSteps(route.neighborhoods).join(' → ') }}</span>
