@@ -23,4 +23,10 @@ jobs:
         run: npm ci
 
       - name: Escaneo de vulnerabilidades (npm audit)
-        run: npm audit --audit-level=high
+        # --omit=dev: esta auditoria mide lo que llega al navegador, no el tooling de CI.
+        # Con devDependencies incluidas, @lhci/cli (SCRUM-127/136) arrastra a extract-zip
+        # via puppeteer-core — un paquete que descarga el binario de Chrome en el runner y
+        # que no tiene version parchada (GHSA-jmr9-qjv8-65gv, GHSA-7pqw-9j4j-h8q3): este
+        # job quedaria rojo para siempre sin que exista arreglo posible, por una dependencia
+        # que el usuario final nunca recibe. dependencies (Angular, rxjs) si se auditan.
+        run: npm audit --omit=dev --audit-level=high

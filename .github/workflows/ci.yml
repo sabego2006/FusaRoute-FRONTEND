@@ -70,10 +70,15 @@ jobs:
 
       - run: npm ci
 
-      - name: Build de produccion
+      - name: Build de produccion (environment lhci)
         # El budget de bundle inicial (angular.json, "initial": maximumError 1MB) se
         # verifica aqui mismo: ng build falla si el bundle inicial lo excede.
-        run: npx ng build
+        # Configuracion "lhci" (angular.json) encima de "production": mismo build
+        # optimizado, pero con apiUrl vacio en vez del backend real de Render. Sin
+        # esto, el LCP medido quedaba dominado por la latencia/fallo de esa llamada
+        # de red externa desde el runner, no por el peso real de la pantalla — ver
+        # environment.lhci.ts y el fixture estatico en public/api/routes.
+        run: npx ng build --configuration=production,lhci
 
       - name: Lighthouse CI
         run: npx lhci autorun

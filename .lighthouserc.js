@@ -11,11 +11,21 @@ const lcpBudgetMs = budgets[0].timings.find((t) => t.metric === 'largest-content
 // truco "--proxy http://localhost:PUERTO?" hace que cualquier 404 (ej. /rutas/buscar)
 // se re-resuelva contra index.html, que es como el SPA maneja esa URL en el navegador.
 const PORT = 4300;
+const DIST_DIR = 'dist/fusaroute-frontend/browser';
+
+// http-server no comprime al vuelo: sin esto servia cada archivo en crudo (p. ej. el
+// chunk inicial mas pesado en ~162kB) mientras que Vercel (donde corre de verdad) los
+// manda con gzip/brotli (~47kB ese mismo chunk) — bajo el Slow 4G simulado, esa
+// diferencia de payload por si sola ya volaba el presupuesto de LCP sin que el cambio
+// tuviera nada que ver con el peso real de la app. precomprimimos a .gz (-k conserva el
+// original para rutas que no son texto) y `--gzip` hace que http-server sirva el .gz
+// con el Content-Encoding correcto cuando el cliente lo acepta.
+const PRECOMPRESS = `find ${DIST_DIR} -type f \\( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.webmanifest" -o -name "routes" \\) -exec gzip -9 -k -f {} \\;`;
 
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: `npx http-server dist/fusaroute-frontend/browser -p ${PORT} --proxy http://localhost:${PORT}?`,
+      startServerCommand: `${PRECOMPRESS} && npx http-server ${DIST_DIR} -p ${PORT} --gzip --proxy http://localhost:${PORT}?`,
       startServerReadyPattern: 'Available on',
       url: [`http://localhost:${PORT}/rutas/buscar`],
       numberOfRuns: 3,

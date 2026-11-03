@@ -12,9 +12,17 @@
   <meta name="description" content="Consulta las rutas de transporte público de Fusagasugá: recorrido, barrios por los que pasa, tarifa y aviso de congestión.">
 
   <!-- FusaRoute Branding Typography -->
+  <!-- SCRUM-127/136: la hoja de estilos de Google Fonts es un recurso externo que, como
+       <link rel="stylesheet"> normal, bloquea el render hasta que termina de ir y volver
+       (y bajo Slow 4G simulado eso solo ya costaba ~1.5s). El patron preload+onload la
+       descarga con prioridad alta sin bloquear el primer pintado: la pagina pinta con la
+       fuente de sistema y cambia a la de marca cuando llega, que es lo que display=swap
+       ya hacia para el archivo de la fuente — esto hace lo mismo para su hoja de estilos. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"></noscript>
 </head>
 <body>
   <app-root></app-root>
