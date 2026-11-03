@@ -19,6 +19,16 @@ export interface Fare {
 export interface Route {
   id: number;
   name: string;
+  /**
+   * Archivo del letrero, que `LetreroComponent` resuelve a
+   * `public/letreros/<signFile>.svg` (SCRUM-184). `null` en las tres rutas del
+   * catálogo sin letrero fotografiado, y entonces no se pinta nada.
+   *
+   * Es opcional a propósito, y no requerido: el frontend se mergea ANTES que el
+   * backend, así que durante esa ventana la respuesta todavía no trae la clave. Con
+   * `?` eso significa "sin letrero" en vez de romper la pantalla.
+   */
+  signFile?: string | null;
   type: RouteType;
   neighborhoods: string[];
   fares: Fare[];
@@ -51,47 +61,12 @@ export interface CongestionSector {
 }
 
 /**
- * Plantilla fisica de una placa de letrero (SCRUM-176): arco con base, rectangulo
- * pequeño, o tabla de franjas de un solo sentido. Solo determina la forma; el color
- * y el texto van en {@link SignLine}.
- */
-export type SignTemplate = 'PLACA_ARCO' | 'PLACA_RECT' | 'TABLA_FRANJAS';
 
-/** Sentido de recorrido que documenta un letrero; `null` cuando no aplica (la mayoría). */
-export type SignSense = 'SUBIENDO' | 'BAJANDO';
 
 /**
- * Espeja SignLineResponse del backend: una linea de texto dentro de una placa.
- * `background`/`foreground` llegan YA RESUELTOS (la linea puede traer su propio color
- * o heredar el de toda la placa, pero esa resolucion ya la hizo el backend) y pueden
- * ser `null` si no se registro ningun color para esa linea.
- */
-export interface SignLine {
-  text: string;
-  background: string | null;
-  foreground: string | null;
-}
 
-/** Espeja SignPlateResponse del backend: una placa dentro de un letrero. */
-export interface SignPlate {
-  template: SignTemplate;
-  code: string | null;
-  lines: SignLine[];
-}
 
 /**
- * Espeja RouteSignResponse del backend (SCRUM-176): un letrero fisico de buseta tal
- * como lo levanto el trabajo de campo de SCRUM-174/175. `fieldId` es trazabilidad
- * hacia el modelado de campo (p. ej. "LC-029"), no un dato para mostrar al usuario.
- */
-export interface RouteSign {
-  fieldId: string;
-  sense: SignSense | null;
-  sourcePhoto: string;
-  evidenceCrop: string | null;
-  observedOn: string;
-  plates: SignPlate[];
-}
 
 /**
  * Espeja RouteDetailResponse del backend (GET /api/routes/{id}): lo mismo que trae el
@@ -102,8 +77,8 @@ export interface RouteSign {
  * puntos no es GeoJSON válido.
  *
  * `congestionSectors` es lista vacía si ningún sector está en franja de trancón; el
- * backend nunca manda null. `signs` (SCRUM-176) es igual: lista vacía si ningún
- * letrero fotografiado respalda esta ruta todavía — no se inventa uno para rellenarla.
+ * backend nunca manda null. El letrero se hereda de `Route.signFile` (SCRUM-184): un
+ * nombre de archivo, no la lista de placas que mandaba SCRUM-176.
  *
  * `lastUpdatedAt` es el `validFrom` más reciente entre las tarifas vigentes (RF-06); null
  * significa que la ruta no tiene ninguna tarifa vigente. En una intermunicipal es la fecha
@@ -112,7 +87,6 @@ export interface RouteSign {
 export interface RouteDetail extends Route {
   path: GeoJsonLineString | null;
   congestionSectors: CongestionSector[];
-  signs: RouteSign[];
   lastUpdatedAt: string | null;
 }
 
@@ -156,8 +130,8 @@ export interface BoardingPoint {
  * es el `validFrom` más reciente entre las tarifas vigentes de la ruta sugerida (RF-06);
  * null si no tiene ninguna.
  *
- * `signs` (SCRUM-176) va aparte y no dentro de `route` a propósito: `Route` se queda
- * liviano para el listado público, y el letrero solo viaja en el detalle y aquí.
+ * El letrero de la ruta sugerida viaja en `route.signFile` (SCRUM-184). Ya no hay un
+ * campo `signs` aparte: con un letrero por ruta, el dato cabe en `Route`.
  */
 export interface RouteSearchResult {
   route: Route;
@@ -172,5 +146,4 @@ export interface RouteSearchResult {
    */
   path?: GeoJsonLineString | null;
   lastUpdatedAt: string | null;
-  signs: RouteSign[];
 }

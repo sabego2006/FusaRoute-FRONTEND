@@ -22,12 +22,17 @@
         <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
       </header>
 
-      @if (signs().length) {
+      @if (r.signFile) {
         <section style="margin-bottom: var(--space-6);">
           <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Letrero de la buseta</h2>
-          <app-letrero [signs]="signs()" />
+          <app-letrero [signFile]="r.signFile" [routeName]="r.name" />
         </section>
       }
+
+      <section style="margin-bottom: var(--space-6);">
+        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
+        <app-route-steps [neighborhoods]="r.neighborhoods" />
+      </section>
 
       <section style="margin-bottom: var(--space-6);">
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h2>
@@ -42,11 +47,6 @@
       </section>
 
       <app-traffic-badge [sectors]="congestionSectors()" />
-
-      <section style="margin-bottom: var(--space-6);">
-        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
-        <app-route-steps [neighborhoods]="r.neighborhoods" />
-      </section>
 
       <section>
         <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Tarifa</h2>

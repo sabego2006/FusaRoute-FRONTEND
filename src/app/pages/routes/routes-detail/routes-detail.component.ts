@@ -28,9 +28,6 @@ export class RoutesDetailComponent implements OnInit {
   // y no con `?.` en la plantilla porque el tipo dice que siempre viene (NG8107).
   congestionSectors = computed(() => this.route()?.congestionSectors ?? []);
 
-  // Mismo motivo que arriba: un backend sin SCRUM-176 desplegado no manda `signs`.
-  signs = computed(() => this.route()?.signs ?? []);
-
   // Mismo `?? null` y por la misma razón: un backend anterior a SCRUM-17 no manda la clave,
   // y entonces la pantalla simplemente no muestra la línea de última actualización.
   readonly lastFareUpdate = computed(() => this.route()?.lastUpdatedAt ?? null);
