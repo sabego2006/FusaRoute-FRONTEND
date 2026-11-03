@@ -137,6 +137,21 @@ describe('LoginComponent', () => {
       expect(fixture.componentInstance.errorMessage()).toBe('Correo o contraseña incorrectos.');
     });
 
+    it('quinto intento fallido (423): muestra el aviso de bloqueo, distinto del genérico', () => {
+      const fixture = submitCredentials();
+      http.expectOne(loginUrl).flush(
+        { type: 'about:blank', status: 423, detail: 'Cuenta bloqueada temporalmente por intentos fallidos', error: 'ACCOUNT_LOCKED' },
+        { status: 423, statusText: 'Locked' },
+      );
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.step()).toBe('credentials');
+      expect(fixture.componentInstance.errorMessage()).not.toBe('Correo o contraseña incorrectos.');
+      expect(fixture.componentInstance.errorMessage()).toContain('bloqueada temporalmente');
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.fr-alerta')?.textContent).toContain('bloqueada temporalmente');
+    });
+
     it('acepta un código de respaldo sin exigir 6 dígitos', () => {
       const fixture = goToTotpStep();
 

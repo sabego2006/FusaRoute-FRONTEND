@@ -194,6 +194,17 @@ export class LoginComponent implements OnInit {
   }
 
   private handleLoginError(err: HttpErrorResponse): void {
+    // Bloqueo temporal (SCRUM-155): 423, distinto del 401 de credenciales
+    // inválidas. El aviso debe ser explícito, no el genérico de abajo.
+    if (err.status === 423) {
+      this.resetTotpStep();
+      this.step.set('credentials');
+      this.errorMessage.set(
+        'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Intenta de nuevo en unos minutos.',
+      );
+      return;
+    }
+
     const mfa = err.status === 401 ? parseLoginError(err.error) : null;
 
     switch (mfa?.error) {
