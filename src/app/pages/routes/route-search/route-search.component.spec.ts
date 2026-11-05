@@ -6,9 +6,12 @@ import { of, throwError } from 'rxjs';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
+import { UserService } from '../../../services/user.service';
+import { AuthService } from '../../../services/auth.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
 import { GoogleMapsLoaderService, MapsStatus } from '../../../core/google-maps-loader.service';
 import { GeoJsonLineString, Route, RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
+import { FavoriteDestination } from '../../../models/favorite.model';
 
 const catalogo: Route[] = [
   {
@@ -46,7 +49,27 @@ interface Opciones {
   searchRoute?: () => unknown;
   searchRouteOffline?: () => unknown;
   getAllPublicRoutes?: () => unknown;
+  /** Si hay sesión iniciada; sin ella no se ofrece el favorito (RF-10). */
+  loggedIn?: boolean;
+  /** Lo que responde `GET /api/users/me/favorite-destination`. */
+  getFavoriteDestination?: () => unknown;
+  setFavoriteDestination?: () => unknown;
+  clearFavoriteDestination?: () => unknown;
+  /** Si el formulario se rellena solo tras montar (apaga la precarga del favorito). */
+  rellenarFormulario?: boolean;
 }
+
+const favoritoLaPampa: FavoriteDestination = {
+  destination: 'La Pampa',
+  savedAt: '2026-11-04T09:15:00Z',
+  congestionSectors: [],
+};
+
+/** Mismo favorito, pero con su barrio en franja de trancón ahora mismo (RF-09). */
+const favoritoConTranco: FavoriteDestination = {
+  ...favoritoLaPampa,
+  congestionSectors: [{ name: 'Centro - Carrera 1', startsAt: '17:00:00', endsAt: '19:00:00' }],
+};
 
 const trazadoCaminoReal: GeoJsonLineString = {
   type: 'LineString',
@@ -66,6 +89,10 @@ async function render(opciones: Opciones) {
     load: () => new Promise<void>(() => undefined),
   };
 
+  const getFavoriteDestination = vi.fn(opciones.getFavoriteDestination ?? (() => of(null)));
+  const setFavoriteDestination = vi.fn(opciones.setFavoriteDestination ?? (() => of(favoritoLaPampa)));
+  const clearFavoriteDestination = vi.fn(opciones.clearFavoriteDestination ?? (() => of(undefined)));
+
   await TestBed.configureTestingModule({
     imports: [RouteSearchComponent],
     providers: [
@@ -73,16 +100,25 @@ async function render(opciones: Opciones) {
       { provide: RouteService, useValue: { searchRoute, searchRouteOffline, getAllPublicRoutes } },
       { provide: ConnectivityService, useValue: { isOnline: signal(opciones.online ?? true) } },
       { provide: GoogleMapsLoaderService, useValue: mapsLoader },
+      {
+        provide: UserService,
+        useValue: { getFavoriteDestination, setFavoriteDestination, clearFavoriteDestination },
+      },
+      { provide: AuthService, useValue: { isLoggedIn: signal(opciones.loggedIn ?? false) } },
     ]
   }).compileComponents();
 
   const fixture = TestBed.createComponent(RouteSearchComponent);
   fixture.detectChanges(); // dispara ngOnInit: carga los barrios del catálogo
 
-  fixture.componentInstance.searchForm.setValue({
-    originNeighborhood: 'Camino Real',
-    destinationNeighborhood: 'La Pampa',
-  });
+  // La precarga del favorito solo se puede observar si el formulario queda como lo
+  // dejó ngOnInit; los tests de búsqueda sí necesitan el formulario lleno.
+  if (opciones.rellenarFormulario ?? true) {
+    fixture.componentInstance.searchForm.setValue({
+      originNeighborhood: 'Camino Real',
+      destinationNeighborhood: 'La Pampa',
+    });
+  }
   fixture.detectChanges();
 
   const triggerSearch = async () => {
@@ -96,6 +132,9 @@ async function render(opciones: Opciones) {
     searchRoute,
     searchRouteOffline,
     getAllPublicRoutes,
+    getFavoriteDestination,
+    setFavoriteDestination,
+    clearFavoriteDestination,
     el: fixture.nativeElement as HTMLElement,
     component: fixture.componentInstance,
     fixture,
@@ -435,5 +474,144 @@ describe('RouteSearchComponent', () => {
     const link = el.querySelector<HTMLAnchorElement>('a[href="/rutas/4"]');
     expect(link).not.toBeNull();
     expect(link?.textContent).toContain('Ver detalle de la ruta');
+  });
+
+  // --- Destino favorito (RF-10, SCRUM-21) ---
+
+  const estrella = (el: HTMLElement) => el.querySelector<HTMLButtonElement>('.fr-boton-favorito');
+
+  it('preloads the destination field with the favorite on open (RF-10)', async () => {
+    const { component } = await render({
+      loggedIn: true,
+      rellenarFormulario: false,
+      getFavoriteDestination: () => of(favoritoLaPampa),
+    });
+
+    expect(component.searchForm.controls.destinationNeighborhood.value).toBe('La Pampa');
+  });
+
+  it('shows the favorite congestion warning without searching (RF-09 within RF-10)', async () => {
+    // El criterio pide verlo al abrir la pantalla, sin pulsar "buscar".
+    const { el, searchRoute } = await render({
+      loggedIn: true,
+      rellenarFormulario: false,
+      getFavoriteDestination: () => of(favoritoConTranco),
+    });
+
+    expect(el.textContent).toContain('Centro - Carrera 1');
+    expect(searchRoute).not.toHaveBeenCalled();
+  });
+
+  it('hides the favorite warning once there is a result with its own warning', async () => {
+    // Dos avisos a la vez dirían dos cosas distintas sobre lo mismo.
+    const { el, triggerSearch } = await render({
+      loggedIn: true,
+      getFavoriteDestination: () => of(favoritoConTranco),
+    });
+    expect(el.textContent).toContain('Centro - Carrera 1');
+
+    await triggerSearch();
+
+    expect(el.textContent).not.toContain('Centro - Carrera 1');
+  });
+
+  it('does not preload if the user already chose a destination', async () => {
+    // Pisarle lo que acaba de elegir sería quitarle su decisión.
+    const { component } = await render({
+      loggedIn: true,
+      rellenarFormulario: true,
+      getFavoriteDestination: () => of({ ...favoritoLaPampa, destination: 'Camino Real' }),
+    });
+
+    expect(component.searchForm.controls.destinationNeighborhood.value).toBe('La Pampa');
+  });
+
+  it('does not ask for the favorite without a session', async () => {
+    // El favorito vive en la cuenta: pedirlo sin token sería un 401 garantizado.
+    const { getFavoriteDestination, el } = await render({ loggedIn: false });
+
+    expect(getFavoriteDestination).not.toHaveBeenCalled();
+    expect(estrella(el)).toBeNull();
+  });
+
+  it('a failure loading the favorite does not block searching', async () => {
+    const { triggerSearch, searchRoute, el } = await render({
+      loggedIn: true,
+      getFavoriteDestination: () => throwError(() => new HttpErrorResponse({ status: 500 })),
+    });
+
+    await triggerSearch();
+
+    expect(searchRoute).toHaveBeenCalledOnce();
+    expect(el.textContent).toContain('18 min');
+  });
+
+  it('marks the chosen destination as favorite', async () => {
+    const { el, setFavoriteDestination, fixture } = await render({
+      loggedIn: true,
+      getFavoriteDestination: () => of(null),
+    });
+
+    estrella(el)!.click();
+    fixture.detectChanges();
+
+    expect(setFavoriteDestination).toHaveBeenCalledWith('La Pampa');
+    expect(estrella(el)!.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('clicking the star again removes the favorite', async () => {
+    const { el, clearFavoriteDestination, fixture } = await render({
+      loggedIn: true,
+      getFavoriteDestination: () => of(favoritoLaPampa),
+    });
+    expect(estrella(el)!.getAttribute('aria-pressed')).toBe('true');
+
+    estrella(el)!.click();
+    fixture.detectChanges();
+
+    expect(clearFavoriteDestination).toHaveBeenCalledOnce();
+    expect(estrella(el)!.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('overwriting the preloaded destination does not change the saved favorite', async () => {
+    // Criterio explícito de RF-10: escribir otro destino no toca el favorito.
+    const { el, component, setFavoriteDestination, clearFavoriteDestination, fixture } = await render({
+      loggedIn: true,
+      rellenarFormulario: false,
+      getFavoriteDestination: () => of(favoritoLaPampa),
+    });
+
+    component.searchForm.controls.destinationNeighborhood.setValue('Camino Real');
+    fixture.detectChanges();
+
+    expect(setFavoriteDestination).not.toHaveBeenCalled();
+    expect(clearFavoriteDestination).not.toHaveBeenCalled();
+    // La estrella se vacía sola: el destino en pantalla ya no es el favorito.
+    expect(estrella(el)!.getAttribute('aria-pressed')).toBe('false');
+    expect(component.favorite()?.destination).toBe('La Pampa');
+  });
+
+  it('the star is disabled while there is no destination chosen', async () => {
+    const { el } = await render({
+      loggedIn: true,
+      rellenarFormulario: false,
+      getFavoriteDestination: () => of(null),
+    });
+
+    expect(estrella(el)!.disabled).toBe(true);
+  });
+
+  it('a failure marking the favorite leaves the button usable again', async () => {
+    const { el, component, fixture } = await render({
+      loggedIn: true,
+      getFavoriteDestination: () => of(null),
+      setFavoriteDestination: () => throwError(() => new HttpErrorResponse({ status: 500 })),
+    });
+
+    estrella(el)!.click();
+    fixture.detectChanges();
+
+    expect(component.savingFavorite()).toBe(false);
+    expect(estrella(el)!.disabled).toBe(false);
   });
 });

@@ -67,4 +67,49 @@ describe('UserService', () => {
 
     expect(errorStatus).toBe(400);
   });
+
+  // --- Destino favorito (RF-10, SCRUM-21) ---
+
+  const urlFavorito = `${environment.apiUrl}/api/users/me/favorite-destination`;
+
+  it('getFavoriteDestination pide GET /api/users/me/favorite-destination', () => {
+    const favorito = { destination: 'La Pampa', savedAt: '2026-11-04T09:15:00Z', congestionSectors: [] };
+
+    let result: unknown;
+    service.getFavoriteDestination().subscribe((r) => (result = r));
+
+    const req = http.expectOne(urlFavorito);
+    expect(req.request.method).toBe('GET');
+    req.flush(favorito);
+
+    expect(result).toEqual(favorito);
+  });
+
+  it('getFavoriteDestination entrega null cuando el backend responde 204', () => {
+    // No tener favorito es el estado normal de una cuenta nueva, no un error: quien
+    // llama distingue "no tiene" de "falló" sin mirar códigos HTTP.
+    let result: unknown = 'sin tocar';
+    service.getFavoriteDestination().subscribe((r) => (result = r));
+
+    http.expectOne(urlFavorito).flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(result).toBeNull();
+  });
+
+  it('setFavoriteDestination envía PUT con el destino en el cuerpo', () => {
+    service.setFavoriteDestination('La Pampa').subscribe();
+
+    const req = http.expectOne(urlFavorito);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ destination: 'La Pampa' });
+    req.flush({ destination: 'La Pampa', savedAt: '2026-11-04T09:15:00Z', congestionSectors: [] });
+  });
+
+  it('clearFavoriteDestination envía DELETE', () => {
+    service.clearFavoriteDestination().subscribe();
+
+    const req = http.expectOne(urlFavorito);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

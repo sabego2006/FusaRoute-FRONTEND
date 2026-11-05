@@ -21,13 +21,49 @@
 
     <div class="fr-campo">
       <label class="fr-etiqueta" for="destination">Destino</label>
-      <select id="destination" class="fr-input fr-input-buscador" formControlName="destinationNeighborhood">
-        <option value="" disabled>Elige tu barrio de llegada</option>
-        @for (barrio of neighborhoods(); track barrio) {
-          <option [value]="barrio">{{ barrio }}</option>
+      <div class="fr-campo-con-accion">
+        <select id="destination" class="fr-input fr-input-buscador" formControlName="destinationNeighborhood">
+          <option value="" disabled>Elige tu barrio de llegada</option>
+          @for (barrio of neighborhoods(); track barrio) {
+            <option [value]="barrio">{{ barrio }}</option>
+          }
+        </select>
+        <!--
+          La estrella solo existe con sesión: el favorito vive en la cuenta (RF-10),
+          así que a un anónimo le ofrecería algo que no se le puede guardar.
+        -->
+        @if (canUseFavorite()) {
+          <button type="button"
+                  class="fr-boton-favorito"
+                  [class.fr-boton-favorito--activo]="chosenIsFavorite()"
+                  [disabled]="!searchForm.controls.destinationNeighborhood.value || savingFavorite()"
+                  [attr.aria-pressed]="chosenIsFavorite()"
+                  [attr.aria-label]="chosenIsFavorite() ? 'Quitar de favoritos' : 'Marcar como destino favorito'"
+                  [title]="chosenIsFavorite() ? 'Quitar de favoritos' : 'Marcar como destino favorito'"
+                  (click)="toggleFavorite()">
+            <span aria-hidden="true">{{ chosenIsFavorite() ? '★' : '☆' }}</span>
+          </button>
         }
-      </select>
+      </div>
+      @if (favorite(); as fav) {
+        <p class="fr-texto-sm fr-nota-favorito">
+          @if (chosenIsFavorite()) {
+            Es tu destino favorito, por eso aparece elegido de una vez.
+          } @else {
+            Tu favorito es <strong>{{ fav.destination }}</strong>. Cambiarlo aquí no lo modifica.
+          }
+        </p>
+      }
     </div>
+
+    <!--
+      Aviso de tranco del favorito (RF-09 dentro de RF-10): se muestra al abrir la
+      pantalla, sin que el usuario haya buscado nada todavía. Se oculta en cuanto hay
+      un resultado en pantalla, que trae su propio aviso del recorrido real.
+    -->
+    @if (favoriteCongestion(); as sectores) {
+      <app-traffic-badge [sectors]="sectores" variant="detail" />
+    }
 
     @if (neighborhoodsError()) {
       <p class="fr-texto-sm" style="color: var(--rojo-texto);">
