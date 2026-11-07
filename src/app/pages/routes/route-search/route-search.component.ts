@@ -4,9 +4,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { RouteService } from '../../../services/route.service';
+import { UserService } from '../../../services/user.service';
+import { AuthService } from '../../../services/auth.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
 import { RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { ProblemDetail } from '../../../models/auth.model';
+import { FavoriteDestination } from '../../../models/favorite.model';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { distinctNeighborhoods } from '../../../lib/neighborhoods';
 import { linestringEnds } from '../../../lib/linestring-ends';
@@ -14,6 +17,7 @@ import { FareTableComponent } from '../../../components/fare-table/fare-table.co
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 import { MapViewComponent, LatLngPoint } from '../../../components/map-view/map-view.component';
 import { MapPointPickerComponent, PickedPoints } from '../../../components/map-point-picker/map-point-picker.component';
+import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 
 /**
  * Pantalla de resultado de búsqueda (SCRUM-54, SCRUM-130): origen/destino, ruta
@@ -28,13 +32,44 @@ import { MapPointPickerComponent, PickedPoints } from '../../../components/map-p
   selector: 'app-route-search',
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, RouteStepsComponent, FareTableComponent,
-            LetreroComponent, MapViewComponent, MapPointPickerComponent],
+            LetreroComponent, MapViewComponent, MapPointPickerComponent, TrafficBadgeComponent],
   templateUrl: './route-search.component.html',
+  styles: [`
+    /* El select ocupa el ancho y la estrella se acomoda al lado, sin encogerlo. */
+    .fr-campo-con-accion {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .fr-campo-con-accion > select { flex: 1 1 auto; min-width: 0; }
+
+    .fr-boton-favorito {
+      flex: 0 0 auto;
+      background: transparent;
+      border: var(--trazo-2) solid var(--borde);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      /* 44px es el mínimo táctil cómodo: la app se usa de pie en la calle. */
+      min-width: 44px;
+      min-height: 44px;
+      color: var(--texto);
+    }
+    .fr-boton-favorito--activo { color: var(--amarillo-congestion, #d99a00); }
+    .fr-boton-favorito:disabled { opacity: .45; cursor: not-allowed; }
+    /* Foco visible: el formulario tiene que poder recorrerse con teclado. */
+    .fr-boton-favorito:focus-visible { outline: var(--trazo-2) solid var(--texto); outline-offset: 2px; }
+
+    .fr-nota-favorito { margin: var(--space-2) 0 0; }
+  `],
 })
 export class RouteSearchComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly routeService = inject(RouteService);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly userService = inject(UserService);
+  private readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   readonly result = signal<RouteSearchResult | null>(null);
@@ -88,11 +123,101 @@ export class RouteSearchComponent implements OnInit {
     destinationNeighborhood: ['', Validators.required],
   });
 
+  /** El destino marcado como favorito, si el usuario tiene sesión y tiene uno (RF-10). */
+  readonly favorite = signal<FavoriteDestination | null>(null);
+  /** Evita que un doble clic en la estrella mande dos peticiones. */
+  readonly savingFavorite = signal(false);
+
+  /**
+   * La estrella se pinta llena cuando el destino elegido ES el favorito. Se compara
+   * contra el valor del formulario y no contra una bandera propia para que, al
+   * sobrescribir el destino precargado, la estrella se vacíe sola — el criterio de
+   * aceptación dice que escribir otro destino no modifica el favorito guardado.
+   */
+  readonly chosenIsFavorite = computed(() =>
+    !!this.favorite() && this.favorite()!.destination === this.destinationValue());
+
+  /** Valor actual del campo destino, como signal para que `computed` lo observe. */
+  private readonly destinationValue = signal('');
+
+  /**
+   * La estrella solo se ofrece con sesión: el favorito vive en la cuenta (RF-10), así
+   * que a un anónimo le prometería algo que no se le puede guardar.
+   */
+  readonly canUseFavorite = computed(() => this.auth.isLoggedIn());
+
+  /**
+   * Sectores del aviso que se pinta al abrir la pantalla, antes de buscar. Desaparece
+   * en cuanto hay un resultado: ese trae su propio aviso, calculado sobre el recorrido
+   * real, y mostrar los dos a la vez diría dos cosas distintas sobre lo mismo.
+   */
+  readonly favoriteCongestion = computed(() => {
+    if (this.result()) return null;
+    const sectores = this.favorite()?.congestionSectors ?? [];
+    return sectores.length > 0 ? sectores : null;
+  });
+
   ngOnInit(): void {
     this.routeService.getAllPublicRoutes().subscribe({
       next: (routes) => this.neighborhoods.set(distinctNeighborhoods(routes)),
       error: () => this.neighborhoodsError.set(true),
     });
+
+    this.searchForm.controls.destinationNeighborhood.valueChanges.subscribe(
+      (value) => this.destinationValue.set(value ?? ''));
+
+    this.loadFavorite();
+  }
+
+  /**
+   * Precarga el campo destino con el favorito al abrir la pantalla (RF-10).
+   *
+   * Solo con sesión: el favorito vive en la cuenta, así que pedirlo sin token sería un
+   * 401 garantizado. Un fallo aquí se traga a propósito — no poder precargar no puede
+   * impedir buscar, que es a lo que el usuario vino.
+   */
+  private loadFavorite(): void {
+    if (!this.auth.isLoggedIn()) return;
+
+    this.userService.getFavoriteDestination().subscribe({
+      next: (favorite) => {
+        if (!favorite) return;
+        this.favorite.set(favorite);
+        // Solo precarga si el usuario no escribió nada todavía: si ya eligió un
+        // destino, pisárselo con el favorito sería quitarle lo que acaba de hacer.
+        if (!this.searchForm.controls.destinationNeighborhood.value) {
+          this.searchForm.controls.destinationNeighborhood.setValue(favorite.destination);
+        }
+      },
+      error: () => this.favorite.set(null),
+    });
+  }
+
+  /**
+   * Marca o desmarca como favorito el destino elegido (RF-10). Es el mismo botón:
+   * con un solo favorito por cuenta, marcar y cambiar son la misma acción para el
+   * usuario.
+   */
+  toggleFavorite(): void {
+    const destination = this.searchForm.controls.destinationNeighborhood.value;
+    if (!destination || this.savingFavorite()) return;
+
+    this.savingFavorite.set(true);
+    const done = { complete: () => this.savingFavorite.set(false) };
+
+    if (this.chosenIsFavorite()) {
+      this.userService.clearFavoriteDestination().subscribe({
+        next: () => this.favorite.set(null),
+        error: () => this.savingFavorite.set(false),
+        ...done,
+      });
+    } else {
+      this.userService.setFavoriteDestination(destination).subscribe({
+        next: (favorite) => this.favorite.set(favorite),
+        error: () => this.savingFavorite.set(false),
+        ...done,
+      });
+    }
   }
 
   onSubmit(): void {
