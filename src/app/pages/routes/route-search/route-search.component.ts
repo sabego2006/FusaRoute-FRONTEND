@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { RouteService } from '../../../services/route.service';
 import { UserService } from '../../../services/user.service';
@@ -70,6 +70,7 @@ export class RouteSearchComponent implements OnInit {
   private readonly connectivity = inject(ConnectivityService);
   private readonly userService = inject(UserService);
   private readonly auth = inject(AuthService);
+  private readonly activatedRoute = inject(ActivatedRoute);
 
   readonly loading = signal(false);
   readonly result = signal<RouteSearchResult | null>(null);
@@ -158,8 +159,17 @@ export class RouteSearchComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Se repone el par ANTES de pedir el catálogo, y de forma sincrónica: así cualquier
+    // precarga posterior que llegue por HTTP (el destino favorito de RF-10) encuentra el
+    // campo con valor y no pisa lo que el usuario acaba de pulsar en su historial.
+    this.restoreRepeatedSearch();
+
     this.routeService.getAllPublicRoutes().subscribe({
-      next: (routes) => this.neighborhoods.set(distinctNeighborhoods(routes)),
+      next: (routes) => {
+        const barrios = distinctNeighborhoods(routes);
+        this.neighborhoods.set(barrios);
+        this.dropRepeatedValuesMissingFrom(barrios);
+      },
       error: () => this.neighborhoodsError.set(true),
     });
 
@@ -217,6 +227,51 @@ export class RouteSearchComponent implements OnInit {
         error: () => this.savingFavorite.set(false),
         ...done,
       });
+    }
+  }
+
+  /**
+   * Repetir una búsqueda del historial (RF-07, SCRUM-82): la pantalla de historial
+   * navega aquí con `?origen=&destino=` y el formulario llega relleno.
+   *
+   * El par viaja por la URL y no por un servicio de estado compartido, así la búsqueda
+   * repetida se puede recargar, compartir y volver atrás.
+   *
+   * No se dispara la búsqueda sola, a propósito: el usuario viene de pulsar la entrada,
+   * así que buscar es un toque más y el flujo sigue cabiendo en las 4 acciones de
+   * RNF-04. Buscar automáticamente, en cambio, gastaría una llamada a Google en un
+   * trayecto que quizá solo quería ajustar antes de consultarlo.
+   */
+  private restoreRepeatedSearch(): void {
+    const params = this.activatedRoute.snapshot.queryParamMap;
+    const origin = params.get('origen');
+    const destination = params.get('destino');
+
+    if (origin) {
+      this.searchForm.controls.originNeighborhood.setValue(origin);
+    }
+    if (destination) {
+      this.searchForm.controls.destinationNeighborhood.setValue(destination);
+    }
+  }
+
+  /**
+   * Un barrio repuesto que ya no está en el catálogo se limpia del formulario.
+   *
+   * Pasa si el barrio se renombró en la base desde el día de aquella búsqueda. Los
+   * campos son `<select>`: un valor sin `<option>` que lo respalde deja el control
+   * relleno pero en blanco en pantalla, y el usuario pulsaría "buscar" sobre un campo
+   * que a él se le ve vacío. Mejor dejarlo elegir de nuevo.
+   */
+  private dropRepeatedValuesMissingFrom(barrios: string[]): void {
+    for (const control of [
+      this.searchForm.controls.originNeighborhood,
+      this.searchForm.controls.destinationNeighborhood,
+    ]) {
+      const value = control.value;
+      if (value && !barrios.includes(value)) {
+        control.setValue('');
+      }
     }
   }
 

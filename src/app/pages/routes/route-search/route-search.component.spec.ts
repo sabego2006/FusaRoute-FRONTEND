@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { afterEach, describe, it, expect, vi } from 'vitest';
@@ -613,5 +613,102 @@ describe('RouteSearchComponent', () => {
 
     expect(component.savingFavorite()).toBe(false);
     expect(estrella(el)!.disabled).toBe(false);
+  });
+
+  // --- Repetir una búsqueda del historial (RF-07, SCRUM-82) ---
+
+  /**
+   * Como {@link render} pero sin rellenar el formulario a mano y con los parámetros de
+   * la URL que pone la pantalla de historial. Así se ve lo que de verdad llega al
+   * formulario al repetir una búsqueda.
+   */
+  async function renderConParametros(
+    queryParams: Record<string, string>,
+    rutas: Route[] = catalogo,
+  ) {
+    const getAllPublicRoutes = vi.fn(() => of(rutas));
+
+    await TestBed.configureTestingModule({
+      imports: [RouteSearchComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+        {
+          provide: RouteService,
+          useValue: { searchRoute: vi.fn(() => of(conTrazado)), searchRouteOffline: vi.fn(() => of(sinRed)), getAllPublicRoutes },
+        },
+        { provide: ConnectivityService, useValue: { isOnline: signal(true) } },
+        {
+          provide: GoogleMapsLoaderService,
+          useValue: { status: signal<MapsStatus>('sin-clave'), load: () => new Promise<void>(() => undefined) },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(RouteSearchComponent);
+    fixture.detectChanges(); // ngOnInit: repone el par y carga los barrios
+    return fixture;
+  }
+
+  it('repone origen y destino desde la URL al venir del historial', async () => {
+    const fixture = await renderConParametros({ origen: 'Camino Real', destino: 'La Pampa' });
+
+    expect(fixture.componentInstance.searchForm.getRawValue()).toEqual({
+      originNeighborhood: 'Camino Real',
+      destinationNeighborhood: 'La Pampa',
+    });
+    expect(fixture.componentInstance.searchForm.valid).toBe(true);
+  });
+
+  it('repetir no dispara la búsqueda sola: el usuario pulsa buscar', async () => {
+    // Buscar es un toque más y el flujo sigue cabiendo en las 4 acciones de RNF-04;
+    // buscar automáticamente gastaría una llamada a Google sin que la pidieran.
+    const fixture = await renderConParametros({ origen: 'Camino Real', destino: 'La Pampa' });
+
+    expect(fixture.componentInstance.result()).toBeNull();
+    expect(fixture.componentInstance.loading()).toBe(false);
+  });
+
+  it('sin parámetros en la URL el formulario queda vacío, como siempre', async () => {
+    const fixture = await renderConParametros({});
+
+    expect(fixture.componentInstance.searchForm.getRawValue()).toEqual({
+      originNeighborhood: '',
+      destinationNeighborhood: '',
+    });
+  });
+
+  it('un solo parámetro repone solo ese campo', async () => {
+    const fixture = await renderConParametros({ destino: 'La Pampa' });
+
+    expect(fixture.componentInstance.searchForm.getRawValue()).toEqual({
+      originNeighborhood: '',
+      destinationNeighborhood: 'La Pampa',
+    });
+  });
+
+  it('un barrio que ya no está en el catálogo se limpia en vez de dejar el select en blanco', async () => {
+    // Pasa si el barrio se renombró desde aquella búsqueda. Los campos son <select>: un
+    // valor sin <option> dejaría el control relleno y la pantalla vacía, y el usuario
+    // pulsaría buscar sobre un campo que a él se le ve sin elegir.
+    const fixture = await renderConParametros({ origen: 'Barrio Que Ya No Existe', destino: 'La Pampa' });
+
+    expect(fixture.componentInstance.searchForm.getRawValue()).toEqual({
+      originNeighborhood: '',
+      destinationNeighborhood: 'La Pampa',
+    });
+  });
+
+  it('el par repuesto llega a la búsqueda cuando el usuario pulsa buscar', async () => {
+    const fixture = await renderConParametros({ origen: 'Camino Real', destino: 'La Pampa' });
+
+    fixture.componentInstance.onSubmit();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.result()).not.toBeNull();
   });
 });
