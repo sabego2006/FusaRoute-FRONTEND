@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 import { RouteSearchComponent } from './pages/routes/route-search/route-search.component';
 
 // El catalogo de rutas (listado y detalle) es publico, sin sesion (RF-15): no lleva authGuard.
@@ -42,6 +43,16 @@ export const routes: Routes = [
     path: 'comentarios',
     loadComponent: () => import('./pages/comments/comments.component').then(m => m.CommentsComponent),
     canActivate: [authGuard],
+  },
+  // Panel del administrador (RF-14, SCRUM-103). Lleva los dos guards: authGuard para
+  // el caso sin sesion y adminGuard para el de sesion sin rol, que mandan a sitios
+  // distintos. Ninguno de los dos es seguridad: el backend exige rol ADMIN en
+  // /api/admin/** y responde 403 (SCRUM-104). Ver el javadoc de adminGuard.
+  {
+    path: 'admin/comentarios',
+    loadComponent: () => import('./pages/admin/admin-comments/admin-comments.component')
+      .then(m => m.AdminCommentsComponent),
+    canActivate: [authGuard, adminGuard],
   },
   // La raiz cae en el buscador y no en el listado (RNF-04): abrir la app ya cuenta
   // como la primera de las 4 acciones del flujo, asi que tiene que aterrizar donde
