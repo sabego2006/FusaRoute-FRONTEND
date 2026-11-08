@@ -28,6 +28,13 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard],
   },
+  // La caja de comentarios exige sesion (RF-08): cada comentario muestra el nombre de
+  // quien lo escribio, y sin cuenta no hay nombre que mostrar.
+  {
+    path: 'comentarios',
+    loadComponent: () => import('./pages/comments/comments.component').then(m => m.CommentsComponent),
+    canActivate: [authGuard],
+  },
   // La raiz cae en el buscador y no en el listado (RNF-04): abrir la app ya cuenta
   // como la primera de las 4 acciones del flujo, asi que tiene que aterrizar donde
   // el usuario va a buscar, no en el catalogo.
