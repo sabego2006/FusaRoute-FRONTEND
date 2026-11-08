@@ -7,7 +7,10 @@ import { AuthService } from '../../services/auth.service';
  *
  * - Siempre muestra el wordmark y el enlace al catálogo de rutas.
  * - Si el usuario NO está logueado: "Ingresar" y "Crear cuenta".
- * - Si el usuario SÍ está logueado: "Hola, {nombre}" · Mi perfil · Salir.
+ * - Si el usuario SÍ está logueado: "Hola, {nombre}" · Comentarios · Mi perfil · Salir.
+ *
+ * El enlace a comentarios solo aparece con sesión porque la pantalla la exige (RF-08):
+ * cada comentario muestra el nombre de quien lo escribió, y sin cuenta no hay nombre.
  */
 @Component({
   selector: 'app-header',
@@ -29,6 +32,7 @@ import { AuthService } from '../../services/auth.service';
 
           @if (auth.isLoggedIn()) {
             <span class="fr-header__greeting">Hola, {{ auth.currentUser()?.name }}</span>
+            <a routerLink="/comentarios" class="fr-header__link">Comentarios</a>
             <a routerLink="/perfil" class="fr-header__link fr-header__link--nav">Mi perfil</a>
             <button class="fr-header__link fr-header__logout" (click)="logout()">Salir</button>
           } @else {
