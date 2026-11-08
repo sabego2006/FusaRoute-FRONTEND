@@ -267,7 +267,7 @@ export class ProfileComponent implements OnInit {
         next: (updated: UserProfile) => {
           this.savingProfile.set(false);
           this.authService.patchUserName(updated.name);
-          this.toast.show('Perfil actualizado', 'success');
+          this.toast.show('¡Quedó melo! Perfil actualizado', 'success');
         },
         error: (err: HttpErrorResponse) => {
           this.savingProfile.set(false);

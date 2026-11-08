@@ -17,16 +17,19 @@ import { AuthService } from '../../services/auth.service';
     <header class="fr-header">
       <nav class="fr-header__nav">
         <a routerLink="/rutas" class="fr-header__brand">
+          <div class="fr-logo-container">
+            <img src="assets/logo.svg" alt="FusaRoute Logo" class="fr-logo-icon">
+          </div>
           <span class="fr-wordmark">Fusa<b>Route</b></span>
         </a>
 
         <div class="fr-header__links">
-          <a routerLink="/rutas" class="fr-header__link">Rutas</a>
-          <a routerLink="/rutas/buscar" class="fr-header__link">Buscar ruta</a>
+          <a routerLink="/rutas" class="fr-header__link fr-header__link--nav">Rutas</a>
+          <a routerLink="/rutas/buscar" class="fr-header__link fr-header__link--nav">Busque su ruta, parce</a>
 
           @if (auth.isLoggedIn()) {
             <span class="fr-header__greeting">Hola, {{ auth.currentUser()?.name }}</span>
-            <a routerLink="/perfil" class="fr-header__link">Mi perfil</a>
+            <a routerLink="/perfil" class="fr-header__link fr-header__link--nav">Mi perfil</a>
             <button class="fr-header__link fr-header__logout" (click)="logout()">Salir</button>
           } @else {
             <a routerLink="/login" class="fr-header__link">Ingresar</a>
@@ -51,7 +54,18 @@ import { AuthService } from '../../services/auth.service';
       height: 56px;
       gap: var(--space-4);
     }
-    .fr-header__brand { text-decoration: none; color: var(--tinta); }
+    /*
+     * Flex explícito: el isotipo va rotado -3deg y, en flujo inline, la
+     * rotación lo desalinea respecto a la línea base del wordmark.
+     */
+    .fr-header__brand {
+      text-decoration: none;
+      color: var(--tinta);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex: none;
+    }
     .fr-header__links {
       display: flex;
       align-items: center;
@@ -83,6 +97,17 @@ import { AuthService } from '../../services/auth.service';
     }
     .fr-header__logout { color: var(--rojo-texto); }
     .fr-header__logout:hover { background: var(--rojo-suave); }
+
+    /*
+     * En celular estos tres destinos ya están en la barra inferior, al alcance
+     * del pulgar. Repetirlos arriba solo apretaba el header hasta hacerlo
+     * envolver en dos líneas. Las acciones de sesión sí se quedan: no están
+     * abajo.
+     */
+    @media (max-width: 759px) {
+      .fr-header__link--nav { display: none; }
+      .fr-header__greeting { display: none; }
+    }
   `],
 })
 export class HeaderComponent {
