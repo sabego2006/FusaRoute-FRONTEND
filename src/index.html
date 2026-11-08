@@ -12,17 +12,45 @@
   <meta name="description" content="Consulta las rutas de transporte público de Fusagasugá: recorrido, barrios por los que pasa, tarifa y aviso de congestión.">
 
   <!-- FusaRoute Branding Typography -->
-  <!-- SCRUM-127/136: la hoja de estilos de Google Fonts es un recurso externo que, como
-       <link rel="stylesheet"> normal, bloquea el render hasta que termina de ir y volver
-       (y bajo Slow 4G simulado eso solo ya costaba ~1.5s). El patron preload+onload la
-       descarga con prioridad alta sin bloquear el primer pintado: la pagina pinta con la
-       fuente de sistema y cambia a la de marca cuando llega, que es lo que display=swap
-       ya hacia para el archivo de la fuente — esto hace lo mismo para su hoja de estilos. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"></noscript>
+  <!--
+    SCRUM-127/136 (RNF-01): las dos fuentes de marca se sirven DESDE ESTE ORIGEN, no
+    desde fonts.gstatic.com. La razon es medida, no estetica: cada origen externo
+    cuesta DNS + TCP + TLS antes del primer byte, y con la latencia de Slow 4G simulado
+    (562 ms por viaje) esa apertura de conexion sola valia cerca de 1,7 s. El archivo
+    de la fuente llegaba despues del primer pintado, el titulo se re-dibujaba con otra
+    metrica y el LCP se corria a ese segundo dibujado: el presupuesto de 2,5 s se
+    reventaba por la conexion, no por el peso de la app.
+
+    Sirviendolas de aqui la conexion ya esta abierta (es la misma del index.html) y el
+    preload las pide durante el parseo del documento, asi que llegan junto con el JS y
+    el titulo se pinta con la tipografia definitiva de una sola vez.
+
+    Son los subconjuntos latinos variables (un archivo por familia cubre todos los
+    pesos: 400-700 y 500-700). No cubren el rango de los simbolos ★/☆ del boton de
+    favorito — esos ya caian en la fuente del sistema antes y siguen igual.
+    Para actualizarlas: pedir la hoja css2 de Google con un User-Agent de Chrome y
+    bajar la URL del bloque cuyo unicode-range empieza en U+0000-00FF.
+  -->
+  <link rel="preload" href="fonts/space-grotesk-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/plus-jakarta-sans-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 400 700;
+      font-display: swap;
+      src: url(fonts/plus-jakarta-sans-latin-variable.woff2) format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'Space Grotesk';
+      font-style: normal;
+      font-weight: 500 700;
+      font-display: swap;
+      src: url(fonts/space-grotesk-latin-variable.woff2) format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+  </style>
 </head>
 <body>
   <app-root></app-root>
