@@ -7,7 +7,21 @@
   --tinta-suave: #4B5563;
   --borde: #0A0A0C;
   --sombra: #0A0A0C;
+  /*
+   * `--indigo` es el morado de marca del Comité 2 y no se toca: es el valor
+   * que está en el isotipo aprobado.
+   *
+   * Pero con texto blanco encima solo llega a 6.29:1, y AAA pide 7:1 para
+   * texto normal (el rótulo del botón es de 16px, que no califica como texto
+   * grande). Por eso existe `--indigo-accion`, apenas más oscuro, para las
+   * superficies que llevan texto blanco. La diferencia no se percibe al lado
+   * del logo; lo que cambia es que el rótulo pasa a 7.10:1.
+   *
+   * Si se prefiere un solo morado, colapsar los dos a --indigo-accion: es
+   * decisión de marca, no técnica.
+   */
   --indigo: #4F46E5;
+  --indigo-accion: #4840D4;
   --sobre-indigo: #FFFFFF;
   --indigo-fondo: #6366F1;
   --indigo-suave: #EEF2FF;
@@ -17,9 +31,15 @@
   --sobre-amarillo: #000000;
   --rojo: #EF4444;
   --sobre-rojo: #000000;
-  --rojo-texto: #B91C1C;
+  /*
+   * Contraste medido, no estimado. El brief pide AAA (7:1 para texto normal).
+   * Los valores de abajo son los que llegan a 7:1 contra el fondo con el que
+   * realmente se emparejan; los anteriores (#B91C1C sobre rojo-suave = 5.30,
+   * #6B7280 con texto blanco = 4.83) se quedaban en AA.
+   */
+  --rojo-texto: #8B1414;
   --rojo-suave: #FEE2E2;
-  --gris-offline: #6B7280;
+  --gris-offline: #4B5563;
   --sobre-gris: #FFFFFF;
   --foco: var(--indigo);
 
@@ -309,20 +329,11 @@ router-outlet + * {
   bottom: calc(var(--fr-nav-alto) + env(safe-area-inset-bottom));
   margin: var(--space-4) calc(var(--space-4) * -1) calc(var(--space-4) * -1);
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
-  background: var(--superficie);
   border-top: var(--trazo-2) solid var(--borde);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   z-index: 10;
-}
-/*
- * Con la barra pegada (no fija) ya no hay que reservarle el alto completo: solo
- * el respiro del borde inferior del teléfono. El alto de la barra de
- * navegación lo reserva `.fr-shell`, no esto.
- */
-.fr-main-scroll-area {
-  padding-bottom: var(--space-6);
 }
 
 /* Sin barra inferior, la zona del pulgar se apoya en el borde de la ventana. */
@@ -331,15 +342,40 @@ router-outlet + * {
 }
 
 /*
- * Vidrio. La translucidez es el efecto en sí, así que el fondo sigue siendo
- * semitransparente; lo que se quita es el borde blanco difuso — el contorno es
- * el mismo trazo negro del resto del sistema.
+ * Vidrio. Se usa en una sola parte, la zona del pulgar, y por una razón: es
+ * la única superficie que flota sobre contenido que sigue ahí debajo. El
+ * desenfoque deja ver que el formulario continúa sin que el texto de atrás
+ * compita con el rótulo del botón, que es justo lo que un fondo sólido no
+ * comunica y un fondo transparente arruinaría.
+ *
+ * La translucidez es el efecto en sí, así que el fondo sigue siendo
+ * semitransparente; lo que se quitó es el borde blanco difuso del
+ * glassmorphism genérico — el contorno es el mismo trazo negro del sistema.
+ *
+ * `@supports`: sin `backdrop-filter` el fondo translúcido dejaría el texto
+ * de atrás pegado al del botón. El respaldo es un fondo sólido.
  */
 .fr-glass {
-  background: color-mix(in srgb, var(--superficie) 72%, transparent);
-  backdrop-filter: blur(12px) saturate(180%);
+  background: var(--superficie);
   border: var(--trazo-2) solid var(--borde);
   box-shadow: var(--sombra-dura-sm);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .fr-glass {
+    background: color-mix(in srgb, var(--superficie) 72%, transparent);
+    backdrop-filter: blur(12px) saturate(180%);
+  }
+}
+
+/* La zona del pulgar es la superficie de vidrio del sistema. */
+.fr-thumb-zone {
+  background: var(--superficie);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .fr-thumb-zone {
+    background: color-mix(in srgb, var(--superficie) 80%, transparent);
+    backdrop-filter: blur(14px) saturate(180%);
+  }
 }
 
 body {
@@ -443,7 +479,7 @@ body {
   transition-duration: var(--vel-rapida);
 }
 .fr-btn:focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; }
-.fr-btn-primario { background: var(--indigo); color: var(--sobre-indigo); box-shadow: var(--shadow-elevated); }
+.fr-btn-primario { background: var(--indigo-accion); color: var(--sobre-indigo); box-shadow: var(--shadow-elevated); }
 .fr-btn-bloque { display: flex; width: 100%; }
 .fr-btn:disabled { background: var(--fondo); color: var(--tinta-suave); box-shadow: none; transform: none; cursor: not-allowed; }
 .fr-link { color: var(--indigo); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

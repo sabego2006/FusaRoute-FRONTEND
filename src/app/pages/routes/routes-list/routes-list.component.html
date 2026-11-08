@@ -3,8 +3,8 @@
     <div class="fr-barra" style="justify-content: center; margin-bottom: var(--space-4);">
       <span class="fr-wordmark">Fusa<b>Route</b></span>
     </div>
-    <h1 class="fr-titulo-1">Catálogo de Rutas Públicas</h1>
-    <p class="fr-texto-sm">Consulta las rutas de transporte disponibles en Fusagasugá</p>
+    <h1 class="fr-titulo-1">Todas las rutas de Fusa</h1>
+    <p class="fr-texto-sm">Pille acá por dónde pasa cada buseta y cuánto vale el pasaje.</p>
   </header>
 
   <!--
@@ -18,7 +18,7 @@
   -->
   @if (loading()) {
     <p role="status" class="fr-solo-lectores">Cargando las rutas...</p>
-    <ul class="fr-lista fr-entra" style="gap: var(--space-6); list-style: none; padding: 0;" aria-hidden="true">
+    <ul class="fr-bento fr-entra" aria-hidden="true">
       @for (hueco of [1, 2, 3]; track hueco) {
         <li class="fr-esq-card">
           <div style="display: flex; justify-content: space-between; gap: var(--space-4);">
@@ -36,17 +36,28 @@
 
   @if (errorMessage()) {
     <div class="fr-alerta" role="alert">
-      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
     </div>
   }
 
   @if (!loading() && !errorMessage()) {
     @if (routes().length === 0) {
-      <div class="fr-card" style="text-align: center; padding: var(--space-8);">
-        <p class="fr-texto">No se encontraron rutas activas en este momento.</p>
+      <!-- Vacío con Sutá: es el momento en que más sirve una cara conocida. -->
+      <div class="fr-card fr-entra-solo" style="text-align: center; padding: var(--space-8);">
+        <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
+             class="fr-suta" width="96" height="96" loading="lazy" decoding="async"
+             style="margin: 0 auto var(--space-4);">
+        <p class="fr-texto">Qué falla, parcero: ahora mismo no hay rutas activas.</p>
+        <p class="fr-texto-sm">Vuelve a intentarlo en un momento.</p>
       </div>
     } @else {
-      <ul class="fr-lista fr-entra" style="gap: var(--space-6); list-style: none; padding: 0;">
+      <!--
+        Bento y no lista: en escritorio las rutas entran de a dos o tres por
+        fila en vez de una columna de tarjetas anchas con mucho aire muerto al
+        lado. En celular `auto-fit` resuelve a una sola columna, que es el
+        mismo apilado de antes.
+      -->
+      <ul class="fr-bento fr-entra" style="list-style: none; padding: 0;">
         @for (route of routes(); track route.id) {
           <li class="fr-card fr-card-interactiva">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
@@ -67,8 +78,10 @@
 
             <app-traffic-badge [sectors]="route.congestionSectors" variant="compact" />
 
-            <a class="fr-btn fr-btn-primario fr-btn-bloque" style="margin-top: var(--space-4);" [routerLink]="['/rutas', route.id]">
-              Ver detalle
+            <!-- `margin-top: auto` empuja el botón al pie para que todas las
+                 tarjetas de la fila lo alineen aunque tengan distinto alto. -->
+            <a class="fr-btn fr-btn-primario fr-btn-bloque" style="margin-top: auto;" [routerLink]="['/rutas', route.id]">
+              Ver esta ruta
             </a>
           </li>
         }

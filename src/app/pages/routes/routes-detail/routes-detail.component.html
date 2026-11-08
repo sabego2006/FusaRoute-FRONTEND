@@ -1,5 +1,5 @@
 <main class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
-  <button [routerLink]="['/rutas']" class="fr-btn" style="margin-bottom: var(--space-6); min-height: 40px;">
+  <button [routerLink]="['/rutas']" class="fr-btn" style="margin-bottom: var(--space-6); min-height: 44px;">
     ← Volver al listado
   </button>
 
@@ -24,47 +24,56 @@
 
   @if (errorMessage()) {
     <div class="fr-alerta" role="alert">
-      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
     </div>
   }
 
   @if (route(); as r) {
-    <article class="fr-card">
-      <header style="margin-bottom: var(--space-6);">
-        <h1 class="fr-titulo-1">{{ r.name }}</h1>
-        <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
-      </header>
+    <!--
+      Mismo Bento que el resultado de búsqueda, a propósito: la persona que
+      llega acá desde la búsqueda reconoce la disposición y no tiene que
+      releer la pantalla. Letrero y mapa ocupan la fila entera; el estado del
+      tráfico y la tarifa caben a media fila en escritorio.
+    -->
+    <div class="fr-bento fr-entra">
+      <div class="fr-bento-item fr-bento-span-2">
+        <h1 class="fr-titulo-1" style="margin: 0;">{{ r.name }}</h1>
+        <p class="fr-texto-sm" style="margin: 0;">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+      </div>
 
       @if (r.signFile) {
-        <section style="margin-bottom: var(--space-6);">
-          <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Letrero de la buseta</h2>
+        <div class="fr-bento-item fr-bento-span-2">
+          <h2 class="fr-titulo-3">Busque este letrero</h2>
           <app-letrero [signFile]="r.signFile" [routeName]="r.name" />
-        </section>
+        </div>
       }
 
-      <section style="margin-bottom: var(--space-6);">
-        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h2>
-        <app-route-steps [neighborhoods]="r.neighborhoods" />
-      </section>
-
-      <section style="margin-bottom: var(--space-6);">
-        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h2>
+      <div class="fr-bento-item fr-bento-span-2">
+        <h2 class="fr-titulo-3">El recorrido en el mapa</h2>
         @if (mapData(); as mapa) {
           <app-map-view [path]="mapa.path" [origin]="mapa.start" [destination]="mapa.end" />
         } @else {
           <p class="fr-texto-sm">
-            Esta ruta todavía no tiene su recorrido dibujado, así que aún no podemos mostrarla
-            en el mapa.
+            Esta ruta todavía no tiene su recorrido dibujado, así que aún no se la podemos
+            mostrar en el mapa.
           </p>
         }
-      </section>
+      </div>
 
-      <app-traffic-badge [sectors]="congestionSectors()" />
+      <div class="fr-bento-item">
+        <h2 class="fr-titulo-3">Por dónde pasa</h2>
+        <app-route-steps [neighborhoods]="r.neighborhoods" />
+      </div>
 
-      <section>
-        <h2 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Tarifa</h2>
+      <div class="fr-bento-item">
+        <h2 class="fr-titulo-3">Cómo está el tráfico</h2>
+        <app-traffic-badge [sectors]="congestionSectors()" />
+      </div>
+
+      <div class="fr-bento-item fr-bento-span-2">
+        <h2 class="fr-titulo-3">Lo que vale el pasaje</h2>
         <app-fare-table [fares]="r.fares" [type]="r.type" [lastUpdatedAt]="lastFareUpdate()" />
-      </section>
-    </article>
+      </div>
+    </div>
   }
 </main>
