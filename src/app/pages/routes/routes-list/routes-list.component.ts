@@ -4,13 +4,12 @@ import { RouteService } from '../../../services/route.service';
 import { Route } from '../../../models/route.model';
 import { formatCop } from '../../../lib/format';
 import { pickNeighborhoodSteps } from '../../../lib/route-steps';
-import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 
 @Component({
   selector: 'app-routes-list',
   standalone: true,
-  imports: [RouterLink, TrafficBadgeComponent, LetreroComponent],
+  imports: [RouterLink, LetreroComponent],
   templateUrl: './routes-list.component.html'
 })
 export class RoutesListComponent implements OnInit {
