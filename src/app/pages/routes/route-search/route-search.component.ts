@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -58,18 +58,61 @@ import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic
     }
     .fr-boton-favorito--activo { color: var(--amarillo-congestion, #d99a00); }
     .fr-boton-favorito:disabled { opacity: .45; cursor: not-allowed; }
+
+    /*
+     * Respuesta al toque. La estrella rebota y de debajo sale una onda que se
+     * apaga: sin eso, pasar de ☆ a ★ es un cambio de un glifo por otro que en
+     * un celular a pleno sol no se registra.
+     *
+     * Los keyframes (fr-pop, fr-anillo) están en el archivo global, no acá: con
+     * la encapsulación de Angular un keyframe declarado en un componente recibe
+     * un nombre reescrito y referenciarlo por el original falla callado.
+     *
+     * OJO: nada de acentos graves en estos comentarios. Están dentro de la
+     * plantilla literal de styles y cualquiera de ellos la cierra antes de
+     * tiempo. El error que sale es "Failed to resolve styles at position 1" y
+     * no menciona el acento grave en ningún momento.
+     */
+    .fr-boton-favorito { position: relative; }
+    .fr-boton-favorito > span { display: block; }
+    .fr-boton-favorito--pulsado > span {
+      animation: fr-pop var(--vel-media) var(--curva-resorte) both;
+    }
+    .fr-boton-favorito--pulsado::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border: var(--trazo-2) solid currentColor;
+      border-radius: var(--radius-md);
+      animation: fr-anillo var(--vel-lenta) var(--curva-salida) both;
+      pointer-events: none;
+    }
+
+    /*
+     * El número grande del tiempo estimado. La cifra tabular es obligatoria
+     * porque el valor se cuenta hacia arriba: con cifras de ancho variable el
+     * número se sacude de lado mientras sube, y el tirón se nota más que la
+     * animación.
+     */
+    .fr-eta-numero {
+      font: 700 32px/36px var(--font-display);
+      color: var(--indigo-accion);
+      font-variant-numeric: tabular-nums;
+    }
     /* Foco visible: el formulario tiene que poder recorrerse con teclado. */
     .fr-boton-favorito:focus-visible { outline: var(--trazo-2) solid var(--texto); outline-offset: 2px; }
 
     .fr-nota-favorito { margin: var(--space-2) 0 0; }
   `],
 })
-export class RouteSearchComponent implements OnInit {
+export class RouteSearchComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly routeService = inject(RouteService);
   private readonly connectivity = inject(ConnectivityService);
   private readonly userService = inject(UserService);
   private readonly auth = inject(AuthService);
+  /** Para `afterNextRender` fuera del constructor (desplazamiento al buscar). */
+  private readonly injector = inject(Injector);
 
   readonly loading = signal(false);
   readonly result = signal<RouteSearchResult | null>(null);
@@ -87,6 +130,29 @@ export class RouteSearchComponent implements OnInit {
   readonly servedOffline = signal(false);
   /** Puntos fijados en el mapa, si los hay. Pisan a la geolocalización del origen. */
   readonly picked = signal<PickedPoints>({ origin: null, destination: null });
+
+  /**
+   * Valor que se pinta en el número grande de "se demora". Sube desde 0 hasta el
+   * minuto real en ~650 ms en vez de aparecer de golpe.
+   *
+   * No es decoración: el tiempo estimado es el dato por el que la persona abrió
+   * la app, y contarlo hacia arriba lo señala como lo importante de la pantalla
+   * sin tener que agrandarlo ni pintarlo de otro color. Se mantiene aparte del
+   * resultado — `result()` siempre tiene el valor verdadero, y lo que se anima
+   * es solo la presentación.
+   */
+  readonly etaMostrado = signal(0);
+
+  /** Dura lo que el rebote de la estrella; de ahí vuelve a false. */
+  readonly favoritoPulsado = signal(false);
+
+  /** Ancla de la zona de resultado, destino del desplazamiento al buscar. */
+  private readonly zonaResultado = viewChild.required<ElementRef<HTMLElement>>('zonaResultado');
+
+  /** `requestAnimationFrame` en vuelo del conteo, para poder cancelarlo. */
+  private cuadroEta = 0;
+  /** Temporizador del rebote de la estrella, para poder cancelarlo. */
+  private relojPulso: ReturnType<typeof setTimeout> | null = null;
 
   readonly isOnline = this.connectivity.isOnline;
   readonly isUrban = computed(() => this.result()?.route.type === 'URBANA');
@@ -169,6 +235,99 @@ export class RouteSearchComponent implements OnInit {
     this.loadFavorite();
   }
 
+  ngOnDestroy(): void {
+    // Un rAF o un setTimeout que sobrevive al componente escribe en signals de
+    // una vista ya destruida. No revienta, pero es una fuga: con navegaciones
+    // repetidas quedan cuadros encolados que no pintan nada.
+    cancelAnimationFrame(this.cuadroEta);
+    if (this.relojPulso !== null) clearTimeout(this.relojPulso);
+  }
+
+  /**
+   * Si el sistema pide menos movimiento. Se consulta en cada animación y no se
+   * guarda al construir el componente: la preferencia se puede cambiar con la
+   * pestaña abierta.
+   */
+  private get movimientoReducido(): boolean {
+    return typeof matchMedia === 'function'
+      && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /**
+   * Cuenta el tiempo estimado desde 0 hasta su valor real.
+   *
+   * La curva es `easeOutExpo`: arranca rápido y frena al final, igual que
+   * `--curva-salida` del CSS. Un conteo lineal se siente mecánico y uno con
+   * rebote pasaría por encima del valor real, que en un dato numérico sería
+   * mostrar por un instante un número que es mentira.
+   */
+  private animarEta(objetivo: number): void {
+    cancelAnimationFrame(this.cuadroEta);
+
+    if (this.movimientoReducido) {
+      this.etaMostrado.set(objetivo);
+      return;
+    }
+
+    const duracion = 650;
+    let inicio: number | null = null;
+
+    const paso = (ahora: number) => {
+      /*
+       * El instante de arranque sale del PRIMER cuadro, no de
+       * `performance.now()`. Mezclar los dos relojes da por hecho que
+       * comparten origen de tiempo; donde no lo comparten, `ahora - inicio`
+       * sale negativo, `Math.pow(2, -10 * avance)` se desborda y el numero
+       * en pantalla salta a algo como -4e+94. Lo destaparon las pruebas.
+       *
+       * El recorte a [0, 1] es el cinturon por encima del tirante: con el
+       * arranque tomado del propio cuadro no deberia hacer falta, pero un
+       * valor fuera de rango aqui se ve como un numero absurdo, no como una
+       * animacion fea.
+       */
+      inicio ??= ahora;
+      const avance = Math.min(1, Math.max(0, (ahora - inicio) / duracion));
+      const suavizado = avance === 1 ? 1 : 1 - Math.pow(2, -10 * avance);
+      this.etaMostrado.set(Math.round(objetivo * suavizado));
+      if (avance < 1) this.cuadroEta = requestAnimationFrame(paso);
+    };
+
+    this.cuadroEta = requestAnimationFrame(paso);
+  }
+
+  /**
+   * Lleva la pantalla a la zona de resultado al empezar a buscar.
+   *
+   * No es un adorno. El botón vive pegado al borde inferior (zona del pulgar) y
+   * el resultado se dibuja debajo del formulario, o sea fuera de pantalla: sin
+   * esto, la persona toca "¡Hágale!" y lo único que cambia a la vista es una
+   * barra de 4 px arriba. Lleva al esqueleto, no al resultado, porque el
+   * esqueleto ya ocupa el sitio exacto que ocupará el resultado.
+   *
+   * Con movimiento reducido salta sin desplazamiento suave, que es
+   * precisamente el movimiento de pantalla completa que molesta.
+   */
+  private irAlResultado(): void {
+    const destino = this.zonaResultado().nativeElement;
+    // jsdom no implementa scrollIntoView, y tampoco lo tiene todo navegador
+    // incrustado. Sin esta guarda la busqueda lanzaba un TypeError: el
+    // desplazamiento es un lujo, poder buscar no.
+    if (typeof destino.scrollIntoView !== 'function') return;
+    destino.scrollIntoView({
+      behavior: this.movimientoReducido ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }
+
+  /** Enciende el rebote de la estrella y lo apaga cuando la animación termina. */
+  private pulsarFavorito(): void {
+    if (this.movimientoReducido) return;
+    if (this.relojPulso !== null) clearTimeout(this.relojPulso);
+    this.favoritoPulsado.set(true);
+    // 500 ms = --vel-lenta, que es lo que dura la onda (la más larga de las dos).
+    this.relojPulso = setTimeout(() => this.favoritoPulsado.set(false), 500);
+  }
+
   /**
    * Precarga el campo destino con el favorito al abrir la pantalla (RF-10).
    *
@@ -202,6 +361,11 @@ export class RouteSearchComponent implements OnInit {
     const destination = this.searchForm.controls.destinationNeighborhood.value;
     if (!destination || this.savingFavorite()) return;
 
+    // El rebote va antes de la petición, no en la respuesta: el toque tiene que
+    // sentirse acusado de inmediato. Si el guardado falla, el estado de la
+    // estrella vuelve solo (sale de `favorite()`), y haber rebotado no afirma
+    // que se guardó — eso lo dice la estrella llena, no la animación.
+    this.pulsarFavorito();
     this.savingFavorite.set(true);
     const done = { complete: () => this.savingFavorite.set(false) };
 
@@ -227,6 +391,12 @@ export class RouteSearchComponent implements OnInit {
     this.result.set(null);
     this.notFoundMessage.set(null);
     this.errorMessage.set(null);
+    this.etaMostrado.set(0);
+
+    // Después del siguiente pintado, no ahora: el esqueleto todavía no está en
+    // el DOM, y sin él la página no es lo bastante alta como para que el
+    // desplazamiento llegue al ancla — el navegador lo recortaría.
+    afterNextRender(() => this.irAlResultado(), { injector: this.injector });
 
     const { originNeighborhood, destinationNeighborhood } = this.searchForm.getRawValue();
     const picked = this.picked();
@@ -283,6 +453,9 @@ export class RouteSearchComponent implements OnInit {
         this.result.set(data);
         this.servedOffline.set(offline);
         this.loading.set(false);
+        // El conteo arranca junto con la entrada de los bloques: el número sube
+        // mientras la tarjeta se está asentando, no después.
+        if (data.estimatedMinutes != null) this.animarEta(data.estimatedMinutes);
       },
       error: (err: HttpErrorResponse) => {
         // status 0 = "no salió de la máquina" (navigator.onLine miente a veces).

@@ -16,8 +16,11 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
         <span class="fr-wordmark">Fusa<b>Route</b></span>
       </div>
 
-      <h1 class="fr-titulo-1" style="text-align: center; margin-bottom: var(--space-4);">Crear Cuenta</h1>
-      <p class="fr-texto-sm" style="text-align: center; margin-bottom: var(--space-6);">Únete a la comunidad y guarda tus rutas favoritas.</p>
+      <div style="text-align: center; margin-bottom: var(--space-4);">
+        <img src="assets/mascot/suta-wave.webp" alt="Indio Sutá saludando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
+        <h1 class="fr-titulo-1">¡Hágale, parcero!</h1>
+        <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Únete a la comunidad y guarda tus rutas favoritas.</p>
+      </div>
 
       @if (generalError()) {
         <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
@@ -51,7 +54,7 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
         </div>
 
         <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="registerForm.invalid || loading()">
-          {{ loading() ? 'Registrando...' : 'Registrarse' }}
+          {{ loading() ? 'Registrando...' : '¡Hágale!' }}
         </button>
       </form>
 

@@ -1,0 +1,22 @@
+/*
+ * El shell reserva abajo el alto de la barra de navegación, que es `fixed` y
+ * si no taparía el último elemento de cada pantalla. Arriba de 760px la barra
+ * se esconde (navega el header) y el espacio se devuelve.
+ */
+.fr-shell {
+  padding: var(--space-4);
+  padding-bottom: calc(var(--fr-nav-alto) + env(safe-area-inset-bottom) + var(--space-4));
+}
+
+@media (min-width: 760px) {
+  .fr-shell {
+    padding-bottom: var(--space-6);
+  }
+}
+
+/*
+ * La transición de pantalla NO va aquí: el componente enrutado lo inserta el
+ * router como hermano del `<router-outlet>`, fuera de esta plantilla, así que
+ * la encapsulación de estilos de Angular nunca le aplicaría la regla. Vive en
+ * `src/styles.css`, que es global.
+ */

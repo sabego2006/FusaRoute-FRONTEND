@@ -1,10 +1,26 @@
+<!--
+  Barra de progreso de la búsqueda. Vive fuera del esqueleto a propósito: el
+  formulario sigue en pantalla y usable mientras se busca, así que la espera
+  necesita un aviso que no dependa de que algo haya desaparecido.
+  `aria-hidden` porque el estado de carga ya lo anuncia el `role="status"` de
+  más abajo; dos anuncios del mismo hecho es ruido para el lector de pantalla.
+-->
+@if (loading()) {
+  <div class="fr-progreso" aria-hidden="true"></div>
+}
+
 <main class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
-  <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Buscar ruta</h1>
-  <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Dinos de dónde sales y a dónde vas.</p>
+  <div style="text-align: center; margin-bottom: var(--space-6);">
+    <img src="assets/mascot/suta-thumbs-up.webp" alt="" aria-hidden="true"
+         class="fr-suta" width="96" height="96" loading="lazy" decoding="async"
+         style="margin: 0 auto var(--space-3);">
+    <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">¿Para dónde va, parcero?</h1>
+    <p class="fr-texto-sm">Dinos de dónde sales y a dónde vas, y te decimos qué buseta tomar.</p>
+  </div>
 
   @if (!isOnline()) {
     <div class="fr-alerta" role="status" style="margin-bottom: var(--space-4); background: var(--lima); border-color: var(--borde);">
-      Estás sin conexión. Podemos sugerirte la ruta más corta, pero no el tiempo de viaje.
+      Está sin internet. Le podemos decir la ruta más corta, pero no cuánto se va a demorar.
     </div>
   }
 
@@ -36,6 +52,7 @@
           <button type="button"
                   class="fr-boton-favorito"
                   [class.fr-boton-favorito--activo]="chosenIsFavorite()"
+                  [class.fr-boton-favorito--pulsado]="favoritoPulsado()"
                   [disabled]="!searchForm.controls.destinationNeighborhood.value || savingFavorite()"
                   [attr.aria-pressed]="chosenIsFavorite()"
                   [attr.aria-label]="chosenIsFavorite() ? 'Quitar de favoritos' : 'Marcar como destino favorito'"
@@ -80,114 +97,178 @@
       </div>
     </details>
 
-    <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="searchForm.invalid || loading()">
-      {{ loading() ? 'Buscando...' : 'Buscar' }}
-    </button>
+    <!--
+      Zona del pulgar: la acción queda pegada al borde inferior mientras se
+      llena el formulario, porque la app se usa de pie en la calle y con una
+      mano. Va pegada y no fija, así que se suelta sola al llegar al resultado
+      en vez de taparlo.
+    -->
+    <!--
+      El texto NO cambia a "Buscando...": el ancho del botón salta y se pierde la
+      etiqueta que la persona acababa de leer. El estado de trabajo lo dice el
+      destello que recorre el botón, y para quien no lo ve lo dice el
+      `role="status"` del esqueleto.
+    -->
+    <div class="fr-thumb-zone">
+      <button type="submit"
+              class="fr-btn fr-btn-primario fr-btn-bloque"
+              [class.fr-btn--trabajando]="loading()"
+              [disabled]="searchForm.invalid || loading()">
+        ¡Hágale!
+      </button>
+    </div>
   </form>
 
+  <!--
+    Ancla fija de la zona de resultado. Existe siempre, aunque no haya nada
+    debajo, porque es el destino del desplazamiento automático al buscar y una
+    referencia que aparece y desaparece no sirve para eso.
+  -->
+  <div #zonaResultado></div>
+
+  <!--
+    Aquí el esqueleto es el de la tarjeta de resultado, no el del formulario:
+    el formulario ya está en pantalla y sigue siendo usable mientras se busca.
+  -->
   @if (loading()) {
-    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-      Buscando la mejor ruta...
+    <p role="status" class="fr-solo-lectores">Buscando la mejor ruta...</p>
+    <!--
+      `animate.leave` retiene el esqueleto en el DOM hasta que termina de
+      encogerse, así se solapa con la entrada del resultado. Sin eso, `@if` lo
+      borra en el mismo fotograma y queda un parpadeo en blanco entre los dos.
+    -->
+    <div class="fr-esq-card fr-entra" animate.leave="fr-saliendo" aria-hidden="true">
+      <div class="fr-esqueleto fr-esq-titulo"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
+      <div class="fr-esqueleto fr-esq-letrero" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--media"></div>
+      <div class="fr-esqueleto fr-esq-mapa" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-boton"></div>
     </div>
   }
 
   @if (notFoundMessage()) {
-    <div class="fr-alerta" role="status" style="background: var(--lima); border-color: var(--borde);">
-      {{ notFoundMessage() }}
+    <div class="fr-alerta fr-entra-solo" role="status" style="background: var(--lima); border-color: var(--borde);">
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+             class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+        <span>{{ notFoundMessage() }}</span>
+      </div>
     </div>
   }
 
   @if (errorMessage()) {
-    <div class="fr-alerta" role="alert">
-      <strong style="color: var(--rojo-texto);">Error:</strong> {{ errorMessage() }}
+    <div class="fr-alerta fr-entra-solo" role="alert">
+      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
     </div>
   }
 
   @if (result(); as r) {
-    <article class="fr-card">
-      <header style="margin-bottom: var(--space-4);">
-        <h2 class="fr-titulo-2">{{ r.route.name }}</h2>
-        <p class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
-      </header>
+    <!--
+      El resultado va en Bento: el dato que el usuario vino a buscar (qué
+      buseta y cuánto se demora) queda en bloques propios y grandes, en vez
+      de diluido en una columna de párrafos. Letrero, mapa y tarifa ocupan la
+      fila completa porque son los que necesitan ancho.
+    -->
+    <!--
+      `fr-entra-z` y no `fr-entra`: los bloques caen girando sobre su borde
+      superior, uno tras otro. Es el patrón de las apps de transporte — el
+      resultado no aparece, se asienta — y con la entrada plana una rejilla de
+      seis bloques se leía como un solo bloque grande moviéndose.
+    -->
+    <div class="fr-bento fr-entra-z">
+      <div class="fr-bento-item fr-bento-span-2">
+        <h2 class="fr-titulo-2" style="margin: 0;">{{ r.route.name }}</h2>
+        <p class="fr-texto-sm" style="margin: 0;">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+      </div>
 
       @if (r.route.signFile) {
-        <section style="margin-bottom: var(--space-4);">
-          <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Letrero de la buseta</h3>
+        <div class="fr-bento-item fr-bento-span-2">
+          <h3 class="fr-titulo-3">Busque este letrero</h3>
           <app-letrero [signFile]="r.route.signFile" [routeName]="r.route.name" />
-        </section>
+        </div>
       }
 
-      @if (r.estimatedMinutes !== null) {
-        <p class="fr-texto" style="margin-bottom: var(--space-4);">
-          <strong style="font: 700 24px/32px var(--font-display);">{{ r.estimatedMinutes }} min</strong>
-          <span class="fr-texto-sm"> · tiempo estimado</span>
-        </p>
-      } @else {
-        <p class="fr-texto" style="margin-bottom: var(--space-2);">
+      <div class="fr-bento-item">
+        @if (r.estimatedMinutes !== null) {
+          <h3 class="fr-titulo-3">Se demora</h3>
+          <!--
+            El número se cuenta desde 0 (ver `animarEta`). El valor verdadero
+            vive en `r.estimatedMinutes`; `etaMostrado()` es solo la
+            presentación, y con movimiento reducido salta directo al final.
+          -->
+          <p class="fr-texto" style="margin: 0;">
+            <strong class="fr-eta-numero">{{ etaMostrado() }}</strong>
+            <span class="fr-texto-sm"> min aprox.</span>
+          </p>
+        } @else {
+          <h3 class="fr-titulo-3">Recorrido</h3>
           @if (travelDistanceLabel(); as distancia) {
-            <strong style="font: 700 24px/32px var(--font-display);">{{ distancia }}</strong>
-            <span class="fr-texto-sm"> · recorrido en buseta</span>
+            <p class="fr-texto" style="margin: 0;">
+              <strong style="font: 700 26px/32px var(--font-display);">{{ distancia }}</strong>
+            </p>
           } @else {
-            <span class="fr-texto-sm">Esta ruta aún no tiene su recorrido cargado.</span>
+            <p class="fr-texto-sm" style="margin: 0;">Esta ruta aún no tiene su recorrido cargado.</p>
           }
-        </p>
-        <p class="fr-texto-sm" style="margin-bottom: var(--space-4);">
-          @if (servedOffline()) {
-            Sin conexión no podemos calcular el tiempo de viaje, solo la distancia.
-          } @else {
-            No pudimos calcular el tiempo ahora; esta es la ruta que conecta tus barrios.
-          }
-        </p>
-      }
+          <p class="fr-texto-sm" style="margin: 0;">
+            @if (servedOffline()) {
+              Sin internet no podemos calcular cuánto se demora, solo la distancia.
+            } @else {
+              No pudimos calcular el tiempo ahora; esta es la ruta que conecta sus barrios.
+            }
+          </p>
+        }
+      </div>
 
-      <section style="margin-bottom: var(--space-4);">
-        <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Barrios por los que pasa</h3>
+      <div class="fr-bento-item">
+        <h3 class="fr-titulo-3">Por dónde pasa</h3>
         <app-route-steps [neighborhoods]="r.route.neighborhoods" />
-      </section>
+      </div>
 
       @if (resultMap(); as mapa) {
-        <section style="margin-bottom: var(--space-4);">
-          <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Recorrido en el mapa</h3>
+        <div class="fr-bento-item fr-bento-span-2">
+          <h3 class="fr-titulo-3">El recorrido en el mapa</h3>
           <app-map-view [path]="mapa.path" [origin]="mapa.start" [destination]="mapa.end" />
-        </section>
+        </div>
       }
 
-      <section style="margin-bottom: var(--space-4);">
-        <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Cómo acercarte</h3>
+      <div class="fr-bento-item fr-bento-span-2">
+        <h3 class="fr-titulo-3">Cómo la toma</h3>
         @if (r.boarding && r.dropOff) {
-          <ul class="fr-lista">
+          <ul class="fr-lista fr-entra">
             <li class="fr-fila">
               <span class="fr-chip-lugar" aria-hidden="true">↑</span>
               <span>
-                Tómala caminando <strong>{{ r.boarding.distanceInMeters }} m</strong>
-                (unos {{ r.boarding.walkingMinutes }} min).
+                Camine <strong>{{ r.boarding.distanceInMeters }} m</strong>
+                (unos {{ r.boarding.walkingMinutes }} min) y ahí la toma.
               </span>
             </li>
             <li class="fr-fila">
               <span class="fr-chip-lugar" aria-hidden="true">↓</span>
               <span>
-                Al bajarte te quedan <strong>{{ r.dropOff.distanceInMeters }} m</strong>
-                (unos {{ r.dropOff.walkingMinutes }} min) hasta tu destino.
+                Al bajarse le quedan <strong>{{ r.dropOff.distanceInMeters }} m</strong>
+                (unos {{ r.dropOff.walkingMinutes }} min) hasta su destino.
               </span>
             </li>
           </ul>
         } @else {
           <p class="fr-texto-sm">
-            Esta ruta todavía no tiene su trazado cargado, así que no podemos decirte el punto
-            exacto donde tomarla.
+            Esta ruta todavía no tiene su trazado cargado, así que no le podemos decir el
+            punto exacto donde tomarla.
           </p>
         }
-      </section>
+      </div>
 
-
-      <section style="margin-bottom: var(--space-4);">
-        <h3 class="fr-titulo-3" style="margin-bottom: var(--space-3);">Tarifa</h3>
+      <div class="fr-bento-item fr-bento-span-2">
+        <h3 class="fr-titulo-3">Lo que vale el pasaje</h3>
         <app-fare-table [fares]="r.route.fares" [type]="r.route.type" [lastUpdatedAt]="r.lastUpdatedAt" />
-      </section>
+      </div>
 
-      <a [routerLink]="['/rutas', r.route.id]" class="fr-btn fr-btn-bloque">
-        Ver detalle de la ruta
-      </a>
-    </article>
+      <div class="fr-bento-item fr-bento-span-2" style="border: 0; box-shadow: none; background: none; padding: 0;">
+        <a [routerLink]="['/rutas', r.route.id]" class="fr-btn fr-btn-bloque">
+          Ver todo sobre esta ruta
+        </a>
+      </div>
+    </div>
   }
 </main>

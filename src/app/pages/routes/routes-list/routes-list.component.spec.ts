@@ -62,7 +62,7 @@ describe('RoutesListComponent', () => {
   it('sin rutas activas muestra el aviso, no una lista vacía', async () => {
     const el = await render(() => of([]));
 
-    expect(el.textContent).toContain('No se encontraron rutas activas');
+    expect(el.textContent).toContain('no hay rutas activas');
   });
 
   it('si el backend falla muestra un error y NO rutas de respaldo inventadas', async () => {
