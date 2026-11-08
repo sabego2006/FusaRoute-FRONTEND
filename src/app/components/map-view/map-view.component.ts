@@ -33,7 +33,14 @@ interface GeoJsonFeature {
     } @else if (loadError()) {
       <p class="fr-alerta" role="alert">No se pudo cargar el mapa. Intenta de nuevo en un momento.</p>
     } @else if (!mapsReady()) {
-      <p class="fr-texto-sm" role="status">Cargando mapa...</p>
+      <!--
+        Esqueleto, no el texto "Cargando mapa...". Ocupa exactamente los 320 px
+        que va a ocupar el mapa, así que cuando Google termina de cargar nada
+        se desplaza. Con el texto de una línea, la página pegaba un salto de
+        300 px justo cuando la persona estaba leyendo el resultado.
+      -->
+      <p role="status" class="fr-solo-lectores">Cargando mapa del recorrido...</p>
+      <div class="fr-esqueleto mapa-hueco" aria-hidden="true"></div>
     } @else {
       <google-map
         height="320px"
@@ -47,7 +54,42 @@ interface GeoJsonFeature {
         <map-marker [position]="destination()" title="Destino" />
       </google-map>
     }
-  `
+  `,
+  styles: [`
+    /*
+     * El recorte del mapa. Google Maps pinta sus teselas en elementos que se
+     * salen del contenedor a propósito (es como consigue el desplazamiento
+     * continuo), y sin este recorte esos 11 px de sobra llegaban hasta el
+     * documento: en celular aparecía una barra de desplazamiento horizontal en
+     * cuanto salía un resultado con mapa.
+     *
+     * Es anterior a las animaciones; se vio al medir el desborde, no al
+     * introducirlo.
+     */
+    :host {
+      display: block;
+      /*
+       * La posición relativa no es decorativa: sin ella el recorte no sirve.
+       * (Nada de acentos graves en estos comentarios: están dentro de la
+       * plantilla literal de styles y cualquiera cierra la cadena antes de
+       * tiempo. El error que sale no lo menciona.)
+       * Google Maps coloca sus capas en absoluto, y un elemento absoluto solo
+       * lo recorta el ancestro que sea su bloque contenedor. Con el host
+       * estático, el bloque contenedor es otro mucho más arriba y las teselas
+       * se salían igual aunque acá dijera overflow: hidden.
+       */
+      position: relative;
+      overflow: hidden;
+      max-width: 100%;
+      border-radius: var(--radius-md);
+    }
+
+    .mapa-hueco {
+      height: 320px;
+      width: 100%;
+      border-radius: var(--radius-md);
+    }
+  `]
 })
 export class MapViewComponent implements OnDestroy {
   path = input.required<GeoJsonLineString>();

@@ -247,28 +247,271 @@ router-outlet + * {
   box-shadow: var(--sombra-dura-sm);
 }
 
+/* ──────────────── Entrada con profundidad (eje Z) ────────────────
+ *
+ * El patrón viene de las apps de transporte que resuelven este mismo
+ * problema — Citymapper, Transit, Moovit: el resultado de una búsqueda no
+ * aparece, *se asienta*. Los bloques caen desde arriba girando sobre su borde
+ * superior, uno tras otro, como fichas que se acomodan.
+ *
+ * Por qué girando y no solo subiendo: `.fr-entra` ya sube los elementos, y en
+ * una rejilla de seis bloques ese movimiento se lee plano. El giro de 7° sobre
+ * el eje X mete al bloque en el espacio — el borde de arriba queda más lejos
+ * que el de abajo durante la entrada — y eso es lo que da la sensación de
+ * profundidad sin dibujar ni una sombra extra.
+ *
+ * Son 7° y no 25°: pasado cierto ángulo el texto del bloque se deforma y se
+ * vuelve ilegible a mitad de la animación, que es exactamente la clase de
+ * efecto vistoso que estorba.
+ */
+@keyframes fr-entrar-z {
+  from {
+    opacity: 0;
+    transform: translateY(22px) rotateX(-7deg) scale(.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fr-entra-z {
+  /*
+   * La perspectiva va en el PADRE. La propiedad `perspective` solo afecta a
+   * los hijos, así que puesta en el elemento que gira no hace absolutamente
+   * nada y el `rotateX` se ve como un simple achatamiento. Es el error clásico
+   * del eje Z en CSS.
+   */
+  perspective: 1200px;
+  perspective-origin: 50% 0;
+}
+
+.fr-entra-z > * {
+  animation: fr-entrar-z var(--vel-lenta) var(--curva-salida) both;
+  /* Sobre el borde superior: el bloque cae hacia el usuario en vez de voltearse
+     sobre su centro, que se leería como una carta dándose vuelta. */
+  transform-origin: 50% 0;
+}
+.fr-entra-z > *:nth-child(1) { animation-delay: calc(var(--escalon) * 0); }
+.fr-entra-z > *:nth-child(2) { animation-delay: calc(var(--escalon) * 1); }
+.fr-entra-z > *:nth-child(3) { animation-delay: calc(var(--escalon) * 2); }
+.fr-entra-z > *:nth-child(4) { animation-delay: calc(var(--escalon) * 3); }
+.fr-entra-z > *:nth-child(5) { animation-delay: calc(var(--escalon) * 4); }
+.fr-entra-z > *:nth-child(6) { animation-delay: calc(var(--escalon) * 5); }
+.fr-entra-z > *:nth-child(7) { animation-delay: calc(var(--escalon) * 6); }
+.fr-entra-z > *:nth-child(8) { animation-delay: calc(var(--escalon) * 7); }
+.fr-entra-z > *:nth-child(9) { animation-delay: calc(var(--escalon) * 8); }
+.fr-entra-z > *:nth-child(n + 10) { animation-delay: calc(var(--escalon) * 9); }
+
+/* ──────────────── Relevo del esqueleto ────────────────
+ *
+ * El esqueleto no desaparece de un fotograma al otro: se encoge y se desvanece
+ * mientras el contenido real ya está entrando. Ese solape de ~180 ms es lo que
+ * quita el parpadeo — sin él hay un fotograma con la pantalla vacía entre el
+ * esqueleto y los datos, y se percibe como un tirón.
+ *
+ * Lo ejecuta `animate.leave` de Angular, que retiene el elemento en el DOM
+ * hasta que la animación termina. Sin eso, `@if` lo borra al instante y la
+ * animación de salida nunca se vería.
+ */
+@keyframes fr-salir-esqueleto {
+  to { opacity: 0; transform: scale(.98); }
+}
+
+.fr-saliendo {
+  animation: fr-salir-esqueleto var(--vel-rapida) var(--curva-salida) both;
+}
+
+/* ──────────────── Barra de progreso ────────────────
+ *
+ * Para la espera de red que no tiene esqueleto propio porque el formulario
+ * sigue en pantalla y usable. Va arriba del todo, delgada, y dice una sola
+ * cosa: "se está trabajando". Es indeterminada a propósito — no sabemos
+ * cuánto va a tardar Google en responder, y una barra que promete un
+ * porcentaje falso es peor que una que no promete nada.
+ */
+@keyframes fr-barra {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(300%); }
+}
+
+.fr-progreso {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 4px;
+  z-index: 60;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--tinta) 12%, transparent);
+}
+
+.fr-progreso::after {
+  content: "";
+  display: block;
+  width: 33%;
+  height: 100%;
+  background: var(--lima);
+  border-bottom: 1px solid var(--tinta);
+  animation: fr-barra 1.1s var(--curva-salida) infinite;
+}
+
+/* ──────────────── Botón trabajando ────────────────
+ *
+ * Un destello que recorre el botón mientras la petición está en vuelo. Sustituye
+ * al cambio de texto a "Buscando...": el texto que cambia hace saltar el ancho
+ * del botón y pierde la etiqueta que el usuario acababa de leer.
+ */
+@keyframes fr-destello {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(220%); }
+}
+
+.fr-btn--trabajando {
+  position: relative;
+  overflow: hidden;
+}
+
 /*
- * Respeta la preferencia del sistema. Las animaciones infinitas (el brillo)
- * se detienen del todo; las de entrada saltan a su estado final en lugar de
- * desaparecer, para que el contenido siga visible.
+ * Mientras trabaja, el botón sigue inhabilitado para el clic (evita la doble
+ * petición) pero NO se pinta como inhabilitado. Son dos mensajes distintos:
+ * el gris de `:disabled` dice "esto no se puede usar", y lo que pasa acá es
+ * "esto está trabajando". Además el destello es blanco, y sobre el gris del
+ * estado inhabilitado no se vería.
+ */
+.fr-btn.fr-btn-primario.fr-btn--trabajando:disabled {
+  background: var(--indigo-accion);
+  color: var(--sobre-indigo);
+  box-shadow: var(--shadow-elevated);
+  cursor: progress;
+}
+
+.fr-btn--trabajando::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, .45) 50%,
+    transparent 80%
+  );
+  animation: fr-destello 1.05s linear infinite;
+  pointer-events: none;
+}
+
+/* ──────────────── Confirmación de un toque ────────────────
+ *
+ * `fr-pop` es el rebote de lo que se acaba de activar; `fr-anillo` es la onda
+ * que sale de debajo y se apaga. Juntos son la respuesta física a marcar un
+ * favorito: sin ellos el cambio de ☆ a ★ pasa inadvertido en un celular a
+ * pleno sol.
+ *
+ * Los keyframes viven acá, en el archivo global, y no en los estilos del
+ * componente: con la encapsulación de Angular un `@keyframes` declarado dentro
+ * de un componente recibe un nombre reescrito, y referenciarlo por el nombre
+ * original falla en silencio.
+ */
+@keyframes fr-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fr-anillo {
+  from { opacity: .6; transform: scale(.65); }
+  to   { opacity: 0;  transform: scale(1.9); }
+}
+
+/*
+ * Respeta la preferencia del sistema. Las animaciones infinitas (el brillo, el
+ * destello, la barra) se detienen del todo; las de entrada saltan a su estado
+ * final en lugar de desaparecer, para que el contenido siga visible.
  */
 @media (prefers-reduced-motion: reduce) {
   .fr-entra > *,
   .fr-entra-solo,
+  .fr-entra-z > *,
+  .fr-saliendo,
   router-outlet + * {
     animation: none;
     opacity: 1;
     transform: none;
   }
+  .fr-entra-z {
+    perspective: none;
+  }
   .fr-esqueleto {
     animation: none;
     background-image: none;
   }
+  .fr-progreso::after,
+  .fr-btn--trabajando::after {
+    animation: none;
+  }
+  /* La barra sin movimiento seguiría siendo un aviso visible de que algo pasa,
+     así que se deja llena en vez de apagarla. */
+  .fr-progreso::after {
+    width: 100%;
+  }
   .fr-btn,
   .fr-card,
-  .letrero-placa {
+  .letrero-placa,
+  .fr-input {
     transition: none;
   }
+  /*
+   * Las transiciones de vista nativas también se apagan: el navegador no lo
+   * hace solo, y un cambio de pantalla con morph es justo el movimiento de
+   * pantalla completa que molesta a quien tiene sensibilidad vestibular.
+   */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ──────────────── Transiciones de vista nativas ────────────────
+ *
+ * Las activa `withViewTransitions()` en `app.config.ts`. El navegador toma una
+ * foto de la pantalla que sale y de la que entra y las cruza él mismo, en el
+ * compositor — es la única forma de animar un cambio de ruta sin mantener las
+ * dos vistas vivas a la vez en el DOM.
+ *
+ * El cruce es corto y sin desplazamiento lateral: la navegación tiene que
+ * sentirse instantánea, no coreografiada.
+ *
+ * No se declara `@view-transition { navigation: auto }`: esa regla es para
+ * navegación entre documentos. Acá es una SPA y el router llama a
+ * `document.startViewTransition()` por su cuenta.
+ */
+
+/*
+ * Donde el navegador soporta transiciones de vista, se apaga la animación de
+ * entrada en CSS. Las dos juntas son el mismo movimiento hecho dos veces: el
+ * navegador cruza las pantallas y además el contenido sube por su cuenta, y se
+ * percibe como un tropiezo. Donde no hay soporte (Firefox viejo) la regla de
+ * abajo no aplica y queda la entrada en CSS como respaldo.
+ */
+@supports (view-transition-name: none) {
+  router-outlet + * {
+    animation: none;
+  }
+}
+
+::view-transition-old(root) {
+  animation: fr-vt-salir var(--vel-rapida) var(--curva-salida) both;
+}
+
+::view-transition-new(root) {
+  animation: fr-vt-entrar var(--vel-media) var(--curva-salida) both;
+}
+
+@keyframes fr-vt-salir {
+  to { opacity: 0; transform: scale(.99); }
+}
+
+@keyframes fr-vt-entrar {
+  from { opacity: 0; transform: scale(1.01); }
 }
 
 /*
@@ -438,6 +681,17 @@ body {
 
 /* Buttons */
 .fr-btn {
+  /*
+   * Sin esto, `.fr-btn-bloque` (width: 100%) le suma por fuera el relleno
+   * lateral y los dos bordes, y el botón sale 33 px más ancho que su
+   * contenedor. Medido en el resultado de la búsqueda: el botón "Ver todo
+   * sobre esta ruta" llegaba a 344 px dentro de una celda de 311 y metía una
+   * barra de desplazamiento horizontal en toda la pantalla, a 390 px de ancho.
+   *
+   * No hay un reseteo global de box-sizing en este archivo; `.fr-input` ya lo
+   * declara por su cuenta por la misma razón.
+   */
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -498,7 +752,14 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--sombra-dura);
   outline: none;
-  transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s cubic-bezier(.4,0,.2,1);
+  /*
+   * Con los tokens del sistema, no con una curva suelta: el campo es algo que
+   * el usuario toca, así que le toca `--curva-resorte` como al botón y a la
+   * tarjeta. Antes tenía un `cubic-bezier` propio y se notaba — el campo subía
+   * con un tiempo distinto al del botón que está tres centímetros más abajo.
+   */
+  transition: transform var(--vel-media) var(--curva-resorte),
+              box-shadow var(--vel-rapida) ease;
 }
 .fr-input::placeholder { color: var(--tinta-suave); }
 .fr-input:focus-visible { transform: translate(-2px,-2px); box-shadow: var(--sombra-dura-md); outline: 3px solid var(--foco); outline-offset: 3px; }

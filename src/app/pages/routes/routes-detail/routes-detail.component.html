@@ -10,7 +10,7 @@
   -->
   @if (loading()) {
     <p role="status" class="fr-solo-lectores">Cargando los detalles de la ruta...</p>
-    <div class="fr-esq-card fr-entra" aria-hidden="true">
+    <div class="fr-esq-card fr-entra" animate.leave="fr-saliendo" aria-hidden="true">
       <div class="fr-esqueleto fr-esq-titulo"></div>
       <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
       <div class="fr-esqueleto fr-esq-letrero" style="margin-top: var(--space-6);"></div>
@@ -35,7 +35,7 @@
       releer la pantalla. Letrero y mapa ocupan la fila entera; el estado del
       tráfico y la tarifa caben a media fila en escritorio.
     -->
-    <div class="fr-bento fr-entra">
+    <div class="fr-bento fr-entra-z">
       <div class="fr-bento-item fr-bento-span-2">
         <h1 class="fr-titulo-1" style="margin: 0;">{{ r.name }}</h1>
         <p class="fr-texto-sm" style="margin: 0;">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
@@ -48,6 +48,22 @@
         </div>
       }
 
+      <div class="fr-bento-item">
+        <h2 class="fr-titulo-3">Por dónde pasa</h2>
+        <app-route-steps [neighborhoods]="r.neighborhoods" />
+      </div>
+
+      <div class="fr-bento-item">
+        <h2 class="fr-titulo-3">Cómo está el tráfico</h2>
+        <app-traffic-badge [sectors]="congestionSectors()" />
+      </div>
+
+      <!--
+        El mapa va DESPUES de los barrios, no antes: primero reconoces la
+        buseta y por donde pasa, y solo entonces el mapa. Es el orden que
+        pidio Santiago y el que hace legible el detalle en celular; hay una
+        prueba que lo fija, y el Bento lo habia invertido sin querer.
+      -->
       <div class="fr-bento-item fr-bento-span-2">
         <h2 class="fr-titulo-3">El recorrido en el mapa</h2>
         @if (mapData(); as mapa) {
@@ -58,16 +74,6 @@
             mostrar en el mapa.
           </p>
         }
-      </div>
-
-      <div class="fr-bento-item">
-        <h2 class="fr-titulo-3">Por dónde pasa</h2>
-        <app-route-steps [neighborhoods]="r.neighborhoods" />
-      </div>
-
-      <div class="fr-bento-item">
-        <h2 class="fr-titulo-3">Cómo está el tráfico</h2>
-        <app-traffic-badge [sectors]="congestionSectors()" />
       </div>
 
       <div class="fr-bento-item fr-bento-span-2">

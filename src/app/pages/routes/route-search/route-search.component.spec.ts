@@ -125,6 +125,17 @@ async function render(opciones: Opciones) {
     fixture.componentInstance.onSubmit();
     await fixture.whenStable();
     fixture.detectChanges();
+
+    // El tiempo estimado se pinta contando desde 0 (ver animarEta), con
+    // requestAnimationFrame. Sin esperar aqui, cada prueba leeria el primer
+    // fotograma, que siempre dice 0. Se espera al modelo y no al texto para
+    // que tambien valga cuando no hay tiempo estimado: ahi el objetivo es 0
+    // y la espera termina de inmediato.
+    const objetivo = fixture.componentInstance.result()?.estimatedMinutes ?? 0;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.componentInstance.etaMostrado()).toBe(objetivo);
+    }, { timeout: 2000 });
   };
 
   return {
@@ -168,7 +179,7 @@ describe('RouteSearchComponent', () => {
     expect(searchRoute).toHaveBeenCalledOnce();
     expect(searchRouteOffline).not.toHaveBeenCalled();
     expect(el.textContent).toContain('18 min');
-    expect(el.textContent).toContain('tiempo estimado');
+    expect(el.textContent).toContain('min aprox.');
   });
 
   it('with more than 7 neighborhoods shows 7 steps, with first and last (RF-05)', async () => {
@@ -237,15 +248,15 @@ describe('RouteSearchComponent', () => {
 
     expect(searchRouteOffline).toHaveBeenCalledOnce();
     expect(searchRoute).not.toHaveBeenCalled();
-    expect(el.textContent).not.toContain('tiempo estimado');
+    expect(el.textContent).not.toContain('min aprox.');
     expect(el.textContent).toContain('2.4 km');
-    expect(el.textContent).toContain('recorrido en buseta');
+    expect(el.textContent).toContain('no podemos calcular cuánto se demora');
   });
 
   it('without network warns before searching that there will be no travel time', async () => {
     const { el } = await render({ online: false });
 
-    expect(el.textContent).toContain('Estás sin conexión');
+    expect(el.textContent).toContain('Está sin internet');
   });
 
   it('if network fails despite browser reporting it as good, retry offline', async () => {
@@ -260,7 +271,7 @@ describe('RouteSearchComponent', () => {
     await triggerSearch();
 
     expect(searchRouteOffline).toHaveBeenCalledOnce();
-    expect(el.textContent).toContain('recorrido en buseta');
+    expect(el.textContent).toContain('no podemos calcular cuánto se demora');
     expect(el.querySelector('[role="alert"]')).toBeNull();
   });
 
@@ -281,7 +292,7 @@ describe('RouteSearchComponent', () => {
 
     await triggerSearch();
 
-    expect(el.textContent).toContain('Letrero de la buseta');
+    expect(el.textContent).toContain('Busque este letrero');
     expect(el.querySelector('app-letrero img')?.getAttribute('src')).toBe('letreros/ARBELAEZ.svg');
   });
 
@@ -290,7 +301,7 @@ describe('RouteSearchComponent', () => {
 
     await triggerSearch();
 
-    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.textContent).not.toContain('Busque este letrero');
     expect(el.querySelector('app-letrero')).toBeNull();
   });
 
@@ -390,7 +401,7 @@ describe('RouteSearchComponent', () => {
 
     await triggerSearch();
 
-    expect(el.textContent).toContain('Recorrido en el mapa');
+    expect(el.textContent).toContain('El recorrido en el mapa');
     expect(el.querySelector('app-map-view')).not.toBeNull();
   });
 
@@ -400,7 +411,7 @@ describe('RouteSearchComponent', () => {
 
     await triggerSearch();
 
-    expect(el.textContent).not.toContain('Recorrido en el mapa');
+    expect(el.textContent).not.toContain('El recorrido en el mapa');
     expect(el.querySelector('app-map-view')).toBeNull();
   });
 
@@ -427,7 +438,7 @@ describe('RouteSearchComponent', () => {
     await triggerSearch();
 
     expect(searchRouteOffline).toHaveBeenCalledOnce();
-    expect(el.textContent).toContain('recorrido en buseta');
+    expect(el.textContent).toContain('no podemos calcular cuánto se demora');
     expect(el.querySelector('[role="alert"]')).toBeNull();
   });
 
@@ -473,7 +484,7 @@ describe('RouteSearchComponent', () => {
 
     const link = el.querySelector<HTMLAnchorElement>('a[href="/rutas/4"]');
     expect(link).not.toBeNull();
-    expect(link?.textContent).toContain('Ver detalle de la ruta');
+    expect(link?.textContent).toContain('Ver todo sobre esta ruta');
   });
 
   // --- Destino favorito (RF-10, SCRUM-21) ---

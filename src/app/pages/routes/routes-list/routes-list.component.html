@@ -18,7 +18,7 @@
   -->
   @if (loading()) {
     <p role="status" class="fr-solo-lectores">Cargando las rutas...</p>
-    <ul class="fr-bento fr-entra" aria-hidden="true">
+    <ul class="fr-bento fr-entra" animate.leave="fr-saliendo" aria-hidden="true">
       @for (hueco of [1, 2, 3]; track hueco) {
         <li class="fr-esq-card">
           <div style="display: flex; justify-content: space-between; gap: var(--space-4);">
@@ -57,7 +57,7 @@
         lado. En celular `auto-fit` resuelve a una sola columna, que es el
         mismo apilado de antes.
       -->
-      <ul class="fr-bento fr-entra" style="list-style: none; padding: 0;">
+      <ul class="fr-bento fr-entra-z" style="list-style: none; padding: 0;">
         @for (route of routes(); track route.id) {
           <li class="fr-card fr-card-interactiva">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
