@@ -13,3 +13,10 @@
     padding-bottom: var(--space-6);
   }
 }
+
+/*
+ * La transición de pantalla NO va aquí: el componente enrutado lo inserta el
+ * router como hermano del `<router-outlet>`, fuera de esta plantilla, así que
+ * la encapsulación de estilos de Angular nunca le aplicaría la regla. Vive en
+ * `src/styles.css`, que es global.
+ */

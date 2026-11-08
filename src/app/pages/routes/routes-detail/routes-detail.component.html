@@ -3,9 +3,22 @@
     ← Volver al listado
   </button>
 
+  <!--
+    El esqueleto sigue el orden real del detalle: nombre, letrero, barrios,
+    mapa y tarifa. El hueco del mapa es el que más importa — es el bloque
+    alto, y sin reservarlo la página pega un salto cuando Maps termina.
+  -->
   @if (loading()) {
-    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-      Cargando detalles de la ruta...
+    <p role="status" class="fr-solo-lectores">Cargando los detalles de la ruta...</p>
+    <div class="fr-esq-card fr-entra" aria-hidden="true">
+      <div class="fr-esqueleto fr-esq-titulo"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
+      <div class="fr-esqueleto fr-esq-letrero" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-linea"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--media"></div>
+      <div class="fr-esqueleto fr-esq-mapa" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-linea" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
     </div>
   }
 

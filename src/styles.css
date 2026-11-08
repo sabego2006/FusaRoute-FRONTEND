@@ -59,6 +59,23 @@
   --fr-nav-alto: 60px;
 
   /*
+   * Motion. Dos curvas y tres duraciones, no más: un sistema de movimiento con
+   * una curva por componente se ve arbitrario.
+   *
+   * `--curva-resorte` pasa de largo y vuelve (el último valor > 1), que es el
+   * rebote. Va en lo que el usuario toca.
+   * `--curva-salida` desacelera sin rebotar. Va en lo que aparece solo:
+   * un elemento que entra rebotando se lee como un error, no como vida.
+   */
+  --curva-resorte: cubic-bezier(.34, 1.3, .64, 1);
+  --curva-salida: cubic-bezier(.22, 1, .36, 1);
+  --vel-rapida: .18s;
+  --vel-media: .32s;
+  --vel-lenta: .5s;
+  /* Retardo entre hermanos en una entrada escalonada. */
+  --escalon: 55ms;
+
+  /*
    * Sombras. El sistema es de sombra dura (offset sin blur): es lo que sostiene
    * el contraste de la interfaz en pantalla de celular a plena luz. Los alias
    * --shadow-* existen solo porque varias plantillas ya los nombran; apuntan a
@@ -76,6 +93,162 @@
   /* Typography */
   --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+/*
+ * Texto solo para lector de pantalla. No se usa `display: none` ni
+ * `visibility: hidden`: eso lo saca también del árbol de accesibilidad y el
+ * lector no lo anunciaría, que es justo lo contrario de lo que se busca.
+ * La receta de 1px recortado lo deja leíble y fuera de la vista.
+ */
+.fr-solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ───────────────────────── Movimiento ─────────────────────────
+ *
+ * Todo lo de abajo se apaga con `prefers-reduced-motion` al final del bloque.
+ * No es opcional: el movimiento con rebote y desplazamiento puede provocar
+ * mareo y migraña a quien tiene sensibilidad vestibular, y el sistema
+ * operativo ya trae el interruptor. Lo que se apaga es el movimiento, no la
+ * visibilidad: el contenido queda en su posición final, nunca invisible.
+ */
+
+@keyframes fr-entrar {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/*
+ * Entrada escalonada. El hermano n arranca n × --escalon más tarde, así la
+ * lista se "escribe" de arriba abajo en vez de aparecer de golpe.
+ *
+ * El retardo sale de `nth-child` y no de una variable puesta en la plantilla:
+ * en una lista con `@for` habría que calcular el índice en cada elemento y
+ * ensuciar el HTML con estilos inline. Se escalonan los primeros 10 y de ahí
+ * en adelante todos entran con el mismo retardo — a partir del décimo el
+ * elemento ya está fuera de pantalla y el escalón no se percibe, solo
+ * retrasaría la aparición.
+ */
+.fr-entra > * {
+  animation: fr-entrar var(--vel-media) var(--curva-salida) both;
+}
+.fr-entra > *:nth-child(1) { animation-delay: calc(var(--escalon) * 0); }
+.fr-entra > *:nth-child(2) { animation-delay: calc(var(--escalon) * 1); }
+.fr-entra > *:nth-child(3) { animation-delay: calc(var(--escalon) * 2); }
+.fr-entra > *:nth-child(4) { animation-delay: calc(var(--escalon) * 3); }
+.fr-entra > *:nth-child(5) { animation-delay: calc(var(--escalon) * 4); }
+.fr-entra > *:nth-child(6) { animation-delay: calc(var(--escalon) * 5); }
+.fr-entra > *:nth-child(7) { animation-delay: calc(var(--escalon) * 6); }
+.fr-entra > *:nth-child(8) { animation-delay: calc(var(--escalon) * 7); }
+.fr-entra > *:nth-child(9) { animation-delay: calc(var(--escalon) * 8); }
+.fr-entra > *:nth-child(n + 10) { animation-delay: calc(var(--escalon) * 9); }
+
+/* Para un elemento suelto que no es hijo de una lista escalonada. */
+.fr-entra-solo {
+  animation: fr-entrar var(--vel-media) var(--curva-salida) both;
+}
+
+/*
+ * Transición al cambiar de pantalla. El selector es `router-outlet + *`
+ * porque Angular no mete el componente *dentro* del outlet: lo inserta como
+ * hermano justo después. Y tiene que estar en este archivo global, no en
+ * `app.css`, porque ese componente no pertenece a la plantilla del shell y la
+ * encapsulación de estilos lo dejaría sin aplicar.
+ *
+ * Entra sin rebote: es contenido que aparece solo, no algo que el usuario
+ * tocó. No hay animación de salida — el router destruye la vista anterior de
+ * inmediato, y una pantalla que tarda en irse se siente lenta.
+ */
+router-outlet + * {
+  display: block;
+  animation: fr-entrar var(--vel-media) var(--curva-salida) both;
+}
+
+/* ───────────────────────── Esqueletos ─────────────────────────
+ *
+ * Reemplazan al texto "Cargando...". La razón no es estética: el esqueleto
+ * ocupa el mismo sitio que el contenido real, así que cuando llega la
+ * respuesta nada salta — un aviso de una línea que se cambia por una lista
+ * de tarjetas desplaza toda la pantalla.
+ *
+ * El brillo es un degradado, que es la única excepción a la regla de no usar
+ * degradados: aquí no decora, es el movimiento mismo, y desaparece en cuanto
+ * cargan los datos.
+ */
+@keyframes fr-brillo {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.fr-esqueleto {
+  background-color: #E7E5E4;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, .85) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: fr-brillo 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+  /* Sin texto dentro: el alto lo pone la propia caja. */
+  min-height: 14px;
+}
+
+/* Piezas con las que se arma cualquier esqueleto. */
+.fr-esq-linea { height: 14px; margin-bottom: var(--space-2); }
+.fr-esq-linea--corta { width: 45%; }
+.fr-esq-linea--media { width: 70%; }
+.fr-esq-titulo { height: 26px; width: 60%; margin-bottom: var(--space-3); }
+.fr-esq-letrero { height: 64px; width: 200px; margin-bottom: var(--space-3); border-radius: var(--radius-md); }
+.fr-esq-mapa { height: 220px; width: 100%; border-radius: var(--radius-md); }
+.fr-esq-boton { height: 48px; width: 100%; border-radius: var(--radius-md); margin-top: var(--space-4); }
+
+/*
+ * La tarjeta del esqueleto repite el contorno de `.fr-card` para que el
+ * encuadre no cambie al llegar los datos, pero con borde más suave: un
+ * esqueleto con el mismo negro que el contenido real compite con él.
+ */
+.fr-esq-card {
+  background: var(--superficie);
+  border: var(--trazo-2) solid var(--tinta-suave);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--sombra-dura-sm);
+}
+
+/*
+ * Respeta la preferencia del sistema. Las animaciones infinitas (el brillo)
+ * se detienen del todo; las de entrada saltan a su estado final en lugar de
+ * desaparecer, para que el contenido siga visible.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fr-entra > *,
+  .fr-entra-solo,
+  router-outlet + * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .fr-esqueleto {
+    animation: none;
+    background-image: none;
+  }
+  .fr-btn,
+  .fr-card,
+  .letrero-placa {
+    transition: none;
+  }
 }
 
 /*
@@ -244,7 +417,8 @@ body {
   cursor: pointer;
   text-decoration: none;
   /* El resorte está en la curva de easing, no en un escalado. */
-  transition: transform .3s cubic-bezier(.34,1.3,.64,1), box-shadow .2s ease;
+  transition: transform var(--vel-media) var(--curva-resorte),
+              box-shadow var(--vel-rapida) ease;
 }
 /*
  * Desplazar y no escalar: `scale` sobre un botón de ancho completo
@@ -256,7 +430,18 @@ body {
 @media (hover: hover) {
   .fr-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--sombra-dura-md); }
 }
-.fr-btn:active { transform: translate(2px, 2px); box-shadow: var(--sombra-dura-sm); }
+/*
+ * El `:active` es el que carga el peso en celular, que es el objetivo
+ * principal: es el único estado táctil que existe. El botón se hunde contra
+ * su sombra, como si se presionara contra la página. Sale rápido (--vel-rapida)
+ * y vuelve con resorte, que es el orden físico correcto: hundirse cuesta poco,
+ * recuperarse rebota.
+ */
+.fr-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--sombra-dura-sm);
+  transition-duration: var(--vel-rapida);
+}
 .fr-btn:focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; }
 .fr-btn-primario { background: var(--indigo); color: var(--sobre-indigo); box-shadow: var(--shadow-elevated); }
 .fr-btn-bloque { display: flex; width: 100%; }
@@ -305,7 +490,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  transition: transform .3s cubic-bezier(.34,1.3,.64,1), box-shadow .3s ease;
+  transition: transform var(--vel-media) var(--curva-resorte),
+              box-shadow var(--vel-media) ease;
 }
 .fr-card-interactiva {
   cursor: pointer;
@@ -316,6 +502,12 @@ body {
     transform: translate(-4px, -4px);
     box-shadow: var(--sombra-dura-lg);
   }
+}
+/* Y el equivalente táctil, que es el que se usa en la calle. */
+.fr-card-interactiva:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--sombra-dura-sm);
+  transition-duration: var(--vel-rapida);
 }
 
 /* Others */

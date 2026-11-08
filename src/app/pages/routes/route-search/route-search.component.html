@@ -85,9 +85,19 @@
     </button>
   </form>
 
+  <!--
+    Aquí el esqueleto es el de la tarjeta de resultado, no el del formulario:
+    el formulario ya está en pantalla y sigue siendo usable mientras se busca.
+  -->
   @if (loading()) {
-    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-      Buscando la mejor ruta...
+    <p role="status" class="fr-solo-lectores">Buscando la mejor ruta...</p>
+    <div class="fr-esq-card fr-entra" aria-hidden="true">
+      <div class="fr-esqueleto fr-esq-titulo"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
+      <div class="fr-esqueleto fr-esq-letrero" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--media"></div>
+      <div class="fr-esqueleto fr-esq-mapa" style="margin-top: var(--space-6);"></div>
+      <div class="fr-esqueleto fr-esq-boton"></div>
     </div>
   }
 

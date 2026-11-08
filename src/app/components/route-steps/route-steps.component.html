@@ -1,4 +1,9 @@
-<ol class="fr-lista">
+<!--
+  `fr-entra` escalona los pasos: el recorrido se dibuja de la primera parada a
+  la última, que es el orden en que se lee. Son máximo 7, así que todos entran
+  dentro del escalonado antes de que se vuelva lento.
+-->
+<ol class="fr-lista fr-entra">
   @for (stop of steps(); track $index; let i = $index) {
     <li class="fr-fila">
       <span class="fr-chip-lugar" aria-hidden="true">{{ i + 1 }}</span>

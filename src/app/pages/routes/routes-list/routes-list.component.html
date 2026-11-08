@@ -7,10 +7,31 @@
     <p class="fr-texto-sm">Consulta las rutas de transporte disponibles en Fusagasugá</p>
   </header>
 
+  <!--
+    Esqueleto con la forma de una tarjeta de ruta (título + precio, letrero,
+    barrios, botón). Son tres porque es lo que cabe en pantalla: el objetivo
+    es que al llegar los datos nada se mueva de sitio.
+
+    `aria-hidden` sobre los bloques y un `role="status"` con texto solo para
+    lector de pantalla: las barras grises no significan nada si no se ven, y
+    quien usa lector necesita que le digan que está cargando.
+  -->
   @if (loading()) {
-    <div class="fr-alerta" role="status" style="text-align: center; background: var(--lima); border-color: var(--borde);">
-      Cargando rutas...
-    </div>
+    <p role="status" class="fr-solo-lectores">Cargando las rutas...</p>
+    <ul class="fr-lista fr-entra" style="gap: var(--space-6); list-style: none; padding: 0;" aria-hidden="true">
+      @for (hueco of [1, 2, 3]; track hueco) {
+        <li class="fr-esq-card">
+          <div style="display: flex; justify-content: space-between; gap: var(--space-4);">
+            <div class="fr-esqueleto fr-esq-titulo" style="flex: 1; width: auto;"></div>
+            <div class="fr-esqueleto fr-esq-linea" style="width: 70px; height: 20px;"></div>
+          </div>
+          <div class="fr-esqueleto fr-esq-letrero"></div>
+          <div class="fr-esqueleto fr-esq-linea fr-esq-linea--media"></div>
+          <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
+          <div class="fr-esqueleto fr-esq-boton"></div>
+        </li>
+      }
+    </ul>
   }
 
   @if (errorMessage()) {
@@ -25,7 +46,7 @@
         <p class="fr-texto">No se encontraron rutas activas en este momento.</p>
       </div>
     } @else {
-      <ul class="fr-lista" style="gap: var(--space-6); list-style: none; padding: 0;">
+      <ul class="fr-lista fr-entra" style="gap: var(--space-6); list-style: none; padding: 0;">
         @for (route of routes(); track route.id) {
           <li class="fr-card fr-card-interactiva">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
