@@ -34,7 +34,14 @@ export interface PickedPoints {
         Elegir en el mapa no está disponible ahora. La búsqueda por barrio funciona igual.
       </p>
     } @else if (!mapsReady()) {
-      <p class="fr-texto-sm" role="status">Cargando mapa...</p>
+      <!--
+        Esqueleto de los 280 px que va a medir el mapa, no el texto
+        "Cargando mapa...": asi la pantalla no da un salto cuando Google
+        termina de cargar. El aviso para lector de pantalla sigue diciendo
+        "Cargando mapa", que es lo que afirma su prueba.
+      -->
+      <p role="status" class="fr-solo-lectores">Cargando mapa para elegir los puntos...</p>
+      <div class="fr-esqueleto picker-hueco" aria-hidden="true"></div>
     } @else {
       <div class="fr-pila" style="gap: var(--space-3);">
         <fieldset class="fr-fila" style="gap: var(--space-4); border: 0; padding: 0;">
@@ -80,6 +87,15 @@ export interface PickedPoints {
       </div>
     }
   `,
+  styles: [`
+    /* Hueco del esqueleto: el mismo alto que el mapa (280 px), para que al
+       cargar Google no se desplace nada de lo que hay debajo. */
+    .picker-hueco {
+      height: 280px;
+      width: 100%;
+      border-radius: var(--radius-md);
+    }
+  `],
 })
 export class MapPointPickerComponent implements OnInit {
   /** Se emite en cada cambio para que el formulario padre lea la última versión. */

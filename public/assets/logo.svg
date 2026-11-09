@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FusaRoute">
+  <!--
+    Isotipo FusaRoute, tal como quedó en la slide 1 de la presentación del
+    Comité 2 (entregables/comite-2/presentacion-comite2.html, símbolo #fr-iso).
+    Es la buseta vista de frente: placa de destino arriba, parabrisas, dos
+    ruedas, y el rectángulo negro desplazado detrás que hace la sombra dura.
+    No se redibuja: cualquier cambio aquí cambia la marca que ya se sustentó.
+  -->
+  <rect x="8" y="8" width="54" height="54" rx="15" fill="#000000"/>
+  <rect x="5" y="5" width="54" height="54" rx="15" fill="#4F46E5" stroke="#000000" stroke-width="3"/>
+  <rect x="13" y="12.5" width="38" height="9.5" rx="3" fill="#D9F99D" stroke="#000000" stroke-width="3"/>
+  <rect x="15.5" y="14.5" width="3.5" height="3" fill="#4F46E5"/>
+  <rect x="22.5" y="17.5" width="3.5" height="3" fill="#4F46E5"/>
+  <rect x="29.5" y="14.5" width="3.5" height="3" fill="#4F46E5"/>
+  <rect x="36.5" y="17.5" width="3.5" height="3" fill="#4F46E5"/>
+  <rect x="43.5" y="14.5" width="3.5" height="3" fill="#4F46E5"/>
+  <rect x="13" y="29" width="38" height="13" rx="4" fill="#FDFCFB" stroke="#000000" stroke-width="3"/>
+  <circle cx="20" cy="50" r="4.5" fill="#D9F99D" stroke="#000000" stroke-width="3"/>
+  <circle cx="44" cy="50" r="4.5" fill="#D9F99D" stroke="#000000" stroke-width="3"/>
+</svg>

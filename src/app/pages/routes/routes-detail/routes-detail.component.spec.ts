@@ -111,7 +111,7 @@ describe('RoutesDetailComponent', () => {
   it('ruta intermunicipal: muestra la última actualización de la ruta sin borrar la fecha de cada fila', async () => {
     const el = await render(() => of(intermunicipal), '8');
 
-    const seccion = el.querySelector('section:has(table)')?.textContent ?? '';
+    const seccion = el.querySelector('.fr-bento-item:has(table)')?.textContent ?? '';
     expect(seccion).toContain('Última actualización');
     expect(seccion).toContain('5 de febrero de 2026');
     // Siete de ocho precios pueden ser más viejos que el más nuevo: sin la fecha por fila,
@@ -126,7 +126,7 @@ describe('RoutesDetailComponent', () => {
     const el = await render(() => of(sinClave));
 
     expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
-    expect(el.textContent).not.toContain('Actualizada el');
+    expect(el.textContent).not.toContain('Última actualización');
   });
 
   it('con más de 7 barrios muestra solo 7, con el primero y el último', async () => {
@@ -161,7 +161,7 @@ describe('RoutesDetailComponent', () => {
     const el = await render(() => of(urbanaConTrazado));
 
     expect(el.querySelector('app-map-view')).not.toBeNull();
-    expect(el.textContent).toContain('Recorrido en el mapa');
+    expect(el.textContent).toContain('El recorrido en el mapa');
     expect(el.textContent).not.toContain('todavía no tiene su recorrido dibujado');
   });
 
@@ -207,7 +207,7 @@ describe('RoutesDetailComponent', () => {
   it('con letrero, muestra la sección y el SVG de esa ruta (SCRUM-184)', async () => {
     const el = await render(() => of({ ...urbana, signFile: 'HOSPITAL_BATALLON_LA_PAMPA_LLANO_GRANDE' }));
 
-    expect(el.textContent).toContain('Letrero de la buseta');
+    expect(el.textContent).toContain('Busque este letrero');
     expect(el.querySelector('app-letrero img')?.getAttribute('src'))
       .toBe('letreros/HOSPITAL_BATALLON_LA_PAMPA_LLANO_GRANDE.svg');
   });
@@ -216,7 +216,7 @@ describe('RoutesDetailComponent', () => {
     // Caso real de 'Fusagasugá - Pasca': es una de las tres rutas sin letrero.
     const el = await render(() => of(intermunicipal), '8');
 
-    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.textContent).not.toContain('Busque este letrero');
     expect(el.querySelector('app-letrero')).toBeNull();
   });
 
@@ -225,7 +225,7 @@ describe('RoutesDetailComponent', () => {
     const el = await render(() => of(urbana));
 
     expect(el.querySelector('h1')?.textContent).toContain('Camino Real - La Pampa');
-    expect(el.textContent).not.toContain('Letrero de la buseta');
+    expect(el.textContent).not.toContain('Busque este letrero');
   });
 
   it('el orden en pantalla es nombre, letrero, lugares y mapa', async () => {
@@ -238,9 +238,9 @@ describe('RoutesDetailComponent', () => {
     }));
 
     const texto = el.textContent ?? '';
-    const letrero = texto.indexOf('Letrero de la buseta');
-    const lugares = texto.indexOf('Barrios por los que pasa');
-    const mapa = texto.indexOf('Recorrido en el mapa');
+    const letrero = texto.indexOf('Busque este letrero');
+    const lugares = texto.indexOf('Por dónde pasa');
+    const mapa = texto.indexOf('El recorrido en el mapa');
 
     expect(letrero).toBeGreaterThan(-1);
     expect(lugares).toBeGreaterThan(letrero);

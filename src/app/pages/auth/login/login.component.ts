@@ -21,14 +21,17 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
 
       @if (errorMessage()) {
         <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
-          <strong>Error:</strong> {{ errorMessage() }}
+          <strong style="color: var(--rojo-texto);">¡Uy, parce!</strong> {{ errorMessage() }}
         </div>
       }
 
       @switch (step()) {
         @case ('credentials') {
-          <h1 class="fr-titulo-1" style="text-align: center; margin-bottom: var(--space-4);">Entra a tu cuenta</h1>
-          <p class="fr-texto-sm" style="text-align: center; margin-bottom: var(--space-6);">Guarda tu historial y tu destino favorito.</p>
+          <div style="text-align: center; margin-bottom: var(--space-4);">
+            <img src="assets/mascot/suta-wave.webp" alt="Indio Sutá saludando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
+            <h1 class="fr-titulo-1">¡Hágale, parcero!</h1>
+            <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Entra a tu cuenta para guardar tu historial y tu destino favorito.</p>
+          </div>
 
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div class="fr-campo">
@@ -42,23 +45,25 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
             </div>
 
             <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="loginForm.invalid || loading()">
-              {{ loading() ? 'Entrando...' : 'Entrar' }}
+              {{ loading() ? 'Entrando...' : '¡Hágale!' }}
             </button>
           </form>
 
           <p class="fr-texto-sm" style="margin-top: var(--space-6); text-align: center;">
-            ¿No tienes cuenta? <a class="fr-link" routerLink="/registro">Créala aquí</a>
+            ¿No tienes cuenta? <a class="fr-link" routerLink="/registro">Créala aquí, parce</a>
           </p>
           <p class="fr-texto-sm" style="margin-top: var(--space-2); text-align: center;">
             Puedes ver las rutas sin iniciar sesión. <a class="fr-link" routerLink="/rutas">Ver catálogo</a>
           </p>
         }
-
         @case ('totp') {
-          <h1 class="fr-titulo-1" style="text-align: center; margin-bottom: var(--space-4);">Verificación en dos pasos</h1>
-          <p class="fr-texto-sm" style="text-align: center; margin-bottom: var(--space-6);">
-            {{ useBackupCode() ? 'Escribe uno de tus códigos de respaldo.' : 'Escribe el código de 6 dígitos de tu app autenticadora.' }}
-          </p>
+          <div style="text-align: center; margin-bottom: var(--space-4);">
+            <img src="assets/mascot/suta-pointing.webp" alt="Indio Sutá señalando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
+            <h1 class="fr-titulo-1">Tranqui, un paso más</h1>
+            <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">
+              {{ useBackupCode() ? 'Escribe uno de tus códigos de respaldo.' : 'Escribe el código de 6 dígitos de tu app autenticadora.' }}
+            </p>
+          </div>
 
           <form [formGroup]="totpForm" (ngSubmit)="onSubmitTotp()" style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div class="fr-campo">
@@ -76,7 +81,7 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
             </div>
 
             <button type="submit" class="fr-btn fr-btn-primario fr-btn-bloque" [disabled]="totpForm.invalid || loading()">
-              {{ loading() ? 'Verificando...' : 'Verificar' }}
+              {{ loading() ? 'Verificando...' : '¡Listo!' }}
             </button>
           </form>
 
@@ -91,12 +96,14 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
             </button>
           </p>
         }
-
         @case ('enroll') {
-          <h1 class="fr-titulo-1" style="text-align: center; margin-bottom: var(--space-4);">Protege tu cuenta</h1>
-          <p class="fr-texto-sm" style="text-align: center; margin-bottom: var(--space-6);">
-            Para entrar a FusaRoute necesitas activar la verificación en dos pasos.
-          </p>
+          <div style="text-align: center; margin-bottom: var(--space-4);">
+            <img src="assets/mascot/suta-de-pie.webp" alt="Indio Sutá de pie" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
+            <h1 class="fr-titulo-1">Protege tu cuenta, parcero</h1>
+            <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">
+              Para entrar a FusaRoute necesitas activar la verificación en dos pasos.
+            </p>
+          </div>
           <app-totp-enroll (enrolled)="onEnrolled()" (expired)="onEnrollmentExpired()" />
         }
       }
