@@ -10,11 +10,11 @@ export interface Fare {
 /**
  * Espeja RouteResponse del backend (GET /api/routes).
  *
- * `congestionSectors` es opcional, no requerido: el listado hoy no lo manda (SCRUM-154, por
- * decisión de rendimiento — el backend evalúa el aviso por ruta y el listado no, para no cargar
- * el detalle completo en cada tarjeta). Que el tipo lo admita como opcional, en vez de omitirlo
- * del todo, deja listo el lado del frontend para el día en que el backend lo agregue, sin volver
- * a tocar este archivo.
+ * `congestionSectors` es opcional y el listado NO lo manda (SCRUM-154). Decisión del
+ * 2026-11-08: no se agrega al listado porque el aviso depende de la hora (se enciende 30 min
+ * antes del trancón), y un listado que depende de la hora no se puede cachear 10 min en HTTP
+ * (SCRUM-127) — perdería casi todo el beneficio sobre el endpoint del LCP. La tarjeta del
+ * catálogo no lo pinta; el aviso vive en el detalle de la ruta, que sí lo calcula.
  */
 export interface Route {
   id: number;
