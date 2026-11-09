@@ -14,4 +14,6 @@ export const environment = {
   production: true,
   apiUrl: 'https://fusaroute-backend.onrender.com',
   googleMapsApiKey: 'AIzaSyB43vsKM3B9vlCyxkikPuMI3rl-3F-uMe8',
+  /** Datos simulados del contrato de lugares (solo la configuracion mock). */
+  mockApi: false,
 };

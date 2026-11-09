@@ -52,3 +52,8 @@ Thumbs.db
 
 # Configuracion personal de la sesion de Claude Code (rutas locales de cada quien)
 .claude/settings.local.json
+
+# Pruebas de responsive (Playwright)
+e2e/capturas/
+test-results/
+playwright-report/

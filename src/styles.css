@@ -861,3 +861,18 @@ body {
   max-width: 100%;
   height: auto;
 }
+
+/* Contenedor del buscador: ancho de lectura, con margen lateral en celular. */
+.fr-pagina-buscar { max-width: 600px; margin: var(--space-6) auto; padding: 0 var(--space-4); box-sizing: border-box; }
+
+/* Enlaces dentro de un texto: 44 px de alto tactil sin cambiar como se leen. */
+.fr-link { display: inline-flex; align-items: center; min-height: 44px; }
+
+/*
+ * Celulares angostos (320-399 px): la tarjeta y los campos ceden relleno lateral
+ * para que un nombre como "Terminal de Transporte" quepa entero en el campo.
+ */
+@media (max-width: 399px) {
+  .fr-card { padding: var(--space-4) var(--space-3); }
+  .fr-input { padding: 0 var(--space-3); }
+}

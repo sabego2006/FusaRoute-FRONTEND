@@ -91,21 +91,41 @@ export interface RouteDetail extends Route {
 }
 
 /**
- * Cuerpo de la petición GET /api/routes/search (RF-04, SCRUM-54, SCRUM-130).
- *
- * El usuario nunca escribe una coordenada: origen y destino se eligen de la lista de
- * barrios del catálogo, que es también lo único que el backend necesita para filtrar
- * qué rutas conectan. Las coordenadas son un dato aparte y opcional — hoy solo llegan
- * del origen, cuando el navegador autoriza la geolocalización, y afinan la última
- * milla; sin ellas el backend deriva un punto aproximado del nombre del barrio.
+ * Query de GET /api/routes/search (y /search/offline). Por punta va UNA de dos formas:
+ * el id de un lugar canónico (`…PlaceId`) o un punto (`…Lat` + `…Lng`) que sale del GPS
+ * o de un toque en el mapa. El usuario nunca escribe la coordenada (SCRUM-130).
  */
 export interface RouteSearchParams {
-  originNeighborhood: string;
+  originPlaceId?: number;
   originLat?: number;
   originLng?: number;
-  destinationNeighborhood: string;
+  destinationPlaceId?: number;
   destinationLat?: number;
   destinationLng?: number;
+}
+
+/** De dónde sale `estimatedMinutes`: tráfico actual de Google o estimado por distancia. */
+export type EtaSource = 'TRAFFIC' | 'ESTIMATED';
+
+/** Un extremo del viaje tal como lo resolvió el backend, con el nombre a mostrar. */
+export interface ResolvedEnd {
+  lat: number;
+  lng: number;
+  label: string;
+}
+
+/** La ruta más cercana a una punta, en el 404 de la búsqueda. */
+export interface NearestRoute {
+  routeId?: number;
+  routeName: string;
+  distanceInMeters: number;
+}
+
+/** Cuerpo del 404 de la búsqueda: el `detail` y, si viene, la ruta más cercana a cada punta. */
+export interface RouteNotFoundProblem {
+  status: number;
+  detail: string;
+  nearestRoutes?: { origin?: NearestRoute | null; destination?: NearestRoute | null };
 }
 
 /**
@@ -146,4 +166,10 @@ export interface RouteSearchResult {
    */
   path?: GeoJsonLineString | null;
   lastUpdatedAt: string | null;
+  /** Opcionales: un backend anterior al contrato de lugares (P1) no los manda. */
+  etaSource?: EtaSource | null;
+  longWalk?: boolean;
+  congestionSectors?: CongestionSector[];
+  origin?: ResolvedEnd | null;
+  destination?: ResolvedEnd | null;
 }

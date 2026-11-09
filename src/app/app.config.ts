@@ -5,12 +5,15 @@ import { provideRouter, withViewTransitions } from '@angular/router';
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { mockApiInterceptor } from './core/mock/mock-api.interceptor';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(
-      withInterceptors([authInterceptor])
+      // El simulador solo entra con environment.mockApi (configuracion mock); apagado por defecto.
+      withInterceptors(environment.mockApi ? [authInterceptor, mockApiInterceptor] : [authInterceptor])
     ),
     /*
      * Transiciones de vista nativas al cambiar de pantalla. El navegador cruza
