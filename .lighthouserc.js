@@ -20,7 +20,7 @@ const DIST_DIR = 'dist/fusaroute-frontend/browser';
 // tuviera nada que ver con el peso real de la app. precomprimimos a .gz (-k conserva el
 // original para rutas que no son texto) y `--gzip` hace que http-server sirva el .gz
 // con el Content-Encoding correcto cuando el cliente lo acepta.
-const PRECOMPRESS = `find ${DIST_DIR} -type f \\( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.webmanifest" -o -name "routes" \\) -exec gzip -9 -k -f {} \\;`;
+const PRECOMPRESS = `find ${DIST_DIR} -type f \\( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.webmanifest" -o -name "routes" -o -name "places" \\) -exec gzip -9 -k -f {} \\;`;
 
 module.exports = {
   ci: {
