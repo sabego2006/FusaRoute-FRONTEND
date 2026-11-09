@@ -56,8 +56,8 @@ function endFrom(req: HttpRequest<unknown>, prefix: 'origin' | 'destination') {
 }
 
 export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
-  const url = new URL(req.url, 'http://x');
-  const path = url.pathname;
+  // Solo la ruta: se quita el origen (cualquiera que sea apiUrl) y la query.
+  const path = req.url.replace(/^[a-z]+:\/\/[^/]+/i, '').split('?')[0];
   const ok = <T>(body: T) => of(new HttpResponse({ status: 200, body })).pipe(delay(150));
 
   if (path === '/api/places') return ok(MOCK_PLACES);

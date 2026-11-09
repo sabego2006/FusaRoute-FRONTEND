@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
 import { GeoJsonLineString } from '../../models/route.model';
@@ -68,7 +68,7 @@ export const FUSA_CENTER: LatLngPoint = { lat: 4.3364, lng: -74.3638 };
     }
   `],
 })
-export class PlacesMapComponent implements OnDestroy {
+export class PlacesMapComponent implements OnInit, OnDestroy {
   readonly markers = input<MapMarkerPoint[]>([]);
   readonly path = input<GeoJsonLineString | null>(null);
   readonly height = input(260);
@@ -85,7 +85,6 @@ export class PlacesMapComponent implements OnDestroy {
   private readonly map = signal<google.maps.Map | null>(null);
 
   constructor() {
-    this.loader.load().catch(() => undefined);
     // Reencuadra cada vez que cambian los puntos o el trazado.
     effect(() => {
       const map = this.map();
@@ -107,6 +106,10 @@ export class PlacesMapComponent implements OnDestroy {
         map.setZoom(16);
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.loader.load().catch(() => undefined);
   }
 
   onMapInitialized(map: google.maps.Map): void {
