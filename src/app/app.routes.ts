@@ -28,6 +28,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard],
   },
+  // El historial vive en la cuenta (RF-07), asi que exige sesion. El guard no es
+  // cortesia visual: el endpoint responde 401 sin token, y sin el guard la pantalla se
+  // abriria solo para mostrar un error.
+  {
+    path: 'historial',
+    loadComponent: () => import('./pages/history/history.component').then(m => m.HistoryComponent),
+    canActivate: [authGuard],
+  },
   // La caja de comentarios exige sesion (RF-08): cada comentario muestra el nombre de
   // quien lo escribio, y sin cuenta no hay nombre que mostrar.
   {

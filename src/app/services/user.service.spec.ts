@@ -54,6 +54,32 @@ describe('UserService', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
   });
 
+  it('getHistory pide GET /api/users/me/history', () => {
+    const historial = [
+      { id: 2, origin: 'Siboney', destination: 'Centro', searchedAt: '2026-10-29T19:00:00Z', routeAvailable: true },
+      { id: 1, origin: 'Gaitán', destination: 'Terminal', searchedAt: '2026-10-29T18:00:00Z', routeAvailable: false },
+    ];
+
+    let result: unknown;
+    service.getHistory().subscribe((r) => (result = r));
+
+    const req = http.expectOne(`${environment.apiUrl}/api/users/me/history`);
+    expect(req.request.method).toBe('GET');
+    req.flush(historial);
+
+    // Llega tal cual: el orden y el tope de 6 los decide el backend, aquí no se tocan.
+    expect(result).toEqual(historial);
+  });
+
+  it('getHistory devuelve lista vacía cuando la cuenta no tiene búsquedas', () => {
+    let result: unknown;
+    service.getHistory().subscribe((r) => (result = r));
+
+    http.expectOne(`${environment.apiUrl}/api/users/me/history`).flush([]);
+
+    expect(result).toEqual([]);
+  });
+
   it('propaga error 400 del backend', () => {
     let errorStatus: number | undefined;
     service.changePassword({ currentPassword: 'bad', newPassword: 'x' }).subscribe({

@@ -4,8 +4,12 @@ import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import { UserProfile, UpdateProfileRequest, ChangePasswordRequest } from '../models/auth.model';
 import { FavoriteDestination } from '../models/favorite.model';
+import { SearchHistoryEntry } from '../models/history.model';
 
-/** Cliente HTTP para el perfil del usuario autenticado (RF-03) y su destino favorito (RF-10). */
+/**
+ * Cliente HTTP del usuario autenticado: su perfil (RF-03), su historial de busquedas
+ * (RF-07) y su destino favorito (RF-10).
+ */
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly url = `${environment.apiUrl}/api/users/me`;
@@ -35,6 +39,18 @@ export class UserService {
 
   getMe(): Observable<UserProfile> {
     return this.http.get<UserProfile>(this.url);
+  }
+
+  /**
+   * Últimas búsquedas de la cuenta, de la más reciente a la más antigua (RF-07).
+   *
+   * El backend ya manda el orden y el tope de 6; aquí no se recorta ni se reordena nada.
+   * Tampoco se cachea: el historial cambia con cada búsqueda, y una entrada puede dejar
+   * de estar disponible entre una visita y la siguiente si el administrador desactiva la
+   * ruta que la servía (RF-11).
+   */
+  getHistory(): Observable<SearchHistoryEntry[]> {
+    return this.http.get<SearchHistoryEntry[]>(`${this.url}/history`);
   }
 
   updateMe(data: UpdateProfileRequest): Observable<UserProfile> {
