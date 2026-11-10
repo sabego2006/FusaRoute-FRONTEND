@@ -40,7 +40,7 @@ import { AuthService } from '../../services/auth.service';
             <a routerLink="/perfil" class="fr-header__link fr-header__link--nav">Mi perfil</a>
             <button class="fr-header__link fr-header__logout" (click)="logout()">Salir</button>
           } @else {
-            <a routerLink="/login" class="fr-header__link">Ingresar</a>
+            <a routerLink="/login" class="fr-header__link fr-header__link--nav">Ingresar</a>
             <a routerLink="/registro" class="fr-header__link fr-header__link--cta">Crear cuenta</a>
           }
         </div>
@@ -73,12 +73,14 @@ import { AuthService } from '../../services/auth.service';
       align-items: center;
       gap: var(--space-3);
       flex: none;
+      min-height: 44px;
     }
     .fr-header__links {
       display: flex;
       align-items: center;
       gap: var(--space-3);
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      min-width: 0;
     }
     .fr-header__link {
       text-decoration: none;
@@ -91,6 +93,12 @@ import { AuthService } from '../../services/auth.service';
       border: none;
       cursor: pointer;
       font-family: inherit;
+      /* Objetivo tactil de 44 px de alto y sin partir el texto en dos lineas. */
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      white-space: nowrap;
+      box-sizing: border-box;
     }
     .fr-header__link:hover { background: var(--indigo-suave); }
     .fr-header__link--cta {
@@ -115,6 +123,7 @@ import { AuthService } from '../../services/auth.service';
     @media (max-width: 759px) {
       .fr-header__link--nav { display: none; }
       .fr-header__greeting { display: none; }
+      .fr-header__brand { gap: var(--space-2); }
     }
   `],
 })

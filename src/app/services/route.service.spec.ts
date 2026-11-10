@@ -43,13 +43,11 @@ describe('RouteService', () => {
     });
   });
 
-  it('la búsqueda con red manda barrio y coordenadas al endpoint online', () => {
+  it('la búsqueda con red manda el id del origen y las coordenadas del destino al endpoint online', () => {
     service
       .searchRoute({
-        originNeighborhood: 'Centro',
-        originLat: 4.3433,
-        originLng: -74.3661,
-        destinationNeighborhood: 'La Pampa',
+        originPlaceId: 12,
+
         destinationLat: 4.33,
         destinationLng: -74.36
       })
@@ -57,8 +55,10 @@ describe('RouteService', () => {
 
     const req = http.expectOne((r) => r.url === `${environment.apiUrl}/api/routes/search`);
     expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('originNeighborhood')).toBe('Centro');
-    expect(req.request.params.get('originLat')).toBe('4.3433');
+    expect(req.request.params.get('originPlaceId')).toBe('12');
+    expect(req.request.params.get('destinationLat')).toBe('4.33');
+    expect(req.request.params.has('originLat')).toBe(false);
+    expect(req.request.params.has('destinationPlaceId')).toBe(false);
     req.flush({ route: {}, estimatedMinutes: 18, travelDistanceInMeters: 2400, boarding: null, dropOff: null });
   });
 
@@ -66,10 +66,8 @@ describe('RouteService', () => {
     let result: unknown;
     service
       .searchRouteOffline({
-        originNeighborhood: 'Centro',
-        originLat: 4.3433,
-        originLng: -74.3661,
-        destinationNeighborhood: 'La Pampa',
+        originPlaceId: 12,
+
         destinationLat: 4.33,
         destinationLng: -74.36
       })
