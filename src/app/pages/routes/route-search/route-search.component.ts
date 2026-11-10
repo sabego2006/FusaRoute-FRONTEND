@@ -20,6 +20,11 @@ import { ComboboxAction, PlaceComboboxComponent } from '../../../components/plac
 import { MapMarkerPoint, PlacesMapComponent } from '../../../components/places-map/places-map.component';
 import { MapPickDialogComponent } from '../../../components/map-pick-dialog/map-pick-dialog.component';
 import { LatLngPoint } from '../../../components/map-view/map-view.component';
+import { BoardedButtonComponent } from '../../../components/boarded-button/boarded-button.component';
+import { LastDestinationChipComponent } from '../../../components/last-destination-chip/last-destination-chip.component';
+import { RideHistoryComponent } from '../../../components/ride-history/ride-history.component';
+import { RideService } from '../../../services/ride.service';
+import { Ride, RideDraft } from '../../../models/ride.model';
 
 type End = 'origin' | 'destination';
 
@@ -41,7 +46,8 @@ export const GPS_TIMEOUT_MS = 8_000;
   selector: 'app-route-search',
   standalone: true,
   imports: [RouterLink, RouteStepsComponent, FareTableComponent, LetreroComponent, TrafficBadgeComponent,
-            PlaceComboboxComponent, PlacesMapComponent, MapPickDialogComponent],
+            PlaceComboboxComponent, PlacesMapComponent, MapPickDialogComponent,
+            BoardedButtonComponent, LastDestinationChipComponent, RideHistoryComponent],
   templateUrl: './route-search.component.html',
   styles: [`
     .fr-campo-con-accion { display: flex; align-items: flex-end; gap: var(--space-2); }
@@ -93,6 +99,7 @@ export const GPS_TIMEOUT_MS = 8_000;
       margin: 0 0 var(--space-3);
     }
     .fr-vista-previa { margin-top: var(--space-4); }
+    .fr-ya-me-subi { margin: var(--space-6) 0; }
     .fr-cercanas { margin: var(--space-2) 0 0; padding-left: var(--space-5); }
   `],
 })
@@ -104,6 +111,31 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
+  private readonly rideService = inject(RideService);
+
+  // ---- "Ya me subí" e historial de viajes (P4) ----
+  readonly rides = this.rideService.rides;
+  readonly lastRide = this.rideService.lastRide;
+  /** Puntas con que se hizo la búsqueda del resultado actual (no las que el usuario cambie después). */
+  private readonly searchedEnds = signal<{ origin: TripEnd; destination: TripEnd } | null>(null);
+  readonly rideDraft = computed<RideDraft | null>(() => {
+    const r = this.result();
+    const ends = this.searchedEnds();
+    if (!r || !ends) return null;
+    const d = r.destination ?? toResolved(ends.destination);
+    if (!d) return null;
+    const place = ends.destination.kind === 'place' ? ends.destination.place : null;
+    return {
+      routeId: r.route.id,
+      routeName: r.route.name,
+      signFile: r.route.signFile ?? null,
+      destinationLabel: place ? place.name : d.label,
+      destinationPlaceId: place ? place.id : null,
+      destinationLat: d.lat,
+      destinationLng: d.lng,
+      originLabel: ends.origin.label,
+    };
+  });
 
   readonly places = signal<Place[]>([]);
   readonly placesError = signal(false);
@@ -207,6 +239,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
       error: () => this.placesError.set(true),
     });
     this.loadFavorite();
+    this.rideService.load();
   }
 
   ngOnDestroy(): void {
@@ -282,6 +315,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     this.etaMostrado.set(0);
     afterNextRender(() => this.irAlResultado(), { injector: this.injector });
 
+    this.searchedEnds.set({ origin, destination });
     const params = buildSearchParams(origin, destination);
     const offline = !this.connectivity.isOnline();
     this.run(offline ? this.routeService.searchRouteOffline(params) : this.routeService.searchRoute(params), offline, params);
@@ -325,6 +359,20 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
       return;
     }
     this.errorMessage.set(body?.detail ?? 'No se pudo completar la búsqueda. Intenta de nuevo.');
+  }
+
+  /**
+   * Atajo y historial: llenan solo el destino, para salir desde cualquier origen. Si el
+   * viaje fue a un lugar de la lista se usa ese lugar (por id); si fue un punto del
+   * mapa, o el lugar ya no está en la lista, se usa la coordenada guardada.
+   */
+  useRideDestination(ride: Ride): void {
+    const place = ride.destinationPlaceId == null
+      ? undefined
+      : this.places().find((p) => p.id === ride.destinationPlaceId);
+    this.destination.set(place
+      ? { kind: 'place', place, label: place.name }
+      : { kind: 'map', lat: ride.destinationLat, lng: ride.destinationLng, label: ride.destinationLabel });
   }
 
   // ---- Favorito ----

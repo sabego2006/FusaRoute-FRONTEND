@@ -31,7 +31,8 @@
         (action)="onComboAction('origin', $event)" />
     </div>
 
-    <!-- HUECO P4 (antes del destino): atajo "último destino". Va aquí, sin tocar la lógica. -->
+    <!-- P4: atajo "último destino". Llena solo el destino. -->
+    <app-last-destination-chip [ride]="lastRide()" (choose)="useRideDestination($event)" />
 
     <div class="fr-campo">
       <div class="fr-campo-con-accion">
@@ -94,6 +95,9 @@
       </button>
     </div>
   </form>
+
+  <!-- P4: "Tus últimos viajes", plegado por defecto. -->
+  <app-ride-history [rides]="rides()" (choose)="useRideDestination($event)" />
 
   <app-map-pick-dialog (picked)="onMapPicked($event)" />
 
@@ -241,6 +245,9 @@
       </div>
     </div>
 
-    <!-- HUECO P4 (debajo del resultado): "Ya me subí" e historial de viajes. -->
+    <!-- P4: "¡Ya me subí!" guarda el viaje y deja su destino como último destino. -->
+    <section class="fr-ya-me-subi" aria-label="Confirmar que tomó la buseta">
+      <app-boarded-button [draft]="rideDraft()" />
+    </section>
   }
 </main>

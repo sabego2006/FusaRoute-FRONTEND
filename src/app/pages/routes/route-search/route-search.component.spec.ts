@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { RIDES_STORAGE_KEY } from '../../../services/ride.service';
 import { of, throwError } from 'rxjs';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { GPS_TIMEOUT_MS, RouteSearchComponent } from './route-search.component';
@@ -53,6 +55,8 @@ async function render(o: Opciones = {}) {
     imports: [RouteSearchComponent],
     providers: [
       provideRouter([]),
+      // RideService real: sin sesión guarda en localStorage, que es lo que se prueba aquí.
+      provideHttpClient(), provideHttpClientTesting(),
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(o.query ?? {}) } } },
       { provide: RouteService, useValue: { searchRoute, searchRouteOffline } },
       { provide: PlaceService, useValue: { getPlaces } },
@@ -261,5 +265,50 @@ describe('RouteSearchComponent', () => {
     const { c } = await render({ loggedIn: true, getFavoriteDestination: () => of(fav) });
     expect(c.destination()?.label).toBe('Terminal de Transporte');
     expect(c.chosenIsFavorite()).toBe(true);
+  });
+
+  describe('Ya me subí (P4, sin sesión)', () => {
+    afterEach(() => localStorage.clear());
+
+    it('tocar "¡Ya me subí!" guarda el viaje y aparece "Volver a" y el historial', async () => {
+      localStorage.clear();
+      const { c, el, fixture, elegirAmbos, buscar } = await render();
+      expect(el.querySelector('[data-testid="volver-a"]')).toBeNull();
+      elegirAmbos();
+      await buscar();
+
+      const boton = el.querySelector('[data-testid="ya-me-subi"]') as HTMLButtonElement;
+      expect(boton.textContent).toContain('¡Ya me subí!');
+      boton.click();
+      fixture.detectChanges();
+
+      expect(boton.textContent).toContain('✓ ¡Buen viaje!');
+      expect(el.querySelector('[data-testid="volver-a"]')?.textContent).toContain('Volver a: Terminal de Transporte');
+      expect(el.querySelector('[data-testid="ultimos-viajes"]')?.textContent).toContain('Terminal de Transporte');
+      const guardado = JSON.parse(localStorage.getItem(RIDES_STORAGE_KEY)!);
+      expect(guardado[0]).toMatchObject({ routeId: 14, destinationPlaceId: terminal.id, originLabel: indio.name });
+      expect(c.lastRide()?.destinationLabel).toBe('Terminal de Transporte');
+    });
+
+    it('el atajo llena solo el destino, con el lugar de la lista', async () => {
+      localStorage.setItem(RIDES_STORAGE_KEY, JSON.stringify([{
+        id: 1, routeId: 14, routeName: 'R', signFile: null, destinationLabel: terminal.name,
+        destinationPlaceId: terminal.id, destinationLat: terminal.lat, destinationLng: terminal.lng,
+        originLabel: 'Indio', boardedAt: new Date().toISOString(),
+      }]));
+      const { c, el, fixture } = await render();
+      fixture.detectChanges();
+
+      (el.querySelector('[data-testid="volver-a"]') as HTMLButtonElement).click();
+      expect(c.destination()).toMatchObject({ kind: 'place', place: { id: terminal.id } });
+      expect(c.origin()).toBeNull();
+    });
+
+    it('un viaje a un punto del mapa vuelve como punto del mapa', async () => {
+      const { c } = await render();
+      c.useRideDestination({ id: 2, routeId: 14, routeName: 'R', signFile: null, destinationLabel: 'Punto',
+        destinationPlaceId: null, destinationLat: 4.33, destinationLng: -74.36, originLabel: 'x', boardedAt: '' });
+      expect(c.destination()).toEqual({ kind: 'map', lat: 4.33, lng: -74.36, label: 'Punto' });
+    });
   });
 });
