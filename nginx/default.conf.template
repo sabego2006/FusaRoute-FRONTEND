@@ -1,0 +1,65 @@
+# Plantilla de Nginx del frontend. La imagen la procesa con envsubst al arrancar
+# el contenedor: solo se reemplazan las variables de entorno que existen
+# (API_URL y GOOGLE_MAPS_API_KEY); las variables propias de Nginx, como $uri, no
+# se tocan.
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # No anunciar la version de Nginx en las cabeceras ni en las paginas de error.
+    server_tokens off;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml application/manifest+json;
+    gzip_min_length 1024;
+
+    # Cabeceras de seguridad. Van en cada location porque en Nginx un add_header
+    # dentro de un location anula los heredados del server.
+    # No hay Content-Security-Policy: el SDK de Google Maps carga scripts, estilos
+    # e imagenes desde varios dominios de Google y una CSP mal afinada rompe el
+    # mapa; queda como mejora proyectada.
+
+    # Configuracion de ejecucion (factor 3 de los 12 factores). El navegador la
+    # pide antes de arrancar Angular; el contenido sale de las variables de
+    # entorno del contenedor, no del bundle. Nunca se cachea: cambiar la variable
+    # y reiniciar el contenedor debe bastar.
+    location = /config.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        return 200 '{"apiUrl":"${API_URL}","googleMapsApiKey":"${GOOGLE_MAPS_API_KEY}"}';
+    }
+
+    # index.html y los archivos del service worker no llevan hash en el nombre:
+    # si se cachean, el navegador se queda con una version vieja de la app.
+    location ~ ^/(index\.html|ngsw\.json|ngsw-worker\.js|safety-worker\.js|manifest\.webmanifest)$ {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        try_files $uri =404;
+    }
+
+    # JS y CSS compilados llevan hash en el nombre (outputHashing: all), asi que
+    # se pueden cachear un ano: si el contenido cambia, cambia el nombre.
+    location ~* \.(?:js|css)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # Fallback de SPA: una ruta como /rutas/5 no existe como archivo; se entrega
+    # index.html y el router de Angular resuelve la pantalla. Es el equivalente
+    # del rewrite de vercel.json.
+    location / {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        try_files $uri $uri/ /index.html;
+    }
+}

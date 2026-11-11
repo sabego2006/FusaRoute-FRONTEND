@@ -16,4 +16,6 @@ export const environment = {
   googleMapsApiKey: '',
   /** Datos simulados del contrato de lugares (solo la configuracion mock). */
   mockApi: false,
+  /** Leer apiUrl y googleMapsApiKey de /config.json al arrancar (solo la imagen Docker). */
+  runtimeConfig: false,
 };
