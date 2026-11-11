@@ -5,9 +5,16 @@
 
 <main class="fr-pila fr-pagina-buscar">
   <div style="text-align: center; margin-bottom: var(--space-6);">
-    <img src="assets/mascot/suta-thumbs-up.webp" alt="" aria-hidden="true"
-         class="fr-suta" width="96" height="96" loading="lazy" decoding="async"
-         style="margin: 0 auto var(--space-3);">
+    <!--
+      La mascota es decorativa: se pide cuando el navegador queda libre, no durante
+      la carga. Antes competía con el bundle por la red y retrasaba el <h1>, que es
+      el LCP de esta pantalla (RNF-01). El hueco de 96 px se reserva para que no salte nada.
+    -->
+    <div class="fr-suta-hueco" aria-hidden="true">
+      @defer (on idle) {
+        <img src="assets/mascot/suta-thumbs-up.webp" alt="" class="fr-suta" width="96" height="96" decoding="async">
+      }
+    </div>
     <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">¿Para dónde va, parcero?</h1>
     <p class="fr-texto-sm">Dinos de dónde sales y a dónde vas, y te decimos qué buseta tomar.</p>
   </div>

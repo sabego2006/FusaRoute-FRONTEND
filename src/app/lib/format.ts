@@ -23,6 +23,15 @@ export function formatDateEs(isoDate: string): string {
   return `${day} de ${MONTHS[month - 1]} de ${year}`;
 }
 
+/**
+ * "2025-01-16" → "16/01/2025". Para celdas angostas (tabla de tarifas a 320 px), donde
+ * "16 de enero de 2025" partido en cuatro renglones no se lee.
+ */
+export function formatDateShort(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 /** "08:30:00" → "08:30". El backend manda la hora con segundos; al usuario le sobran. */
 export function formatTime(time: string): string {
   return time.slice(0, 5);

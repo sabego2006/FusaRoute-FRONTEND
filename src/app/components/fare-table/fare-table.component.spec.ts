@@ -39,8 +39,8 @@ describe('FareTableComponent', () => {
     expect(rows[0]).toContain('Corregimiento');
     expect(rows[1]).toContain('Alaska');
     expect(rows[2]).toContain('Pasca');
-    expect(rows[1]).toContain('5 de febrero de 2026');
-    expect(rows[2]).toContain('16 de enero de 2025');
+    expect(rows[1]).toContain('05/02/2026');
+    expect(rows[2]).toContain('16/01/2025');
 
     const seccion = el.textContent ?? '';
     expect(seccion).toContain('Última actualización');

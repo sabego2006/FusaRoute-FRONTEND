@@ -56,6 +56,10 @@
       <div class="fr-bento-item">
         <h2 class="fr-titulo-3">Cómo está el tráfico</h2>
         <app-traffic-badge [sectors]="congestionSectors()" />
+        @if (congestionSectors().length === 0) {
+          <!-- Sin esto la tarjeta quedaba con el título y vacía (visto en /rutas/8, P6). -->
+          <p class="fr-texto-sm" data-testid="sin-trancon">Esta ruta no pasa por ningún sector con trancón registrado.</p>
+        }
       </div>
 
       <!--
