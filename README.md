@@ -76,6 +76,50 @@ del backend en Render debe incluir el dominio de Vercel para que las peticiones 
 **Cold start:** el backend duerme tras ~15 min de inactividad en el tier gratis de Render; el
 primer request tras eso puede tardar hasta ~60 s.
 
+## Docker
+
+El `Dockerfile` empaqueta el frontend en dos etapas: Node 22 compila el bundle y la imagen
+final solo lleva **Nginx sin privilegios** (escucha en 8080) con los archivos estáticos.
+`nginx/default.conf.template` trae el *fallback* de SPA (`try_files ... /index.html`, el
+equivalente del rewrite de `vercel.json`), caché larga para los archivos con hash y las
+cabeceras de seguridad básicas.
+
+Lo normal es levantarlo junto con el backend y la base, desde el repo del backend:
+
+```bash
+cd ../FusaRoute-BACKEND
+docker compose up --build      # frontend en http://localhost:4200
+```
+
+Para construir y correr solo esta imagen:
+
+```bash
+docker build -t fusaroute-frontend .
+docker run --rm -p 4200:8080 -e API_URL=http://localhost:8080 fusaroute-frontend
+```
+
+### Configuración en ejecución (factor 3)
+
+En esta imagen la URL del backend **no** va compilada en el bundle. Se construye con
+`--configuration=production,docker` (`environment.docker.ts`, `runtimeConfig: true`) y, al
+arrancar, `main.ts` pide `/config.json` antes de iniciar Angular
+(`src/app/core/runtime-config.ts`). Nginx arma esa respuesta con las variables de entorno
+del contenedor:
+
+| Variable | Qué es | Por defecto |
+|---|---|---|
+| `API_URL` | URL base del backend **vista desde el navegador** | `http://localhost:8080` |
+| `GOOGLE_MAPS_API_KEY` | clave pública de Maps del frontend | vacía (la app corre sin mapa) |
+
+Así **la misma imagen** sirve para cualquier ambiente: cambiar de backend es cambiar una
+variable y reiniciar el contenedor, sin recompilar. Se eligió `/config.json` y no reescribir
+el bundle con `sed`/`envsubst` porque el service worker guarda el hash de cada archivo
+compilado: modificarlos después del build lo deja en estado inválido.
+
+El despliegue en Vercel **no cambia**: sigue usando `environment.prod.ts` (URL compilada) y
+no hace la petición extra a `/config.json`, para no sumarle un viaje de red al primer pintado
+que mide RNF-01. Esa parte del factor 3 sigue siendo una brecha declarada del build de Vercel.
+
 ### Verificación rápida
 
 ```bash

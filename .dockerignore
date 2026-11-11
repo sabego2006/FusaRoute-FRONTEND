@@ -1,0 +1,21 @@
+# Lo que no entra al contexto de build de Docker. node_modules y dist se
+# regeneran dentro de la imagen; copiarlos del host la haria mas lenta y
+# mezclaria binarios de Windows con los de Alpine.
+node_modules/
+dist/
+.angular/
+coverage/
+.lighthouseci/
+test-results/
+playwright-report/
+e2e/
+docs/
+.git/
+.github/
+.vscode/
+.claude/
+.env
+.env.*
+*.md
+Dockerfile
+.dockerignore
