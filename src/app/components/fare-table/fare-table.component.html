@@ -9,8 +9,8 @@
     <p class="fr-texto-sm">Actualizada el {{ formatDateEs(fecha) }}</p>
   }
 } @else {
-  <!-- overflow-wrap: los nombres largos (Hogar Francisco y Clara, Crucero La Angostura) desbordaban 1 px a 320 px. -->
-  <table style="width: 100%; border-collapse: collapse; overflow-wrap: anywhere;">
+  <!-- A 320 px la tabla desbordaba (P6): fecha corta, precio sin partir y, solo si no cabe, el nombre se parte. -->
+  <table style="width: 100%; border-collapse: collapse;">
     <caption class="fr-texto-sm" style="text-align: left; margin-bottom: var(--space-2);">
       Precio según el punto de referencia donde te bajas
     </caption>
@@ -18,15 +18,17 @@
       <tr>
         <th scope="col" style="text-align: left;">Bajada en</th>
         <th scope="col" style="text-align: right;">Precio</th>
-        <th scope="col" style="text-align: right;">Actualizada</th>
+        <th scope="col" style="text-align: right;">Desde</th>
       </tr>
     </thead>
     <tbody>
       @for (fare of fares(); track fare.referencePoint) {
         <tr>
-          <td>{{ fare.referencePoint }}</td>
+          <td style="overflow-wrap: anywhere;">{{ fare.referencePoint }}</td>
           <td style="text-align: right; white-space: nowrap;">{{ formatCop(fare.amount) }}</td>
-          <td style="text-align: right;" class="fr-texto-sm">{{ formatDateEs(fare.validFrom) }}</td>
+          <td style="text-align: right;" class="fr-texto-sm">
+            <time [attr.datetime]="fare.validFrom" [attr.aria-label]="formatDateEs(fare.validFrom)">{{ formatDateShort(fare.validFrom) }}</time>
+          </td>
         </tr>
       }
     </tbody>

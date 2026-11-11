@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCop, formatDateEs, formatTime } from './format';
+import { formatCop, formatDateEs, formatDateShort, formatTime } from './format';
 import { pickNeighborhoodSteps } from './route-steps';
 
 describe('formatCop', () => {
@@ -13,6 +13,7 @@ describe('formatDateEs', () => {
   it('escribe la fecha en español sin correrla de día por la zona horaria', () => {
     expect(formatDateEs('2026-02-05')).toBe('5 de febrero de 2026');
     expect(formatDateEs('2025-01-16')).toBe('16 de enero de 2025');
+    expect(formatDateShort('2025-01-16')).toBe('16/01/2025');
   });
 });
 

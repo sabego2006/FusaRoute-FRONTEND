@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Fare, RouteType } from '../../models/route.model';
-import { formatCop, formatDateEs } from '../../lib/format';
+import { formatCop, formatDateEs, formatDateShort } from '../../lib/format';
 
 /**
  * Costo del pasaje de una ruta (RF-06): precio único si es urbana, tabla por punto de
@@ -26,4 +26,5 @@ export class FareTableComponent {
 
   readonly formatCop = formatCop;
   readonly formatDateEs = formatDateEs;
+  readonly formatDateShort = formatDateShort;
 }

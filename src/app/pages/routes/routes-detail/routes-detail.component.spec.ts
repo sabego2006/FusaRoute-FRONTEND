@@ -97,8 +97,8 @@ describe('RoutesDetailComponent', () => {
     expect(rows[0]).toContain('Corregimiento');
     expect(rows[1]).toContain('Alaska');
     expect(rows[2]).toContain('Pasca');
-    expect(rows[1]).toContain('5 de febrero de 2026');
-    expect(rows[2]).toContain('16 de enero de 2025');
+    expect(rows[1]).toContain('05/02/2026');
+    expect(rows[2]).toContain('16/01/2025');
 
     // El orden de menor a mayor (RF-06) lo decide el backend; la vista nunca reordena.
     const amounts = Array.from(el.querySelectorAll('tbody tr td:nth-child(2)')).map((c) =>
@@ -117,7 +117,7 @@ describe('RoutesDetailComponent', () => {
     // Siete de ocho precios pueden ser más viejos que el más nuevo: sin la fecha por fila,
     // la pantalla afirmaría que todos se revisaron en febrero de 2026.
     const rows = Array.from(el.querySelectorAll('tbody tr')).map((r) => r.textContent ?? '');
-    expect(rows[0]).toContain('16 de enero de 2025');
+    expect(rows[0]).toContain('16/01/2025');
   });
 
   it('si el backend no manda lastUpdatedAt (build viejo), no muestra la línea ni se rompe', async () => {
@@ -193,6 +193,8 @@ describe('RoutesDetailComponent', () => {
 
     expect(el.textContent).not.toContain('Puede haber congestión');
     expect(el.querySelector('.congestion-sector')).toBeNull();
+    // La tarjeta no queda vacía: dice que no hay trancón registrado.
+    expect(el.querySelector('[data-testid=\'sin-trancon\']')?.textContent).toContain('no pasa por ningún sector con trancón');
   });
 
   it('si el backend no manda la clave (build viejo), no muestra aviso ni se rompe', async () => {
