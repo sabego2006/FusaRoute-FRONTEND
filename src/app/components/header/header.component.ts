@@ -82,8 +82,16 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
-      gap: var(--space-4);
+      /*
+       * Alto mínimo y no fijo, con salto de línea: con sesión iniciada los enlaces
+       * (Mis búsquedas, Comentarios, Administración, Salir) no caben junto a la marca
+       * en un celular ni en una tableta, y con alto fijo y 'nowrap' se salían por la
+       * derecha y metían scroll horizontal en toda la página (medido: 622 px de ancho
+       * a 320). Cuando no caben bajan a una segunda fila; cuando caben, nada cambia.
+       */
+      min-height: 56px;
+      flex-wrap: wrap;
+      column-gap: var(--space-4);
     }
     /*
      * Flex explícito: el isotipo va rotado -3deg y, en flujo inline, la
@@ -101,8 +109,10 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
     .fr-header__links {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
-      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-left: auto;
       min-width: 0;
     }
     .fr-header__link {
@@ -166,6 +176,7 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
       .fr-header__link--nav { display: none; }
       .fr-header__greeting { display: none; }
       .fr-header__brand { gap: var(--space-2); }
+      .fr-header__links { column-gap: var(--space-1); }
     }
   `],
 })
