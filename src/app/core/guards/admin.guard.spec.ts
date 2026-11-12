@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { adminGuard } from './admin.guard';
 import { AuthService } from '../../services/auth.service';
 import { UserSummary } from '../../models/auth.model';
+import { ToastService } from '../../components/toast/toast.service';
 
 /**
  * Guard de rol del panel de administrador (SCRUM-103).
@@ -59,17 +60,42 @@ describe('adminGuard', () => {
     expect(router.serializeUrl(resultado as UrlTree)).toBe('/login');
   });
 
+  it('a un administrador no le muestra ningun aviso', () => {
+    iniciarSesion(admin);
+
+    ejecutar();
+
+    expect(TestBed.inject(ToastService).current()).toBeNull();
+  });
+
   /**
-   * Con sesion pero sin rol se manda al catalogo y NO al login: volver a iniciar
+   * Con sesion pero sin rol se manda al buscador y NO al login: volver a iniciar
    * sesion con la misma cuenta no cambiaria nada y seria un bucle que no explica nada.
    */
-  it('manda al catalogo a un usuario con sesion pero sin rol de administrador', () => {
+  it('manda al buscador a un usuario con sesion pero sin rol de administrador', () => {
     iniciarSesion(usuario);
 
     const resultado = ejecutar();
 
     expect(resultado).toBeInstanceOf(UrlTree);
-    expect(router.serializeUrl(resultado as UrlTree)).toBe('/rutas');
+    expect(router.serializeUrl(resultado as UrlTree)).toBe('/rutas/buscar');
+  });
+
+  /** Sin el aviso, la redireccion pareceria un enlace roto. */
+  it('le explica con un aviso breve por que no entro', () => {
+    iniciarSesion(usuario);
+
+    ejecutar();
+
+    expect(TestBed.inject(ToastService).current()?.message)
+      .toBe('Esa sección es solo para administradores.');
+  });
+
+  /** A quien no tiene sesion lo explica la propia pantalla de login: sin aviso. */
+  it('a quien no tiene sesion no le muestra el aviso de administradores', () => {
+    ejecutar();
+
+    expect(TestBed.inject(ToastService).current()).toBeNull();
   });
 
   /**

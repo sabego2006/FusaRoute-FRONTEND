@@ -44,15 +44,30 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/comments/comments.component').then(m => m.CommentsComponent),
     canActivate: [authGuard],
   },
-  // Panel del administrador (RF-14, SCRUM-103). Lleva los dos guards: authGuard para
-  // el caso sin sesion y adminGuard para el de sesion sin rol, que mandan a sitios
-  // distintos. Ninguno de los dos es seguridad: el backend exige rol ADMIN en
-  // /api/admin/** y responde 403 (SCRUM-104). Ver el javadoc de adminGuard.
+  // Armazon de administracion (SCRUM-23). Los dos guards van en el padre y cubren a
+  // todas las hijas: authGuard para el caso sin sesion y adminGuard para el de sesion
+  // sin rol, que mandan a sitios distintos. Ninguno de los dos es seguridad: el backend
+  // exige rol ADMIN en /api/admin/** y responde 403 (SCRUM-104). Ver adminGuard.
+  //
+  // Una seccion nueva (rutas, suspensiones, metricas) se agrega como hija ANTES del
+  // comodin y se marca `available: true` en ADMIN_SECTIONS (admin-layout.component.ts).
   {
-    path: 'admin/comentarios',
-    loadComponent: () => import('./pages/admin/admin-comments/admin-comments.component')
-      .then(m => m.AdminCommentsComponent),
+    path: 'admin',
+    loadComponent: () => import('./pages/admin/admin-layout/admin-layout.component')
+      .then(m => m.AdminLayoutComponent),
     canActivate: [authGuard, adminGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'comentarios' },
+      // Panel de comentarios (RF-14, SCRUM-103).
+      {
+        path: 'comentarios',
+        loadComponent: () => import('./pages/admin/admin-comments/admin-comments.component')
+          .then(m => m.AdminCommentsComponent),
+      },
+      // Una seccion que aun no existe cae en comentarios y no en el comodin global,
+      // que sacaria al administrador al catalogo publico sin explicacion.
+      { path: '**', redirectTo: 'comentarios' },
+    ],
   },
   // La raiz cae en el buscador y no en el listado (RNF-04): abrir la app ya cuenta
   // como la primera de las 4 acciones del flujo, asi que tiene que aterrizar donde

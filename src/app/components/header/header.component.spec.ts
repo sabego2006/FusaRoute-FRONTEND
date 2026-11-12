@@ -128,22 +128,43 @@ describe('HeaderComponent', () => {
     expect(globito(fixture)).toBeNull();
   });
 
-  // --- Enlace al panel (SCRUM-103) ------------------------------------------
+  // --- Enlace a la administración (SCRUM-103, SCRUM-23) -----------------------
 
-  it('un usuario normal no ve el enlace al panel', () => {
+  function enlaceAdmin(fixture: ComponentFixture<HeaderComponent>): HTMLAnchorElement | undefined {
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a'))
+      .find((a) => (a.textContent ?? '').trim() === 'Administración');
+  }
+
+  it('sin sesión no hay enlace a la administración', () => {
+    const fixture = TestBed.createComponent(HeaderComponent);
+    fixture.detectChanges();
+
+    expect(enlaceAdmin(fixture)).toBeUndefined();
+  });
+
+  it('un usuario normal no ve el enlace a la administración', () => {
     const fixture = montarConSesion(0, usuario);
 
-    expect(texto(fixture)).not.toContain('Panel');
+    expect(enlaceAdmin(fixture)).toBeUndefined();
   });
 
   /**
    * Que el enlace aparezca es comodidad, no seguridad: el backend exige rol ADMIN en
    * `/api/admin/**` y responde 403 a cualquier otro.
    */
-  it('un administrador ve el enlace al panel', () => {
+  it('un administrador ve el enlace a la administración, que abre /admin', () => {
     const fixture = montarConSesion(0, admin);
 
-    expect(texto(fixture)).toContain('Panel');
+    expect(enlaceAdmin(fixture)?.getAttribute('href')).toBe('/admin');
+  });
+
+  it('al cerrar sesión el administrador deja de ver el enlace', () => {
+    const fixture = montarConSesion(0, admin);
+
+    auth.logout();
+    fixture.detectChanges();
+
+    expect(enlaceAdmin(fixture)).toBeUndefined();
   });
 
   it('al cerrar sesión desaparece el enlace de comentarios y el globito', () => {

@@ -5,6 +5,8 @@ import { ToastService } from '../../../components/toast/toast.service';
 import { ProblemDetail } from '../../../models/auth.model';
 import { Comment, CommentStatus } from '../../../models/comment.model';
 
+const FORBIDDEN_MESSAGE = 'No tienes permiso de administrador.';
+
 /** Opciones del filtro. `'TODOS'` no es un estado del backend: es la ausencia de filtro. */
 type Filtro = 'TODOS' | CommentStatus;
 
@@ -243,10 +245,13 @@ export class AdminCommentsComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
+        // Un 401 ya lo resolvió authInterceptor (cierra la sesión y lleva al login):
+        // pintar aquí un error sería un parpadeo justo antes de salir de la pantalla.
+        if (err.status === 401) return;
         // El 403 merece mensaje propio: significa que la cuenta no es administradora,
         // no que el servidor falló. Es el caso de alguien que forzó la ruta.
         this.loadError.set(err.status === 403
-          ? 'Tu cuenta no tiene permiso de administrador. Si acabas de recibirlo, cierra sesión y vuelve a entrar: el rol viaja dentro del token.'
+          ? FORBIDDEN_MESSAGE + ' Si acabas de recibirlo, cierra sesión y vuelve a entrar: el rol viaja dentro del token.'
           : 'No pudimos cargar los comentarios. Inténtalo de nuevo.');
       },
     });
@@ -293,11 +298,16 @@ export class AdminCommentsComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.busyId.set(null);
+        // Igual que al cargar: del 401 se encarga authInterceptor.
+        if (err.status === 401) return;
         this.rowError.set(comment.id);
         const body = err.error as ProblemDetail | undefined;
         // Se prefiere el mensaje del backend: es el que dice cuál regla falló (una
-        // respuesta vacía o demasiado larga dan 400 con su detalle).
-        this.rowMessage.set(body?.detail ?? 'No pudimos guardar la respuesta.');
+        // respuesta vacía o demasiado larga dan 400 con su detalle). El 403 es la
+        // excepción: su detalle es genérico y aquí importa decir que falta el rol.
+        this.rowMessage.set(err.status === 403
+          ? FORBIDDEN_MESSAGE
+          : body?.detail ?? 'No pudimos guardar la respuesta.');
 
         // El comentario desapareció entre la carga y la respuesta: la lista que se ve
         // ya no corresponde.

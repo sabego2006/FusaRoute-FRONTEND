@@ -10,7 +10,8 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
  * - Si el usuario NO está logueado: "Ingresar" y "Crear cuenta".
  * - Si el usuario SÍ está logueado: "Hola, {nombre}" · Mis búsquedas · Comentarios ·
  *   Mi perfil · Salir.
- * - Con rol ADMIN aparece además el enlace al Panel.
+ * - Con rol ADMIN aparece además el enlace "Administración", que abre el armazón
+ *   `/admin` (SCRUM-23).
  *
  * El enlace de Comentarios lleva un globito con las respuestas nuevas desde el ingreso
  * anterior (RF-14, SCRUM-102). No es una notificación push —están fuera de alcance—,
@@ -57,7 +58,7 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
             @if (auth.currentUser()?.role === 'ADMIN') {
               <!-- Que este enlace solo se vea con rol ADMIN es comodidad, no
                    seguridad: el backend exige el rol en /api/admin/** y responde 403. -->
-              <a routerLink="/admin/comentarios" class="fr-header__link">Panel</a>
+              <a routerLink="/admin" class="fr-header__link">Administración</a>
             }
             <a routerLink="/perfil" class="fr-header__link fr-header__link--nav">Mi perfil</a>
             <button class="fr-header__link fr-header__logout" (click)="logout()">Salir</button>

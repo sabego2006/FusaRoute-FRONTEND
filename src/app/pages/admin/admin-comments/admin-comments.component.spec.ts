@@ -344,8 +344,57 @@ describe('AdminCommentsComponent', () => {
     http.expectOne((r) => r.url === adminUrl).flush(null, { status: 403, statusText: 'Forbidden' });
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('no tiene permiso de administrador');
+    expect(texto(fixture)).toContain('No tienes permiso de administrador.');
     expect(texto(fixture)).toContain('cierra sesión y vuelve a entrar');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('li').length).toBe(0);
+  });
+
+  /**
+   * Del 401 se encarga `authInterceptor` (cierra la sesión y lleva al login, probado
+   * en su propio spec). Aquí solo se comprueba que el panel no pinte un error encima
+   * mientras ocurre esa redirección.
+   */
+  it('un 401 al cargar no pinta ningún error: la redirección al login es del interceptor', () => {
+    const fixture = TestBed.createComponent(AdminCommentsComponent);
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === adminUrl).flush(null, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.fr-alerta')).toBeNull();
+    expect(texto(fixture)).not.toContain('No pudimos cargar');
+  });
+
+  /** Abre el formulario del comentario pendiente, escribe y pulsa guardar. */
+  function responder(fixture: ComponentFixture<AdminCommentsComponent>): void {
+    boton(fixture, 'Responder')!.click();
+    fixture.detectChanges();
+    const area = (fixture.nativeElement as HTMLElement).querySelector('textarea')!;
+    area.value = 'Gracias por avisar';
+    area.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    boton(fixture, 'Guardar respuesta')!.click();
+  }
+
+  /** El rol pudo perderse entre la carga y la respuesta (token de una cuenta degradada). */
+  it('un 403 al responder dice que falta el permiso, no el detalle genérico del backend', () => {
+    const fixture = montar([pendiente]);
+    responder(fixture);
+    http.expectOne(`${adminUrl}/${pendiente.id}/reply`)
+      .flush({ detail: 'Access Denied' }, { status: 403, statusText: 'Forbidden' });
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No tienes permiso de administrador.');
+    expect(texto(fixture)).not.toContain('Access Denied');
+  });
+
+  it('un 401 al responder no pinta error en la fila', () => {
+    const fixture = montar([pendiente]);
+    responder(fixture);
+    http.expectOne(`${adminUrl}/${pendiente.id}/reply`)
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.fr-ayuda-error')).toBeNull();
   });
 
   it('otro error al cargar muestra un mensaje genérico', () => {
