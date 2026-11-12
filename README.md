@@ -73,6 +73,14 @@ dominio (`localhost` sirve para DEV) y pegarla en `googleMapsApiKey` dentro de
 no hay variables de entorno en Vercel que leer ni que configurar. El `CORS_ALLOWED_ORIGINS`
 del backend en Render debe incluir el dominio de Vercel para que las peticiones no den `403`.
 
+**Fusión de chunks:** los builds de producción (Vercel, CI y Docker) corren con
+`NG_BUILD_OPTIMIZE_CHUNKS=1`, que junta en un solo archivo los chunks pequeños del arranque.
+Sin eso el `index.html` solo precarga 10 de ellos y el resto llega una ronda de red más tarde,
+lo que sube el LCP que mide RNF-01. La variable va versionada en `vercel.json`
+(`buildCommand`), `.github/workflows/ci.yml` y el `Dockerfile`; debe valer lo mismo en los
+tres para que Lighthouse mida el mismo build que se despliega. Para reproducirlo en local:
+`NG_BUILD_OPTIMIZE_CHUNKS=1 npx ng build`.
+
 **Cold start:** el backend duerme tras ~15 min de inactividad en el tier gratis de Render; el
 primer request tras eso puede tardar hasta ~60 s.
 

@@ -21,6 +21,10 @@ COPY . .
 # environment.docker.ts, que NO trae la URL del backend ni la clave de Maps
 # compiladas: se leen de /config.json cuando el contenedor arranca (factor 3).
 # Asi una sola imagen sirve para cualquier ambiente.
+#
+# NG_BUILD_OPTIMIZE_CHUNKS fusiona los chunks pequenos del arranque en uno solo, igual
+# que en CI (.github/workflows/ci.yml, que explica el porque) y en Vercel (vercel.json).
+ENV NG_BUILD_OPTIMIZE_CHUNKS=1
 RUN npx ng build --configuration=production,docker
 
 # --- Etapa 2: imagen de ejecucion ---

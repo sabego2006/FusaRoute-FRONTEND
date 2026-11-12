@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CommentService } from '../../services/comment.service';
 import { ToastService } from '../../components/toast/toast.service';
 import { ProblemDetail } from '../../models/auth.model';
+import { UnreadRepliesStore } from '../../core/unread-replies.store';
 import {
   COMMENT_MAX_LENGTH,
   COMMENT_MIN_LENGTH,
@@ -242,6 +243,7 @@ export class CommentsComponent implements OnInit {
   private readonly comentarios = inject(CommentService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly unread = inject(UnreadRepliesStore);
 
   protected readonly minLength = COMMENT_MIN_LENGTH;
   protected readonly maxLength = COMMENT_MAX_LENGTH;
@@ -289,6 +291,11 @@ export class CommentsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // SCRUM-102: abrir esta pantalla ES ver las respuestas, asi que el contador del
+    // encabezado se apaga aqui. Se apaga al entrar y no despues de que cargue la
+    // lista: si la peticion falla, el usuario ya esta en la pantalla de sus
+    // comentarios y dejar el globito encendido no le dice nada nuevo.
+    this.unread.clear();
     this.load();
   }
 

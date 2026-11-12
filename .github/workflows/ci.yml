@@ -6,6 +6,15 @@ on:
   push:
     branches: [main]
 
+# Fusion de chunks de Angular CLI (SCRUM-23). esbuild parte el arranque en muchos
+# archivos pequenos, y el index.html solo precarga los 10 primeros: al pasar de 9 a 12
+# el nucleo de Angular (62 kB) quedo fuera de la precarga, se descargaba una ronda de
+# red mas tarde y el LCP subia unos 160 ms. Con esta variable el arranque es un solo
+# archivo. Tiene que valer lo mismo en vercel.json y en el Dockerfile: si no, Lighthouse
+# mediria un build distinto del que se despliega.
+env:
+  NG_BUILD_OPTIMIZE_CHUNKS: '1'
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest

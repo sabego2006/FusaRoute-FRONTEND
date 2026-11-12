@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { UnreadRepliesStore } from '../../core/unread-replies.store';
 
 /**
  * Barra de navegación superior.
@@ -9,6 +10,12 @@ import { AuthService } from '../../services/auth.service';
  * - Si el usuario NO está logueado: "Ingresar" y "Crear cuenta".
  * - Si el usuario SÍ está logueado: "Hola, {nombre}" · Mis búsquedas · Comentarios ·
  *   Mi perfil · Salir.
+ * - Con rol ADMIN aparece además el enlace "Administración", que abre el armazón
+ *   `/admin` (SCRUM-23).
+ *
+ * El enlace de Comentarios lleva un globito con las respuestas nuevas desde el ingreso
+ * anterior (RF-14, SCRUM-102). No es una notificación push —están fuera de alcance—,
+ * sino un chequeo del backend al cargar la sesión.
  *
  * "Mis búsquedas" (RF-07) solo aparece con sesión porque el historial vive en la cuenta.
  * Ocultarlo es cortesía visual: la ruta lleva su `authGuard` y el endpoint exige token.
@@ -36,7 +43,23 @@ import { AuthService } from '../../services/auth.service';
           @if (auth.isLoggedIn()) {
             <span class="fr-header__greeting">Hola, {{ auth.currentUser()?.name }}</span>
             <a routerLink="/historial" class="fr-header__link">Mis búsquedas</a>
-            <a routerLink="/comentarios" class="fr-header__link">Comentarios</a>
+            <!-- SCRUM-102: el contador va DENTRO del enlace para que al pulsarlo se
+                 vaya a ver justo lo que el aviso anuncia. aria-label incluye el numero
+                 porque el globito solo se ve, no se lee. -->
+            <a routerLink="/comentarios" class="fr-header__link fr-header__link--con-aviso"
+               [attr.aria-label]="unread.count() > 0
+                 ? 'Comentarios, ' + unread.count() + ' respuestas nuevas'
+                 : 'Comentarios'">
+              Comentarios
+              @if (unread.count() > 0) {
+                <span class="fr-aviso" aria-hidden="true">{{ unread.count() }}</span>
+              }
+            </a>
+            @if (auth.currentUser()?.role === 'ADMIN') {
+              <!-- Que este enlace solo se vea con rol ADMIN es comodidad, no
+                   seguridad: el backend exige el rol en /api/admin/** y responde 403. -->
+              <a routerLink="/admin" class="fr-header__link">Administración</a>
+            }
             <a routerLink="/perfil" class="fr-header__link fr-header__link--nav">Mi perfil</a>
             <button class="fr-header__link fr-header__logout" (click)="logout()">Salir</button>
           } @else {
@@ -59,8 +82,16 @@ import { AuthService } from '../../services/auth.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
-      gap: var(--space-4);
+      /*
+       * Alto mínimo y no fijo, con salto de línea: con sesión iniciada los enlaces
+       * (Mis búsquedas, Comentarios, Administración, Salir) no caben junto a la marca
+       * en un celular ni en una tableta, y con alto fijo y 'nowrap' se salían por la
+       * derecha y metían scroll horizontal en toda la página (medido: 622 px de ancho
+       * a 320). Cuando no caben bajan a una segunda fila; cuando caben, nada cambia.
+       */
+      min-height: 56px;
+      flex-wrap: wrap;
+      column-gap: var(--space-4);
     }
     /*
      * Flex explícito: el isotipo va rotado -3deg y, en flujo inline, la
@@ -78,8 +109,10 @@ import { AuthService } from '../../services/auth.service';
     .fr-header__links {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
-      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-left: auto;
       min-width: 0;
     }
     .fr-header__link {
@@ -111,6 +144,25 @@ import { AuthService } from '../../services/auth.service';
       font-size: 0.9rem;
       color: var(--tinta-suave);
     }
+    .fr-header__link--con-aviso {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .fr-aviso {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--indigo, #4F46E5);
+      color: var(--sobre-indigo, #fff);
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1;
+    }
     .fr-header__logout { color: var(--rojo-texto); }
     .fr-header__logout:hover { background: var(--rojo-suave); }
 
@@ -124,12 +176,29 @@ import { AuthService } from '../../services/auth.service';
       .fr-header__link--nav { display: none; }
       .fr-header__greeting { display: none; }
       .fr-header__brand { gap: var(--space-2); }
+      .fr-header__links { column-gap: var(--space-1); }
     }
   `],
 })
 export class HeaderComponent {
   protected readonly auth = inject(AuthService);
+  protected readonly unread = inject(UnreadRepliesStore);
   private readonly router = inject(Router);
+
+  constructor() {
+    // Se pide el conteo cuando hay sesion y se apaga cuando no (SCRUM-102). Va en un
+    // effect sobre isLoggedIn y no en ngOnInit porque tiene que dispararse en los dos
+    // momentos en que puede haber sesion nueva: al iniciarla sin recargar la pagina
+    // (el encabezado nunca se vuelve a montar, es parte del armazon de la app) y al
+    // abrir la aplicacion con una sesion ya guardada.
+    effect(() => {
+      if (this.auth.isLoggedIn()) {
+        this.unread.refresh();
+      } else {
+        this.unread.clear();
+      }
+    });
+  }
 
   logout(): void {
     this.auth.logout();
