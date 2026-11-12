@@ -10,13 +10,19 @@ import { Ride } from '../../models/ride.model';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!--
+      Si la ruta del último viaje ya no existe (RF-11) no se ofrece el atajo; el aviso
+      "Ruta ya no disponible" vive en la lista de viajes, que sí muestra ese viaje.
+    -->
     @if (ride(); as r) {
+      @if (r.routeAvailable !== false) {
       <button type="button" class="fr-volver" data-testid="volver-a"
               [attr.aria-label]="'Volver a ' + r.destinationLabel + ': usar como destino'"
               (click)="choose.emit(r)">
         <span aria-hidden="true">↩</span>
         <span>Volver a: <strong>{{ r.destinationLabel }}</strong></span>
       </button>
+      }
     }
   `,
   styles: [`

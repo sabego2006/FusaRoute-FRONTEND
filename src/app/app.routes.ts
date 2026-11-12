@@ -64,6 +64,23 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/admin-comments/admin-comments.component')
           .then(m => m.AdminCommentsComponent),
       },
+      // Gestion de rutas (RF-11, SCRUM-24). 'nueva' va antes que ':id/editar' para que el
+      // comodin de id no se la coma.
+      {
+        path: 'rutas',
+        loadComponent: () => import('./pages/admin/admin-routes/admin-routes.component')
+          .then(m => m.AdminRoutesComponent),
+      },
+      {
+        path: 'rutas/nueva',
+        loadComponent: () => import('./pages/admin/admin-route-form/admin-route-form.component')
+          .then(m => m.AdminRouteFormComponent),
+      },
+      {
+        path: 'rutas/:id/editar',
+        loadComponent: () => import('./pages/admin/admin-route-form/admin-route-form.component')
+          .then(m => m.AdminRouteFormComponent),
+      },
       // Una seccion que aun no existe cae en comentarios y no en el comodin global,
       // que sacaria al administrador al catalogo publico sin explicacion.
       { path: '**', redirectTo: 'comentarios' },
