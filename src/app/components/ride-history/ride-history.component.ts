@@ -20,8 +20,13 @@ import { relativeTime } from '../../lib/relative-time';
         <ul class="fr-viajes__lista">
           @for (r of rides(); track r.id) {
             <li>
+              <!--
+                Un viaje cuya ruta ya no existe se ve pero no se repite: va deshabilitado y
+                lo dice con texto, no solo con color (RF-11).
+              -->
               <button type="button" class="fr-viajes__item" (click)="choose.emit(r)"
-                      [attr.aria-label]="'Ir otra vez a ' + r.destinationLabel + ', en ' + r.routeName + ', ' + when(r)">
+                      [disabled]="!isAvailable(r)"
+                      [attr.aria-label]="labelFor(r)">
                 <span class="fr-viajes__letrero">
                   @if (r.signFile) {
                     <app-letrero [signFile]="r.signFile" [routeName]="r.routeName" />
@@ -32,6 +37,9 @@ import { relativeTime } from '../../lib/relative-time';
                 <span class="fr-viajes__texto">
                   <strong>{{ r.destinationLabel }}</strong>
                   <span class="fr-texto-sm">{{ when(r) }}</span>
+                  @if (!isAvailable(r)) {
+                    <span class="fr-viajes__no-disponible">Ruta ya no disponible</span>
+                  }
                 </span>
               </button>
             </li>
@@ -57,6 +65,8 @@ import { relativeTime } from '../../lib/relative-time';
       font: inherit;
     }
     .fr-viajes__item:focus-visible { outline: var(--trazo-2) solid var(--foco, var(--tinta)); outline-offset: 2px; }
+    .fr-viajes__item:disabled { background: var(--fondo); color: var(--tinta-suave); cursor: not-allowed; }
+    .fr-viajes__no-disponible { color: var(--rojo-texto); font: 700 14px/20px var(--font-sans); }
     .fr-viajes__letrero { display: block; min-width: 0; }
     .fr-viajes__letrero ::ng-deep img { width: 100%; height: auto; display: block; }
     .fr-viajes__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -70,5 +80,16 @@ export class RideHistoryComponent {
 
   when(r: Ride): string {
     return relativeTime(r.boardedAt);
+  }
+
+  /** Sin la clave se trata como disponible: el backend desplegado puede no mandarla todavía. */
+  isAvailable(r: Ride): boolean {
+    return r.routeAvailable ?? true;
+  }
+
+  labelFor(r: Ride): string {
+    return this.isAvailable(r)
+      ? 'Ir otra vez a ' + r.destinationLabel + ', en ' + r.routeName + ', ' + this.when(r)
+      : r.destinationLabel + ', en ' + r.routeName + ': ruta ya no disponible';
   }
 }

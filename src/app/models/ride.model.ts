@@ -19,6 +19,15 @@ export interface Ride {
   originLabel: string;
   /** ISO-8601 con desfase (`2026-11-09T17:42:00-05:00`). */
   boardedAt: string;
+  /**
+   * Si la ruta de ese viaje sigue en el catálogo (RF-11: un administrador puede
+   * eliminarla). La decisión es del backend; aquí solo se pinta «Ruta ya no disponible»
+   * cuando llega en `false`.
+   *
+   * Opcional a propósito: el frontend puede mergearse antes que el backend, y los viajes
+   * guardados en el navegador sin sesión no la traen. Ausente se trata como disponible.
+   */
+  routeAvailable?: boolean;
 }
 
 /** Cuerpo de `POST /api/users/me/rides`. */
