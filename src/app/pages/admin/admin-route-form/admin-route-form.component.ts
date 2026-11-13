@@ -543,8 +543,13 @@ export class AdminRouteFormComponent implements OnInit {
       this.serverErrors.set(body.errors);
       this.summaryError.set('El servidor encontró errores en los datos. Están junto a cada campo.');
     } else if (err.status === 409) {
-      // El nombre repetido va en el campo nombre, no en un aviso general.
-      this.serverErrors.set([{ field: 'name', message: 'Ya existe una ruta con ese nombre.' }]);
+      // El 409 del backend cubre dos casos con el mismo código: nombre repetido y letrero
+      // repetido. Cada uno va junto a su campo, no en un aviso general; el `detail` dice
+      // cuál fue. Sin detalle legible se asume el nombre, que es el caso normal.
+      const letrero = /letrero/i.test(body?.detail ?? '');
+      this.serverErrors.set(letrero
+        ? [{ field: 'signFile', message: 'Otra ruta ya usa ese letrero.' }]
+        : [{ field: 'name', message: 'Ya existe una ruta con ese nombre.' }]);
     } else if (err.status === 404) {
       this.summaryError.set('Esa ruta ya no existe. Vuelve a la lista.');
     } else if (err.status === 403) {

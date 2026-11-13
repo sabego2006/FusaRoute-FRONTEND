@@ -349,6 +349,21 @@ describe('AdminRouteFormComponent', () => {
         expect(router.navigate).not.toHaveBeenCalled();
       });
 
+      /** El backend usa 409 también para "Ya existe una ruta con ese letrero". */
+      it('un 409 de letrero repetido va en el campo señal, no en el nombre', () => {
+        llenarUrbana();
+        escribir('#ruta-letrero', 'ARBELAEZ');
+        enviar();
+        http.expectOne(url).flush(
+          { status: 409, detail: 'Ya existe una ruta con ese letrero' },
+          { status: 409, statusText: 'Conflict' },
+        );
+        fixture.detectChanges();
+
+        expect(root.textContent).toContain('Otra ruta ya usa ese letrero');
+        expect(root.querySelector('#ruta-nombre-error')).toBeNull();
+      });
+
       it('al corregir el nombre se limpia el error del 409', () => {
         llenarUrbana();
         enviar();
