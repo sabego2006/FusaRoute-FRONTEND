@@ -93,7 +93,7 @@ describe('AdminLayoutComponent', () => {
   it('las secciones que aún no existen salen deshabilitadas, con "Próximamente" y sin enlace', async () => {
     await abrir('/admin/comentarios');
 
-    for (const etiqueta of ['Suspensiones', 'Métricas']) {
+    for (const etiqueta of ['Suspensiones']) {
       const el = entrada(etiqueta);
       expect(el?.tagName, etiqueta).toBe('SPAN');
       expect(el?.getAttribute('aria-disabled'), etiqueta).toBe('true');
@@ -113,6 +113,16 @@ describe('AdminLayoutComponent', () => {
     expect(rutas?.textContent).not.toContain('Próximamente');
   });
 
+  /** Métricas se activó con el panel de RF-13 (SCRUM-26). */
+  it('Métricas es un enlace a /admin/metricas y ya no dice "Próximamente"', async () => {
+    await abrir('/admin/comentarios');
+
+    const metricas = entrada('Métricas');
+    expect(metricas?.tagName).toBe('A');
+    expect(metricas?.getAttribute('href')).toBe('/admin/metricas');
+    expect(metricas?.textContent).not.toContain('Próximamente');
+  });
+
   it('la sección disponible no lleva la etiqueta "Próximamente"', async () => {
     await abrir('/admin/comentarios');
 
@@ -128,7 +138,7 @@ describe('AdminLayoutComponent', () => {
 
   /** Entrar por URL a una sección sin construir no saca al administrador del armazón. */
   it('una sección que aún no existe cae en comentarios', async () => {
-    await abrir('/admin/metricas');
+    await abrir('/admin/suspensiones');
 
     expect(TestBed.inject(Router).url).toBe('/admin/comentarios');
   });
