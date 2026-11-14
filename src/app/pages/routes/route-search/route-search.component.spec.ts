@@ -230,6 +230,25 @@ describe('RouteSearchComponent', () => {
     expect(el.textContent).toContain('La ruta más cercana a su origen es Ruta 7, a 420 m');
   });
 
+  it('si la única opción está suspendida, dice cuál ruta y hasta cuándo en hora de Colombia', async () => {
+    const { el, elegirAmbos, buscar } = await render({
+      searchRoute: () => throwError(() => new HttpErrorResponse({
+        status: 404,
+        error: {
+          status: 404,
+          detail: 'No hay rutas disponibles. (texto del servidor)',
+          suspendedCandidates: [{ routeId: 12, routeName: 'Centro - Terminal', endsAt: '2026-11-23T01:00:00Z' }],
+        },
+      })),
+    });
+    elegirAmbos();
+    await buscar();
+    expect(el.textContent).toContain('La ruta Centro - Terminal sirve este trayecto, pero está suspendida hasta el');
+    expect(el.textContent).toContain('22 de noviembre de 2026');
+    expect(el.textContent).toContain('20:00');
+    expect(el.textContent).not.toContain('texto del servidor');
+  });
+
   it('sin red usa el endpoint offline', async () => {
     const { elegirAmbos, buscar, searchRoute, searchRouteOffline, el } = await render({ online: false });
     elegirAmbos();

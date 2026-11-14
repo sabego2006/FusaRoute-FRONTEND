@@ -12,6 +12,7 @@ import { Place, TripEnd } from '../../../models/place.model';
 import { FavoriteDestination } from '../../../models/favorite.model';
 import { findExactPlace } from '../../../lib/place-search';
 import { buildSearchParams } from '../../../lib/trip-params';
+import { formatBogota } from '../../../lib/bogota-time';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
@@ -348,10 +349,15 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
       const n = body?.nearestRoutes;
       if (n?.origin) nearest.push(`La ruta más cercana a su origen es ${n.origin.routeName}, a ${n.origin.distanceInMeters} m.`);
       if (n?.destination) nearest.push(`La ruta más cercana a su destino es ${n.destination.routeName}, a ${n.destination.distanceInMeters} m.`);
-      this.notFound.set({
-        detail: body?.detail ?? 'No hay rutas disponibles que conecten ese origen con ese destino.',
-        nearest,
-      });
+      // RF-12: si la única opción estaba suspendida, el mensaje dice cuál ruta sirve el
+      // trayecto y hasta cuándo (hora de Colombia), en lugar del "no encontramos" genérico.
+      const suspended = body?.suspendedCandidates ?? [];
+      const detail = suspended.length
+        ? suspended
+            .map((c) => `La ruta ${c.routeName} sirve este trayecto, pero está suspendida hasta el ${formatBogota(c.endsAt)}.`)
+            .join(' ')
+        : body?.detail ?? 'No hay rutas disponibles que conecten ese origen con ese destino.';
+      this.notFound.set({ detail, nearest });
       return;
     }
     if (err.status === 503) {

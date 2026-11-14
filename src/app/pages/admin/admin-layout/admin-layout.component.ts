@@ -20,7 +20,7 @@ export interface AdminSection {
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { label: 'Comentarios', path: 'comentarios', available: true },
   { label: 'Rutas', path: 'rutas', available: true },
-  { label: 'Suspensiones', path: 'suspensiones', available: false },
+  { label: 'Suspensiones', path: 'suspensiones', available: true },
   { label: 'Métricas', path: 'metricas', available: false },
 ];
 

@@ -126,6 +126,8 @@ export interface RouteNotFoundProblem {
   status: number;
   detail: string;
   nearestRoutes?: { origin?: NearestRoute | null; destination?: NearestRoute | null };
+  /** Presente solo si había rutas candidatas y todas están suspendidas (RF-12). */
+  suspendedCandidates?: { routeId: number; routeName: string; endsAt: string }[];
 }
 
 /**

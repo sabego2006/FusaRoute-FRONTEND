@@ -93,7 +93,7 @@ describe('AdminLayoutComponent', () => {
   it('las secciones que aún no existen salen deshabilitadas, con "Próximamente" y sin enlace', async () => {
     await abrir('/admin/comentarios');
 
-    for (const etiqueta of ['Suspensiones', 'Métricas']) {
+    for (const etiqueta of ['Métricas']) {
       const el = entrada(etiqueta);
       expect(el?.tagName, etiqueta).toBe('SPAN');
       expect(el?.getAttribute('aria-disabled'), etiqueta).toBe('true');
@@ -104,6 +104,16 @@ describe('AdminLayoutComponent', () => {
   });
 
   /** Rutas se activó con la gestión de rutas (SCRUM-24): ya es enlace y sin etiqueta. */
+  /** Suspensiones se activó con RF-12 (SCRUM-25): ya es enlace y sin etiqueta. */
+  it('Suspensiones es un enlace a /admin/suspensiones y ya no dice "Próximamente"', async () => {
+    await abrir('/admin/comentarios');
+
+    const susp = entrada('Suspensiones');
+    expect(susp?.tagName).toBe('A');
+    expect(susp?.getAttribute('href')).toBe('/admin/suspensiones');
+    expect(susp?.textContent).not.toContain('Próximamente');
+  });
+
   it('Rutas es un enlace a /admin/rutas y ya no dice "Próximamente"', async () => {
     await abrir('/admin/comentarios');
 
