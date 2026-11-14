@@ -81,6 +81,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/admin-route-form/admin-route-form.component')
           .then(m => m.AdminRouteFormComponent),
       },
+      // Suspensiones temporales de rutas (RF-12, SCRUM-25).
+      {
+        path: 'suspensiones',
+        loadComponent: () => import('./pages/admin/admin-suspensions/admin-suspensions.component')
+          .then(m => m.AdminSuspensionsComponent),
+        },
       // Panel de metricas (RF-13, SCRUM-26).
       {
         path: 'metricas',

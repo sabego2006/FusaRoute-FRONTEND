@@ -85,13 +85,13 @@ describe('AdminMetricsComponent', () => {
     expect(texto()).toContain('Últimos 30 días');
   });
 
-  it('comentarios pendientes enlaza a /admin/comentarios y suspensiones aún no enlaza', () => {
+  it('comentarios pendientes enlaza a /admin/comentarios y suspensiones también enlaza', () => {
     abrir();
 
     const hrefs = Array.from(root.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/admin/comentarios');
-    // La sección de suspensiones sigue "Próximamente" en ADMIN_SECTIONS.
-    expect(hrefs).not.toContain('/admin/suspensiones');
+    // La sección de suspensiones ya está activa en ADMIN_SECTIONS (SCRUM-25).
+    expect(hrefs).toContain('/admin/suspensiones');
   });
 
   /** 04:59Z es 23:59 del día anterior en Colombia (UTC-5), sin importar la zona del navegador. */
