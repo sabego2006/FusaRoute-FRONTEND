@@ -10,7 +10,8 @@
     "test:ci": "ng test --no-watch --coverage",
     "lint": "ng lint",
     "lighthouse": "lhci autorun",
-    "e2e:responsive": "playwright test"
+    "e2e:responsive": "playwright test",
+    "e2e:admin": "playwright test -c playwright.admin.config.ts --grep @admin"
   },
   "private": true,
   "engines": {
