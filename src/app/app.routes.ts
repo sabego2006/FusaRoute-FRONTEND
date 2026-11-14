@@ -81,6 +81,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/admin-route-form/admin-route-form.component')
           .then(m => m.AdminRouteFormComponent),
       },
+      // Panel de metricas (RF-13, SCRUM-26).
+      {
+        path: 'metricas',
+        loadComponent: () => import('./pages/admin/admin-metrics/admin-metrics.component')
+          .then(m => m.AdminMetricsComponent),
+      },
       // Una seccion que aun no existe cae en comentarios y no en el comodin global,
       // que sacaria al administrador al catalogo publico sin explicacion.
       { path: '**', redirectTo: 'comentarios' },
