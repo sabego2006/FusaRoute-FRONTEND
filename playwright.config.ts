@@ -9,6 +9,8 @@ const PORT = 4300;
 
 export default defineConfig({
   testDir: './e2e',
+  // La suite del administrador necesita credenciales de DEV: tiene su propia config.
+  testIgnore: ['**/admin.spec.ts'],
   timeout: 60_000,
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
