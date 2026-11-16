@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { DomSanitizer } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -27,6 +28,7 @@ describe('TotpEnrollComponent', () => {
   afterEach(() => {
     http.verify();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   function mount() {
@@ -42,14 +44,53 @@ describe('TotpEnrollComponent', () => {
     fixture.componentInstance.confirm();
   }
 
-  it('muestra el QR desde base64, el deep link otpauth y el secret copiable', () => {
+  function deepLinkButton(el: HTMLElement): HTMLButtonElement | undefined {
+    return Array.from(el.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Abrir mi app autenticadora'),
+    );
+  }
+
+  it('muestra el QR desde base64, el botón del deep link otpauth y el secret copiable', () => {
     const el: HTMLElement = mount().nativeElement;
 
     expect(el.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=');
-    expect(el.querySelector('a[href^="otpauth://"]')?.textContent).toContain(
-      'Abrir mi app autenticadora',
-    );
+    expect(deepLinkButton(el)).toBeDefined();
     expect(el.textContent).toContain('JBSWY3DPEHPK3PXP');
+  });
+
+  it('el botón abre la URI otpauth con un clic en una ancla efímera, sin href en la plantilla', () => {
+    let clickedHref: string | null = null;
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      clickedHref = this.getAttribute('href');
+    });
+    const el: HTMLElement = mount().nativeElement;
+
+    deepLinkButton(el)!.click();
+
+    expect(clickedHref).toBe(enrollment.otpauthUri);
+    expect(el.querySelector('a[href]')).toBeNull();
+  });
+
+  /**
+   * Sonar S6268 (T03): el QR se renderiza como <img> con data:image/png (Angular lo admite) y el
+   * deep link se abre con un clic programático, así que el componente no debe desactivar la
+   * sanitización. Si alguien vuelve a bypassSecurityTrust*, este test falla.
+   */
+  it('no desactiva la sanitización de Angular para renderizar el enrolamiento', () => {
+    const sanitizer = TestBed.inject(DomSanitizer);
+    const bypasses = [
+      vi.spyOn(sanitizer, 'bypassSecurityTrustUrl'),
+      vi.spyOn(sanitizer, 'bypassSecurityTrustHtml'),
+      vi.spyOn(sanitizer, 'bypassSecurityTrustResourceUrl'),
+    ];
+
+    const el: HTMLElement = mount().nativeElement;
+
+    expect(el.querySelector('img')).not.toBeNull();
+    expect(deepLinkButton(el)).toBeDefined();
+    for (const spy of bypasses) expect(spy).not.toHaveBeenCalled();
   });
 
   it('no ofrece el deep link si la URI no es otpauth://', () => {
@@ -58,7 +99,9 @@ describe('TotpEnrollComponent', () => {
     http.expectOne(`${base}/enroll`).flush({ ...enrollment, otpauthUri: 'javascript:alert(1)' });
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('a.fr-btn')).toBeNull();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(deepLinkButton(el)).toBeUndefined();
+    expect(el.querySelector('a[href]')).toBeNull();
   });
 
   it('no deja confirmar un código que no tenga 6 dígitos', () => {
