@@ -6,26 +6,27 @@
 <main class="fr-pila fr-pagina-buscar">
   <div style="text-align: center; margin-bottom: var(--space-6);">
     <!--
-      La mascota es decorativa: se pide cuando el navegador queda libre, no durante
-      la carga. Antes competía con el bundle por la red y retrasaba el <h1>, que es
-      el LCP de esta pantalla (RNF-01). El hueco de 96 px se reserva para que no salte nada.
+      T05 (R2, R4): Sutá ya no va encima del buscador inicial — la mascota se
+      reserva para los estados (sin red, sin ruta, error) y acá arriba la
+      identidad la pone el letrero. Es texto, no imagen: el <h1> sigue siendo el
+      LCP de esta pantalla (RNF-01) y nada compite con él por la red.
     -->
-    <div class="fr-suta-hueco" aria-hidden="true">
-      @defer (on idle) {
-        <img src="assets/mascot/suta-thumbs-up.webp" alt="" class="fr-suta" width="96" height="96" decoding="async">
-      }
-    </div>
+    <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
     <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">¿Para dónde va, parcero?</h1>
     <p class="fr-texto-sm">Dinos de dónde sales y a dónde vas, y te decimos qué buseta tomar.</p>
   </div>
 
   @if (!isOnline()) {
-    <div class="fr-alerta" role="status" style="margin-bottom: var(--space-4); background: var(--lima); border-color: var(--borde);">
-      Está sin internet. Le podemos decir la ruta más corta, pero no cuánto se va a demorar.
+    <div class="fr-suta-estado" role="status" style="margin-bottom: var(--space-4);">
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong>Está sin internet.</strong> Le podemos decir la ruta más corta, pero no cuánto se va a demorar.</p>
+      </div>
     </div>
   }
 
-  <form (submit)="$event.preventDefault(); onSubmit()" class="fr-card" style="margin-bottom: var(--space-6);"
+  <form (submit)="$event.preventDefault(); onSubmit()" class="fr-card fr-card--paramo" style="margin-bottom: var(--space-6);"
         aria-label="Buscar ruta">
     <div class="fr-campo">
       <app-place-combobox
@@ -104,6 +105,9 @@
   </form>
 
   <!-- P4: "Tus últimos viajes", plegado por defecto. -->
+  @if (rides().length > 0) {
+    <div class="fr-greca fr-greca--fina" aria-hidden="true" style="margin: 0 0 var(--space-4);"></div>
+  }
   <app-ride-history [rides]="rides()" (choose)="useRideDestination($event)" />
 
   <app-map-pick-dialog (picked)="onMapPicked($event)" />
@@ -124,27 +128,29 @@
   }
 
   @if (notFound(); as nf) {
-    <div class="fr-alerta fr-entra-solo" role="status" style="background: var(--lima); border-color: var(--borde);">
-      <div style="display: flex; align-items: flex-start; gap: var(--space-3);">
-        <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
-             class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
-        <div>
-          <p style="margin: 0;">{{ nf.detail }}</p>
-          @if (nf.nearest.length) {
-            <ul class="fr-cercanas">
-              @for (linea of nf.nearest; track linea) {
-                <li>{{ linea }}</li>
-              }
-            </ul>
-          }
-        </div>
+    <div class="fr-suta-estado fr-entra-solo" role="status" style="align-items: flex-start;">
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p>{{ nf.detail }}</p>
+        @if (nf.nearest.length) {
+          <ul class="fr-cercanas">
+            @for (linea of nf.nearest; track linea) {
+              <li>{{ linea }}</li>
+            }
+          </ul>
+        }
       </div>
     </div>
   }
 
   @if (errorMessage()) {
-    <div class="fr-alerta fr-entra-solo" role="alert">
-      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
+    <div class="fr-suta-estado fr-suta-estado--error fr-entra-solo" role="alert">
+      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+      </div>
     </div>
   }
 
@@ -152,7 +158,13 @@
     <div class="fr-bento fr-entra-z" data-testid="resultado">
       <div class="fr-bento-item fr-bento-span-2">
         <h2 class="fr-titulo-2" style="margin: 0;">{{ r.route.name }}</h2>
-        <p class="fr-texto-sm" style="margin: 0;">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+        <!-- T05 (R5): el chip dice de qué municipio es la ruta, con su color. -->
+        <div class="fr-chips">
+          @if (municipality(); as m) {
+            <span class="fr-chip-muni" [class]="'fr-chip-muni fr-chip-muni--' + m.slug">{{ m.name }}</span>
+          }
+          <span class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</span>
+        </div>
       </div>
 
       @if (r.congestionSectors?.length) {
@@ -163,12 +175,12 @@
 
       @if (r.route.signFile) {
         <div class="fr-bento-item fr-bento-span-2">
-          <h3 class="fr-titulo-3">Busque este letrero</h3>
+          <h3 class="fr-letrero-titulo">Busque este letrero</h3>
           <app-letrero [signFile]="r.route.signFile" [routeName]="r.route.name" />
         </div>
       }
 
-      <div class="fr-bento-item" data-testid="tiempo">
+      <div class="fr-bento-item fr-bento-item--paramo" data-testid="tiempo">
         @if (r.estimatedMinutes !== null) {
           <h3 class="fr-titulo-3">Se demora</h3>
           <p class="fr-texto" style="margin: 0;">
@@ -194,11 +206,12 @@
       </div>
 
       <div class="fr-bento-item">
-        <h3 class="fr-titulo-3">Por dónde pasa</h3>
+        <h3 class="fr-letrero-titulo fr-letrero-titulo--paramo">Por dónde pasa</h3>
         <app-route-steps [neighborhoods]="r.route.neighborhoods" />
       </div>
 
       <div class="fr-bento-item fr-bento-span-2" data-testid="caminata">
+        <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true"></div>
         <h3 class="fr-titulo-3">Cómo la toma</h3>
         @if (r.longWalk) {
           <p class="fr-aviso-caminata" role="status">

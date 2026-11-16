@@ -13,6 +13,7 @@ import { FavoriteDestination } from '../../../models/favorite.model';
 import { findExactPlace } from '../../../lib/place-search';
 import { buildSearchParams } from '../../../lib/trip-params';
 import { formatBogota } from '../../../lib/bogota-time';
+import { municipalityOf } from '../../../lib/municipality';
 import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
 import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
@@ -164,6 +165,11 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
 
   readonly isOnline = this.connectivity.isOnline;
   readonly isUrban = computed(() => this.result()?.route.type === 'URBANA');
+  /** Chip de municipio del resultado (T05, R5). Presentación: el color de la ruta. */
+  readonly municipality = computed(() => {
+    const r = this.result();
+    return r ? municipalityOf(r.route.name, r.route.type) : null;
+  });
   readonly canSearch = computed(() => !!this.origin() && !!this.destination() && !this.loading());
 
   readonly travelDistanceLabel = computed(() => {

@@ -14,14 +14,21 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, TotpEnrollComponent],
   template: `
-    <div class="fr-card" style="max-width: 400px; margin: 2rem auto;">
-      <div style="margin-bottom: var(--space-6); display: flex; justify-content: center;">
+    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto;">
+      <div style="margin-bottom: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);">
         <span class="fr-wordmark">Fusa<b>Route</b></span>
+        <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+        <p class="fr-chip-letrero">Busetas de Fusa · Sumapaz</p>
       </div>
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin-bottom: var(--space-4);"></div>
 
       @if (errorMessage()) {
-        <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
-          <strong style="color: var(--rojo-texto);">¡Uy, parce!</strong> {{ errorMessage() }}
+        <!-- T05 (R4): Sutá acompaña el error, no el formulario en reposo. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert" style="margin-bottom: var(--space-4);">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div>
+            <p><strong style="color: var(--rojo-texto);">¡Uy, parce!</strong> {{ errorMessage() }}</p>
+          </div>
         </div>
       }
 

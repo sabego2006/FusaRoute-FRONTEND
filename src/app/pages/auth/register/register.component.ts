@@ -11,10 +11,13 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <div class="fr-card" style="max-width: 400px; margin: 2rem auto;">
-      <div style="margin-bottom: var(--space-6); display: flex; justify-content: center;">
+    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto;">
+      <div style="margin-bottom: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);">
         <span class="fr-wordmark">Fusa<b>Route</b></span>
+        <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+        <p class="fr-chip-letrero">Busetas de Fusa · Sumapaz</p>
       </div>
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin-bottom: var(--space-4);"></div>
 
       <div style="text-align: center; margin-bottom: var(--space-4);">
         <img src="assets/mascot/suta-wave.webp" alt="Indio Sutá saludando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
@@ -23,8 +26,12 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
       </div>
 
       @if (generalError()) {
-        <div class="fr-alerta" role="alert" style="margin-bottom: var(--space-4);">
-          <strong>Error:</strong> {{ generalError() }}
+        <!-- T05 (R4): Sutá acompaña el error. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert" style="margin-bottom: var(--space-4);">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div>
+            <p><strong style="color: var(--rojo-texto);">Error:</strong> {{ generalError() }}</p>
+          </div>
         </div>
       }
 
