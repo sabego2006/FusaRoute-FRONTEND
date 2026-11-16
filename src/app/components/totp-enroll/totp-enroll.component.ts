@@ -1,7 +1,6 @@
 import { Component, OnInit, computed, inject, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
 import { TotpService } from '../../services/totp.service';
 import { ToastService } from '../toast/toast.service';
@@ -10,6 +9,7 @@ import { ProblemDetail } from '../../models/auth.model';
 import { copyText } from '../../lib/clipboard';
 import { downloadText } from '../../lib/download';
 import { isMobileDevice } from '../../lib/device';
+import { openUri } from '../../lib/open-uri';
 import { parseLoginError } from '../../lib/login-error';
 
 /**
@@ -81,16 +81,17 @@ import { parseLoginError } from '../../lib/login-error';
             />
           </div>
 
-          @if (deepLink(); as link) {
-            <a
+          @if (deepLink()) {
+            <button
+              type="button"
               class="fr-btn fr-btn-bloque"
               [class.fr-btn-primario]="mobile"
-              [href]="link"
               [style.order]="mobile ? 1 : 2"
               style="box-sizing: border-box; text-align: center; justify-content: center;"
+              (click)="openAuthenticator()"
             >
               Abrir mi app autenticadora
-            </a>
+            </button>
           }
 
           <div [style.order]="3">
@@ -151,7 +152,6 @@ export class TotpEnrollComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly totp = inject(TotpService);
   private readonly toast = inject(ToastService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   /** El usuario guardó sus códigos de respaldo y ya quedó con sesión completa. */
   readonly enrolled = output<void>();
@@ -168,10 +168,14 @@ export class TotpEnrollComponent implements OnInit {
 
   readonly qrSrc = computed(() => `data:image/png;base64,${this.enrollment()?.qrPngBase64 ?? ''}`);
 
-  /** Solo se confía en un esquema otpauth://; Angular bloquearía el resto de esquemas ajenos a http. */
-  readonly deepLink = computed<SafeUrl | null>(() => {
+  /**
+   * Solo se ofrece un esquema otpauth://: cualquier otro no es un deep link a una app
+   * autenticadora. No se enlaza en la plantilla (Angular lo bloquearía por no ser http) ni se
+   * marca como confiable con DomSanitizer: se abre con un clic programático, ver openUri.
+   */
+  readonly deepLink = computed<string | null>(() => {
     const uri = this.enrollment()?.otpauthUri;
-    return uri?.startsWith('otpauth://') ? this.sanitizer.bypassSecurityTrustUrl(uri) : null;
+    return uri?.startsWith('otpauth://') ? uri : null;
   });
 
   readonly codeForm = this.fb.nonNullable.group({
@@ -227,6 +231,11 @@ export class TotpEnrollComponent implements OnInit {
         }
       },
     });
+  }
+
+  openAuthenticator(): void {
+    const uri = this.deepLink();
+    if (uri) openUri(uri);
   }
 
   async copySecret(): Promise<void> {
