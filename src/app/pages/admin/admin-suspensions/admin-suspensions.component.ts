@@ -36,6 +36,10 @@ type FormField = 'routeId' | 'startsAt' | 'endsAt' | 'reason';
   template: `
     <section class="fr-susp">
       <header>
+        <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+        <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
+        <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+        <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
         <h1 class="fr-titulo-1" style="margin-bottom: var(--space-1);">Suspensiones de rutas</h1>
         <p class="fr-texto-sm" style="color: var(--tinta-suave); margin: 0;">
           Suspender es temporal: la ruta no sale en las búsquedas durante la ventana. Todas las horas son de Colombia.
@@ -150,7 +154,11 @@ type FormField = 'routeId' | 'startsAt' | 'endsAt' | 'reason';
       } @else if (loadError()) {
         <p class="fr-alerta" role="alert">{{ loadError() }}</p>
       } @else if (items().length === 0) {
-        <p class="fr-texto" role="status" style="color: var(--tinta-suave);">No hay suspensiones en esta vista.</p>
+        <!-- T05 (R4): estado vacío con Sutá. -->
+        <div class="fr-suta-estado" role="status">
+          <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p class="fr-texto">No hay suspensiones en esta vista.</p></div>
+        </div>
       } @else {
         <table class="fr-tabla">
           <caption class="fr-solo-lectores">Suspensiones de rutas con su ventana y estado</caption>

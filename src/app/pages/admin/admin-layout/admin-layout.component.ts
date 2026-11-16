@@ -48,6 +48,8 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
     <div class="fr-admin">
       <nav class="fr-admin__nav" aria-label="Secciones de administración">
         <p class="fr-admin__titulo">Administración</p>
+        <!-- T05 (R1): greca bajo el título del panel. -->
+        <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin-bottom: var(--space-3);"></div>
         <ul class="fr-admin__lista">
           @for (section of sections; track section.path) {
             <li>
