@@ -58,7 +58,9 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <div class="fr-card" style="max-width: 640px; margin: 2rem auto;">
+    <div class="fr-card fr-card--paramo" style="max-width: 640px; margin: 2rem auto;">
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Tu voz · FusaRoute</p>
       <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Comentarios</h1>
       <p style="color: var(--tinta-suave); margin-bottom: var(--space-6);">
         Cuéntanos qué mejorar. Un administrador lee todos los comentarios y te responde aquí mismo.
@@ -97,7 +99,8 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
         </button>
       </form>
 
-      <hr style="margin: var(--space-8) 0; border: 0; border-top: var(--trazo-1) solid var(--borde);">
+      <!-- T05 (R1): la greca separa las secciones en vez del <hr>. -->
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin: var(--space-8) 0;"></div>
 
       <!-- Mis comentarios, con estado y respuesta -->
       <h2 class="fr-titulo-2" style="margin-bottom: var(--space-4);">Mis comentarios</h2>
@@ -105,9 +108,17 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
       @if (loading()) {
         <p style="color: var(--tinta-suave);">Cargando tus comentarios...</p>
       } @else if (loadError()) {
-        <p class="fr-alerta">{{ loadError() }}</p>
+        <!-- T05 (R4): Sutá acompaña el error. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p>{{ loadError() }}</p></div>
+        </div>
       } @else if (comments().length === 0) {
-        <p style="color: var(--tinta-suave);">Todavía no has escrito ninguno.</p>
+        <!-- T05 (R4): estado vacío con Sutá. -->
+        <div class="fr-suta-estado">
+          <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p>Todavía no has escrito ninguno.</p></div>
+        </div>
       } @else {
         <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--space-4);">
           @for (c of comments(); track c.id) {
@@ -233,7 +244,8 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
       display: block;
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--indigo, #4F46E5);
+      /* --indigo-texto y no --indigo: a 12 px sobre --indigo-suave el índigo de marca da 5.62:1 (T02); este da 7.07:1. */
+      color: var(--indigo-texto, #4338CA);
       margin-bottom: var(--space-1);
     }
     .fr-btn-peligro { color: var(--rojo-texto, #B91C1C); }
