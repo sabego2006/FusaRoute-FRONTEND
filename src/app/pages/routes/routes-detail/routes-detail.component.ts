@@ -10,6 +10,7 @@ import { FareTableComponent } from '../../../components/fare-table/fare-table.co
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 import { formatTime } from '../../../lib/format';
+import { municipalityOf } from '../../../lib/municipality';
 
 @Component({
   selector: 'app-routes-detail',
@@ -23,6 +24,11 @@ export class RoutesDetailComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   isUrban = computed(() => this.route()?.type === 'URBANA');
+  /** Chip de municipio (T05, R5). Presentación: el color de la ruta. */
+  municipality = computed(() => {
+    const r = this.route();
+    return r ? municipalityOf(r.name, r.type) : null;
+  });
 
   // El `?? []` cubre un backend sin RF-09 desplegado, que no manda la clave. Se hace aquí
   // y no con `?.` en la plantilla porque el tipo dice que siempre viene (NG8107).
