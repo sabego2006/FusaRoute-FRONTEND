@@ -274,7 +274,8 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
 
   /** "Señalar en el mapa": abre el panel para esa punta, partiendo del punto que ya tenga. */
   pickOnMap(end: End): void {
-    this.pickDialog().open(end, endPoint(this.signalFor(end)()));
+    const other: End = end === 'origin' ? 'destination' : 'origin';
+    this.pickDialog().open(end, endPoint(this.signalFor(end)()), endPoint(this.signalFor(other)()));
   }
 
   onMapPicked(e: { which: End; point: LatLngPoint }): void {

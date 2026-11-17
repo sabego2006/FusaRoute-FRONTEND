@@ -52,6 +52,23 @@ describe('MapPickDialogComponent', () => {
     expect(el.textContent).toContain('Listo, salir de aquí');
   });
 
+  it('muestra la otra punta como referencia: A al elegir el destino, B al elegir el origen', async () => {
+    const { c, el, fixture } = await render('cargando');
+    c.open('destination', null, { lat: 4.33, lng: -74.37 });
+    fixture.detectChanges();
+    expect(c.reference()).toEqual({ lat: 4.33, lng: -74.37 });
+    expect(c.referenceLabel()).toBe('A');
+    expect(c.startCenter()).toEqual({ lat: 4.33, lng: -74.37 });
+    expect(c.referenceNote()).toContain('de dónde sale');
+    c.open('origin', null, { lat: 4.34, lng: -74.36 });
+    fixture.detectChanges();
+    expect(c.referenceLabel()).toBe('B');
+    expect(c.referenceNote()).toContain('a dónde va');
+    c.open('origin');
+    expect(c.reference()).toBeNull();
+    expect(el.querySelector('dialog')).not.toBeNull();
+  });
+
   it('cancelar cierra sin emitir', async () => {
     const { c, el } = await render('error');
     const emitted: unknown[] = [];

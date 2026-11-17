@@ -37,10 +37,16 @@ import { FUSA_CENTER } from '../places-map/places-map.component';
           <div class="fr-esqueleto dlg__mapa" aria-hidden="true"></div>
         } @else {
           <p class="fr-texto" style="margin: 0;">{{ instruction() }}</p>
+          @if (reference()) {
+            <p class="fr-texto-sm" style="margin: 0;">{{ referenceNote() }}</p>
+          }
           <div class="dlg__mapa" role="group" aria-label="Mapa" aria-describedby="dlg-teclado"
                (keydown.enter)="pickCenter($event)">
-            <google-map height="100%" width="100%" [center]="center" [zoom]="14"
+            <google-map height="100%" width="100%" [center]="startCenter()" [zoom]="14"
                         [options]="mapOptions" (mapClick)="onMapClick($event)">
+              @if (reference(); as r) {
+                <map-marker [position]="r" [label]="referenceLabel()" [title]="referenceTitle()" />
+              }
               @if (point(); as p) {
                 <map-marker [position]="p" title="Punto elegido" />
               }
@@ -93,6 +99,14 @@ export class MapPickDialogComponent {
 
   readonly forWhich = signal<'origin' | 'destination'>('origin');
   readonly point = signal<LatLngPoint | null>(null);
+  /** La otra punta del viaje, si ya está elegida: se dibuja en el mapa para que uno se ubique. */
+  readonly reference = signal<LatLngPoint | null>(null);
+  readonly referenceLabel = computed(() => (this.forWhich() === 'origin' ? 'B' : 'A'));
+  readonly referenceTitle = computed(() => (this.forWhich() === 'origin' ? 'Su destino' : 'Su origen'));
+  readonly referenceNote = computed(() =>
+    `La letra ${this.referenceLabel()} marca ${this.forWhich() === 'origin' ? 'a dónde va' : 'de dónde sale'}.`);
+  /** El mapa abre donde está lo que ya se eligió, para no empezar desde cero. */
+  readonly startCenter = computed(() => this.point() ?? this.reference() ?? FUSA_CENTER);
   readonly title = computed(() => (this.forWhich() === 'origin' ? 'Señale de dónde sale' : 'Señale a dónde va'));
   readonly instruction = computed(() =>
     `Toque el mapa en el sitio donde quiere ${this.forWhich() === 'origin' ? 'salir' : 'llegar'}.`);
@@ -110,9 +124,10 @@ export class MapPickDialogComponent {
   /** A quién devolverle el foco al cerrar: el botón desde el que se abrió. */
   private returnFocus: HTMLElement | null = null;
 
-  open(which: 'origin' | 'destination', start: LatLngPoint | null = null): void {
+  open(which: 'origin' | 'destination', start: LatLngPoint | null = null, reference: LatLngPoint | null = null): void {
     this.forWhich.set(which);
     this.point.set(start);
+    this.reference.set(reference);
     this.returnFocus = document.activeElement as HTMLElement | null;
     this.loader.load().catch(() => undefined);
     const d = this.dialogo().nativeElement;
