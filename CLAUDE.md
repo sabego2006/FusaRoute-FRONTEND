@@ -58,6 +58,8 @@ Los tipos de `models/` **espejan el dominio del backend**. Cuando cambia un mode
 
 El backend emite un JWT (Spring Security) con validez de **una semana** — al expirar, el frontend redirige al login (RNF-04: el login se pide como máximo 1 vez por semana). El frontend guarda el token, lo adjunta en el header `Authorization` de cada petición y redirige al login cuando recibe `401`. En login, hasta 4 intentos fallidos muestran "credenciales incorrectas"; al quinto, el backend bloquea temporalmente y el frontend muestra ese aviso específico, distinto del genérico. Recuperación de contraseña fuera de alcance este semestre.
 
+**Segundo factor TOTP y dispositivo de confianza (SCRUM-196).** El login exige además un código TOTP (obligatorio para toda cuenta). Una cuenta **USER** no vuelve a verlo pedido durante 15 días **en el mismo dispositivo**, tras un código correcto; una cuenta **ADMIN** lo pide **siempre**. `AuthService` guarda el "dispositivo de confianza" que entrega el backend (`trustToken`, en `localStorage` junto al JWT de acceso — no una cookie, por el origen distinto Vercel/Render) y lo reenvía en cada login; `logout()` no lo borra. El backend decide por rol, nunca el cliente: el frontend solo guarda y reenvía el token, sin lógica propia.
+
 **No se usa Supabase Auth.** El frontend nunca habla con Supabase: su única fuente de datos es la API del backend. Si aparece una dependencia de `@supabase/*` en este repo, es un error de arquitectura.
 
 **Ocultar un botón de administrador no es seguridad**, es cortesía visual. El permiso real lo verifica el backend siempre.
