@@ -20,7 +20,7 @@ describe('MapPickDialogComponent', () => {
     c.open('destination');
     fixture.detectChanges();
     expect(el.querySelector('dialog')!.hasAttribute('open')).toBe(true);
-    expect(el.textContent).toContain('Elija a dónde va');
+    expect(el.textContent).toContain('Señale a dónde va');
     expect(el.textContent).toContain('no está disponible');
   });
 
@@ -30,8 +30,8 @@ describe('MapPickDialogComponent', () => {
     c.picked.subscribe((e) => emitted.push(e));
     c.open('origin');
     fixture.detectChanges();
-    expect(el.textContent).toContain('Elija de dónde sale');
-    const usar = () => Array.from(el.querySelectorAll('button')).find((b) => b.textContent!.includes('Usar'))!;
+    expect(el.textContent).toContain('Señale de dónde sale');
+    const usar = () => Array.from(el.querySelectorAll('button')).find((b) => b.textContent!.includes('Listo'))!;
     expect(usar().disabled).toBe(true);
     c.onMapClick({ latLng: { lat: () => 4.3, lng: () => -74.3 } } as unknown as google.maps.MapMouseEvent);
     c.onMapClick({ latLng: null } as google.maps.MapMouseEvent);
@@ -40,6 +40,33 @@ describe('MapPickDialogComponent', () => {
     usar().click();
     expect(emitted).toEqual([{ which: 'origin', point: { lat: 4.3, lng: -74.3 } }]);
     expect(el.querySelector('dialog')!.hasAttribute('open')).toBe(false);
+  });
+
+  it('el botón principal dice a dónde se va según la punta', async () => {
+    const { c, el, fixture } = await render('cargando');
+    c.open('destination');
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Listo, ir aquí');
+    c.open('origin');
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Listo, salir de aquí');
+  });
+
+  it('muestra la otra punta como referencia: A al elegir el destino, B al elegir el origen', async () => {
+    const { c, el, fixture } = await render('cargando');
+    c.open('destination', null, { lat: 4.33, lng: -74.37 });
+    fixture.detectChanges();
+    expect(c.reference()).toEqual({ lat: 4.33, lng: -74.37 });
+    expect(c.referenceLabel()).toBe('A');
+    expect(c.startCenter()).toEqual({ lat: 4.33, lng: -74.37 });
+    expect(c.referenceNote()).toContain('de dónde sale');
+    c.open('origin', null, { lat: 4.34, lng: -74.36 });
+    fixture.detectChanges();
+    expect(c.referenceLabel()).toBe('B');
+    expect(c.referenceNote()).toContain('a dónde va');
+    c.open('origin');
+    expect(c.reference()).toBeNull();
+    expect(el.querySelector('dialog')).not.toBeNull();
   });
 
   it('cancelar cierra sin emitir', async () => {

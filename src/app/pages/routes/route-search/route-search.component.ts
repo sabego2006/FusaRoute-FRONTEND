@@ -18,7 +18,8 @@ import { RouteStepsComponent } from '../../../components/route-steps/route-steps
 import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
-import { ComboboxAction, PlaceComboboxComponent } from '../../../components/place-combobox/place-combobox.component';
+import { TripEndFieldComponent } from '../../../components/trip-end-field/trip-end-field.component';
+import { canSearchEnds, mapEnd } from '../../../lib/trip-end';
 import { MapMarkerPoint, PlacesMapComponent } from '../../../components/places-map/places-map.component';
 import { MapPickDialogComponent } from '../../../components/map-pick-dialog/map-pick-dialog.component';
 import { LatLngPoint } from '../../../components/map-view/map-view.component';
@@ -37,7 +38,8 @@ export const GPS_TIMEOUT_MS = 8_000;
  * Buscador de ruta (RF-04, SCRUM-54, SCRUM-130) y su resultado, en la misma pantalla.
  *
  * Cada punta es un campo escribible sobre los lugares canónicos de `GET /api/places`,
- * con dos atajos: "Mi ubicación" (solo el origen, por GPS) y "Elegir en el mapa".
+ * con tres maneras a la vista (T16): escribir, "Usar mi ubicación" (solo el origen, por GPS)
+ * y "Señalar en el mapa". Un punto del mapa o del GPS basta para buscar, sin escribir nada.
  * Sigue cabiendo en 4 acciones (RNF-04): abrir, origen, destino, ¡Hágale!.
  *
  * La plantilla reserva dos huecos para lo que viene en esta misma pantalla ("Ya me
@@ -48,12 +50,10 @@ export const GPS_TIMEOUT_MS = 8_000;
   selector: 'app-route-search',
   standalone: true,
   imports: [RouterLink, RouteStepsComponent, FareTableComponent, LetreroComponent, TrafficBadgeComponent,
-            PlaceComboboxComponent, PlacesMapComponent, MapPickDialogComponent,
+            TripEndFieldComponent, PlacesMapComponent, MapPickDialogComponent,
             BoardedButtonComponent, LastDestinationChipComponent, RideHistoryComponent],
   templateUrl: './route-search.component.html',
   styles: [`
-    .fr-campo-con-accion { display: flex; align-items: flex-end; gap: var(--space-2); }
-    .fr-campo-con-accion > app-place-combobox { flex: 1 1 auto; min-width: 0; }
 
     .fr-boton-favorito {
       flex: 0 0 auto;
@@ -170,7 +170,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     const r = this.result();
     return r ? municipalityOf(r.route.name, r.route.type) : null;
   });
-  readonly canSearch = computed(() => !!this.origin() && !!this.destination() && !this.loading());
+  readonly canSearch = computed(() => canSearchEnds(this.origin(), this.destination(), this.loading()));
 
   readonly travelDistanceLabel = computed(() => {
     const meters = this.result()?.travelDistanceInMeters;
@@ -272,13 +272,14 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     return end === 'origin' ? this.origin : this.destination;
   }
 
-  onComboAction(end: End, action: ComboboxAction): void {
-    if (action === 'my-location') this.useMyLocation();
-    else this.pickDialog().open(end, endPoint(this.signalFor(end)()));
+  /** "Señalar en el mapa": abre el panel para esa punta, partiendo del punto que ya tenga. */
+  pickOnMap(end: End): void {
+    const other: End = end === 'origin' ? 'destination' : 'origin';
+    this.pickDialog().open(end, endPoint(this.signalFor(end)()), endPoint(this.signalFor(other)()));
   }
 
   onMapPicked(e: { which: End; point: LatLngPoint }): void {
-    this.signalFor(e.which).set({ kind: 'map', lat: e.point.lat, lng: e.point.lng, label: '🗺️ Punto en el mapa' });
+    this.signalFor(e.which).set(mapEnd(e.point.lat, e.point.lng));
   }
 
   /**
@@ -297,7 +298,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
       (pos) => {
         this.locating.set(false);
         this.originHint.set(null);
-        this.origin.set({ kind: 'gps', lat: pos.coords.latitude, lng: pos.coords.longitude, label: '📍 Mi ubicación' });
+        this.origin.set({ kind: 'gps', lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Su ubicación actual' });
       },
       (err) => {
         this.locating.set(false);

@@ -133,7 +133,7 @@ describe('RouteSearchComponent', () => {
   it('Mi ubicación pide el GPS con 8 s y manda lat/lng', async () => {
     const geo = mockGeolocation((ok) => ok({ coords: { latitude: 4.33, longitude: -74.37 } } as GeolocationPosition));
     const { c, fixture, buscar, searchRoute } = await render();
-    c.onComboAction('origin', 'my-location');
+    c.useMyLocation();
     expect(geo.mock.calls[0][2]?.timeout).toBe(GPS_TIMEOUT_MS);
     c.destination.set({ kind: 'place', place: terminal, label: terminal.name });
     fixture.detectChanges();
@@ -144,7 +144,7 @@ describe('RouteSearchComponent', () => {
   it('si niega el GPS lo dice y deja el origen vacío para escribir', async () => {
     mockGeolocation((_ok, fail) => fail({ code: 1 } as GeolocationPositionError));
     const { c, el, fixture } = await render();
-    c.onComboAction('origin', 'my-location');
+    c.useMyLocation();
     fixture.detectChanges();
     expect(c.origin()).toBeNull();
     expect(el.textContent).toContain('No nos dio permiso');
@@ -165,6 +165,79 @@ describe('RouteSearchComponent', () => {
     fixture.detectChanges();
     await buscar();
     expect(searchRoute).toHaveBeenCalledWith({ originPlaceId: 12, destinationLat: 4.34, destinationLng: -74.36 });
+  });
+
+  describe('puntas elegidas en el mapa (SCRUM-195)', () => {
+    const botones = (el: HTMLElement) => Array.from(el.querySelectorAll('button')).map((b) => b.textContent!.replace(/\s+/g, ' ').trim());
+
+    it('las tres maneras están a la vista sin abrir nada: escribir, mi ubicación y señalar en el mapa', async () => {
+      const { el } = await render();
+      expect(el.textContent).toContain('¿Desde dónde sale?');
+      expect(el.textContent).toContain('¿A dónde va?');
+      expect(botones(el).filter((t) => t === 'Señalar en el mapa').length).toBe(2);
+      expect(botones(el).filter((t) => t === 'Usar mi ubicación').length).toBe(1);
+      expect((el.querySelectorAll('input[role="combobox"]')[1] as HTMLInputElement).placeholder).toContain('Terminal');
+    });
+
+    it('se puede buscar con dos puntos del mapa sin escribir nada', async () => {
+      const { c, el, fixture, buscar, searchRoute } = await render();
+      c.onMapPicked({ which: 'origin', point: { lat: 4.33, lng: -74.37 } });
+      c.onMapPicked({ which: 'destination', point: { lat: 4.34, lng: -74.36 } });
+      fixture.detectChanges();
+      expect(el.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(false);
+      await buscar();
+      expect(searchRoute).toHaveBeenCalledWith({ originLat: 4.33, originLng: -74.37, destinationLat: 4.34, destinationLng: -74.36 });
+    });
+
+    it('el punto se muestra como ficha legible, nunca como coordenadas', async () => {
+      const { c, el, fixture } = await render();
+      c.onMapPicked({ which: 'destination', point: { lat: 4.34123, lng: -74.36456 } });
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Punto en el mapa');
+      expect(el.textContent).not.toMatch(/4\.34|74\.36/);
+      expect(botones(el)).toContain('Cambiar');
+      expect(el.querySelectorAll('input[role="combobox"]').length).toBe(1);
+    });
+
+    it('Quitar devuelve el campo vacío y deshabilita ¡Hágale!; después se puede escribir un lugar', async () => {
+      const { c, el, fixture } = await render();
+      c.origin.set({ kind: 'place', place: indio, label: indio.name });
+      c.onMapPicked({ which: 'destination', point: { lat: 4.34, lng: -74.36 } });
+      fixture.detectChanges();
+      const submit = el.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      expect(submit.disabled).toBe(false);
+      Array.from(el.querySelectorAll('button')).find((b) => b.textContent!.trim() === 'Quitar')!.click();
+      fixture.detectChanges();
+      expect(c.destination()).toBeNull();
+      expect(submit.disabled).toBe(true);
+      expect(el.querySelectorAll('input[role="combobox"]').length).toBe(2);
+      c.destination.set({ kind: 'place', place: terminal, label: terminal.name });
+      fixture.detectChanges();
+      expect(submit.disabled).toBe(false);
+    });
+
+    it('cambiar de un punto del mapa a un lugar escrito deja solo el lugar', async () => {
+      const { c, fixture, buscar, searchRoute } = await render();
+      c.origin.set({ kind: 'place', place: indio, label: indio.name });
+      c.onMapPicked({ which: 'destination', point: { lat: 4.34, lng: -74.36 } });
+      c.destination.set({ kind: 'place', place: terminal, label: terminal.name });
+      fixture.detectChanges();
+      await buscar();
+      expect(searchRoute).toHaveBeenCalledWith({ originPlaceId: 12, destinationPlaceId: 40 });
+    });
+
+    it('"Cambiar" en la ficha del mapa vuelve a abrir el panel; en la del GPS devuelve el campo', async () => {
+      const { c, el, fixture } = await render();
+      const open = vi.spyOn(c, 'pickOnMap');
+      c.onMapPicked({ which: 'destination', point: { lat: 4.34, lng: -74.36 } });
+      fixture.detectChanges();
+      Array.from(el.querySelectorAll('button')).find((b) => b.textContent!.trim() === 'Cambiar')!.click();
+      expect(open).toHaveBeenCalledWith('destination');
+      c.origin.set({ kind: 'gps', lat: 4.3, lng: -74.3, label: 'Su ubicación actual' });
+      fixture.detectChanges();
+      Array.from(el.querySelectorAll('button')).find((b) => b.textContent!.trim() === 'Cambiar')!.click();
+      expect(c.origin()).toBeNull();
+    });
   });
 
   it('muestra la vista previa en mapa al elegir un punto, antes de buscar', async () => {

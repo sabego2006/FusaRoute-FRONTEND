@@ -67,7 +67,7 @@ for (const width of WIDTHS) {
 
       const origen = page.getByRole('combobox', { name: 'Origen' });
       await origen.fill('ind');
-      await expect(page.getByRole('option', { name: '📍 Mi ubicación' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Usar mi ubicación' })).toBeVisible();
       await page.getByRole('option', { name: /^Indio/ }).click();
       await expect(origen).toHaveValue('Indio');
 
