@@ -124,6 +124,62 @@ describe('AuthService', () => {
     expect(service.enrollmentToken()).toBeNull();
   });
 
+  // --- Dispositivo de confianza del segundo factor (decisión del 17-nov-2026, SCRUM-196). -
+
+  it('login adjunta el trustToken guardado de una sesión anterior, aunque quien llama no lo pase', () => {
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    service.applySession({
+      token: 'tk', tokenType: 'Bearer', expiresAt: futureDate,
+      user: { id: 1, name: 'A', email: 'a@b.co', role: 'USER', active: true },
+      trustToken: 'trust.guardado',
+    });
+
+    service.login({ email: 'a@b.co', password: 'x' }).subscribe({ error: () => undefined });
+
+    const req = http.expectOne(`${environment.apiUrl}/api/auth/login`);
+    expect(req.request.body).toEqual({ email: 'a@b.co', password: 'x', trustToken: 'trust.guardado' });
+    req.flush({ error: 'TOTP_REQUIRED' }, { status: 401, statusText: 'Unauthorized' });
+  });
+
+  it('applySession guarda el trustToken nuevo cuando el backend lo entrega', () => {
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    service.applySession({
+      token: 'tk', tokenType: 'Bearer', expiresAt: futureDate,
+      user: { id: 1, name: 'A', email: 'a@b.co', role: 'USER', active: true },
+      trustToken: 'trust.nuevo',
+    });
+
+    expect(localStorage.getItem('trustToken')).toBe('trust.nuevo');
+  });
+
+  it('applySession NO borra el trustToken existente cuando el backend no manda uno nuevo', () => {
+    localStorage.setItem('trustToken', 'trust.que-ya-tenia');
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Saltarse el TOTP por confianza no renueva el token (decisión: no se
+    // renueva con el uso), así que la respuesta no trae trustToken.
+    service.applySession({
+      token: 'tk', tokenType: 'Bearer', expiresAt: futureDate,
+      user: { id: 1, name: 'A', email: 'a@b.co', role: 'USER', active: true },
+    });
+
+    expect(localStorage.getItem('trustToken')).toBe('trust.que-ya-tenia');
+  });
+
+  it('logout NO borra el trustToken: el usuario espera no repetir el TOTP en 15 días', () => {
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    service.applySession({
+      token: 'tk', tokenType: 'Bearer', expiresAt: futureDate,
+      user: { id: 1, name: 'A', email: 'a@b.co', role: 'USER', active: true },
+      trustToken: 'trust.persistente',
+    });
+
+    service.logout();
+
+    expect(localStorage.getItem('trustToken')).toBe('trust.persistente');
+  });
+
   it('patchUserName actualiza el nombre del signal sin HTTP', () => {
     const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     service.login({ email: 'a@b.co', password: 'x' }).subscribe();

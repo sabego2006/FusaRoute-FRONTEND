@@ -31,6 +31,17 @@ export class AuthService {
    */
   readonly enrollmentToken = signal<string | null>(null);
 
+  /**
+   * Dispositivo de confianza del segundo factor (decisión del 17-nov-2026, SCRUM-196): si
+   * el backend lo reconoce vigente para una cuenta USER, el login no vuelve a
+   * pedir el código TOTP. A propósito en localStorage, igual que `token`: es
+   * el mismo origen (Vercel) y el mismo riesgo ya aceptado por el JWT de
+   * acceso, y evita abrir una cookie entre sitios (Vercel↔Render) que las
+   * políticas de cookies de terceros de los navegadores ya bloquean por
+   * defecto. `logout()` NO lo borra (el usuario espera no repetir el TOTP).
+   */
+  private readonly trustToken = signal<string | null>(this.loadTrustToken());
+
   readonly isLoggedIn = computed(() => {
     const t = this.token();
     const exp = this.expiresAt();
@@ -40,9 +51,15 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * El dispositivo de confianza guardado (si hay uno) se adjunta siempre,
+   * aunque la cuenta sea ADMIN: el backend decide por el rol, nunca el
+   * cliente (decisión del 17-nov-2026, SCRUM-196).
+   */
   login(credentials: LoginCredentials): Observable<LoginResponse> {
+    const body: LoginCredentials = { ...credentials, trustToken: this.trustToken() ?? undefined };
     return this.http
-      .post<LoginResponse>(`${this.authUrl}/login`, credentials)
+      .post<LoginResponse>(`${this.authUrl}/login`, body)
       .pipe(tap((res) => this.applySession(res)));
   }
 
@@ -65,6 +82,12 @@ export class AuthService {
     this.expiresAt.set(res.expiresAt);
     this.currentUser.set(res.user);
     this.enrollmentToken.set(null);
+    // Ausente = no se renovó (se saltó el TOTP, fue un código de respaldo, o es
+    // ADMIN): se conserva el que ya hubiera, nunca se borra por esto.
+    if (res.trustToken) {
+      try { localStorage.setItem('trustToken', res.trustToken); } catch { /* no-op */ }
+      this.trustToken.set(res.trustToken);
+    }
   }
 
   register(data: RegisterRequest): Observable<RegisterResponse> {
@@ -89,6 +112,11 @@ export class AuthService {
 
   // --- Persistencia en localStorage ---
 
+  /**
+   * Cierra la sesión. NO toca `trustToken` a propósito (decisión del
+   * 17-nov-2026, SCRUM-196): el usuario espera no repetir el TOTP en 15 días aunque
+   * cierre sesión entre medias, en el mismo dispositivo.
+   */
   private clearSession(): void {
     try {
       localStorage.removeItem('token');
@@ -103,6 +131,10 @@ export class AuthService {
 
   private loadToken(): string | null {
     try { return localStorage.getItem('token'); } catch { return null; }
+  }
+
+  private loadTrustToken(): string | null {
+    try { return localStorage.getItem('trustToken'); } catch { return null; }
   }
 
   private loadExpiry(): string | null {
