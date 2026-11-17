@@ -15,7 +15,9 @@ import { downloadText } from '../../lib/download';
   standalone: true,
   imports: [ReactiveFormsModule, TotpEnrollComponent],
   template: `
-    <div class="fr-card" style="max-width: 480px; margin: 2rem auto;">
+    <div class="fr-card fr-card--paramo" style="max-width: 480px; margin: 2rem auto;">
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Tu cuenta · FusaRoute</p>
       <h1 class="fr-titulo-1" style="margin-bottom: var(--space-6);">Mi perfil</h1>
 
       <!-- Datos personales -->
@@ -53,8 +55,8 @@ import { downloadText } from '../../lib/download';
         </button>
       </form>
 
-      <!-- Cambiar contraseña -->
-      <hr style="margin: var(--space-8) 0; border: 0; border-top: var(--trazo-1) solid var(--borde);">
+      <!-- Cambiar contraseña. T05 (R1): la greca separa las secciones en vez del <hr>. -->
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin: var(--space-8) 0;"></div>
       <h2 class="fr-titulo-2" style="margin-bottom: var(--space-4);">Cambiar contraseña</h2>
 
       <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" style="display: flex; flex-direction: column; gap: var(--space-4);">
@@ -86,7 +88,7 @@ import { downloadText } from '../../lib/download';
       </form>
 
       <!-- Seguridad: verificación en dos pasos (obligatoria, no se puede desactivar) -->
-      <hr style="margin: var(--space-8) 0; border: 0; border-top: var(--trazo-1) solid var(--borde);">
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin: var(--space-8) 0;"></div>
       <h2 class="fr-titulo-2" style="margin-bottom: var(--space-4);">Verificación en dos pasos</h2>
 
       @if (reenrolling()) {

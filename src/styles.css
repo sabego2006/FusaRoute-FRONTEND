@@ -43,6 +43,36 @@
   --sobre-gris: #FFFFFF;
   --foco: var(--indigo);
 
+  /*
+   * Enlaces (T05). El índigo de marca sobre blanco da 6.29:1 y AAA pide 7:1
+   * para texto normal (los enlaces son de 14–16 px). `--indigo-texto` es el
+   * mismo matiz, un paso más oscuro: 7.90:1 sobre --superficie, 7.71:1 sobre
+   * --fondo y 7.07:1 sobre --indigo-suave. Solo para texto; las superficies
+   * siguen usando --indigo-accion.
+   */
+  --indigo-texto: #4338CA;
+
+  /*
+   * Paleta del páramo (T05, rasgo R3): el tercer color de apoyo, al lado del
+   * índigo y la lima. Sale del páramo de Sumapaz, que es lo que hace que
+   * Fusagasugá no sea cualquier ciudad: el frailejón y la niebla.
+   *
+   * Contraste medido (WCAG, luminancia relativa), no estimado:
+   *   --paramo sobre --fondo (#FDFCFB) ..... 7.94:1  → texto normal AAA
+   *   --paramo sobre --superficie (#FFF) ... 8.13:1
+   *   --sobre-paramo (#FFF) sobre --paramo . 8.13:1
+   *   --tinta sobre --niebla ............... 16.73:1
+   *   --paramo sobre --niebla .............. 6.88:1  → NO alcanza 7:1: el verde
+   *     nunca va como texto encima de la niebla, solo --tinta.
+   *   --frailejon: decorativo (greca, puntos, franjas). Nunca detrás de texto.
+   */
+  --paramo: #1F5A3A;
+  --sobre-paramo: #FFFFFF;
+  --niebla: #E6EEE8;
+  --frailejon: #F2C94C;
+  /* Placa cruda de los letreros fotografiados (public/letreros/*.svg). */
+  --placa: #F4F5F0;
+
   /* Municipios */
   --muni-fusagasuga: #4F46E5;
   --muni-pasca: #0D9488;
@@ -739,7 +769,7 @@ body {
 .fr-btn-primario { background: var(--indigo-accion); color: var(--sobre-indigo); box-shadow: var(--shadow-elevated); }
 .fr-btn-bloque { display: flex; width: 100%; }
 .fr-btn:disabled { background: var(--fondo); color: var(--tinta-suave); box-shadow: none; transform: none; cursor: not-allowed; }
-.fr-link { color: var(--indigo); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.fr-link { color: var(--indigo-texto); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Fields */
 .fr-campo { display: flex; flex-direction: column; }
@@ -878,4 +908,151 @@ body {
 @media (max-width: 399px) {
   .fr-card { padding: var(--space-4) var(--space-3); }
   .fr-input { padding: 0 var(--space-3); }
+}
+
+/* ═══════════════════ Identidad Sumapaz (T05, SCRUM-194) ═══════════════════
+ *
+ * Seis rasgos, definidos una sola vez aquí y usados en las plantillas:
+ *   R1 greca escalonada   .fr-greca
+ *   R2 letrero de buseta  .fr-letrero-titulo, .fr-chip-letrero
+ *   R3 paleta del páramo  --paramo, --niebla, --frailejon (tokens de :root)
+ *   R4 Sutá               .fr-suta-estado (solo estados vacío/éxito/error/sin red)
+ *   R5 paleta municipal   .fr-chip-muni--<municipio>
+ *   R6 isotipo            assets/logo.svg (candidato B), en el encabezado
+ *
+ * Nada de esto es una imagen rasterizada: la greca es un SVG en línea dentro
+ * del CSS y el letrero es solo tipografía y bordes. Son bytes de CSS, no
+ * peticiones de red, así que no tocan el LCP.
+ */
+
+/*
+ * R1 · Greca escalonada. Es la escalera de la greca chibcha de los isotipos A
+ * y D (el `M15 47 H31 V31 H47` del candidato A), repetida como cenefa.
+ *
+ * Va como máscara y no como `background-image` porque la máscara toma el color
+ * de `background-color`: una sola forma sirve en tinta, páramo o lima sin
+ * duplicar el SVG por color. El dibujo es una loseta de 16×8 con escalones de
+ * 2 unidades, que se ve a 20×10 px.
+ *
+ * `aria-hidden` lo pone la plantilla: es decoración y el lector no la nombra.
+ */
+.fr-greca {
+  display: block;
+  width: 100%;
+  height: 10px;
+  flex: none;
+  background-color: var(--tinta);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 8V6h2V4h2V2h2V0h4v2h2v2h2v2h2v2z'/%3E%3C/svg%3E") repeat-x left bottom / 20px 10px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 8V6h2V4h2V2h2V0h4v2h2v2h2v2h2v2z'/%3E%3C/svg%3E") repeat-x left bottom / 20px 10px;
+}
+.fr-greca--paramo { background-color: var(--paramo); }
+.fr-greca--lima { background-color: var(--lima); }
+.fr-greca--frailejon { background-color: var(--frailejon); }
+/* Cenefa fina, para separar secciones dentro de una tarjeta. */
+.fr-greca--fina {
+  height: 6px;
+  -webkit-mask-size: 12px 6px;
+  mask-size: 12px 6px;
+}
+
+/*
+ * R2 · Letrero de buseta. Es la placa que va en el parabrisas, hecha solo con
+ * CSS: fondo crudo (`--placa`, el mismo de los SVG fotografiados), borde negro,
+ * mayúsculas apretadas y una franja lima abajo como en el isotipo B. Sirve de
+ * título de sección (`.fr-letrero-titulo`) y de chip (`.fr-chip-letrero`).
+ *
+ * Texto --tinta sobre --placa: 17.5:1. Cualquier tamaño pasa AAA.
+ */
+.fr-letrero-titulo {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--space-1) var(--space-3) calc(var(--space-1) + 4px);
+  font: 700 18px/24px var(--font-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  background: var(--placa);
+  border: var(--trazo-2) solid var(--borde);
+  border-radius: 6px;
+  box-shadow: inset 0 -4px 0 var(--lima), var(--sombra-dura-sm);
+  text-wrap: balance;
+}
+.fr-letrero-titulo--paramo { box-shadow: inset 0 -4px 0 var(--paramo), var(--sombra-dura-sm); }
+.fr-chip-letrero {
+  display: inline-block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 2px var(--space-2) 4px;
+  font: 700 12px/16px var(--font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  background: var(--placa);
+  border: var(--trazo-2) solid var(--borde);
+  border-radius: 4px;
+  box-shadow: inset 0 -3px 0 var(--lima);
+}
+
+/*
+ * R4 · Sutá en un estado (vacío, éxito, error, sin conexión). La mascota va al
+ * lado del mensaje, sobre la niebla del páramo, con la greca arriba. El texto
+ * es --tinta sobre --niebla (16.7:1). La imagen es `loading="lazy"` en la
+ * plantilla y siempre llega después del contenido: nunca es el LCP.
+ */
+.fr-suta-estado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--niebla);
+  color: var(--tinta);
+  border: var(--trazo-2) solid var(--borde);
+  border-radius: var(--radius-md);
+  box-shadow: var(--sombra-dura-sm);
+}
+.fr-suta-estado > .fr-suta { flex: none; }
+.fr-suta-estado > div { min-width: 0; }
+.fr-suta-estado p { margin: 0; }
+.fr-suta-estado--error { background: var(--rojo-suave); }
+.fr-suta-estado--exito { background: var(--lima); }
+
+/*
+ * R5 · Paleta por municipio. El chip ya existía; lo que se agrega es el
+ * modificador por municipio para que cada ruta diga de dónde es. El texto es
+ * --tinta sobre --superficie: el color municipal es el punto, no el texto,
+ * porque ninguno de los --muni-* llega a 7:1 sobre blanco (3.1–6.0:1 medido).
+ */
+.fr-chip-muni--fusagasuga { --muni: var(--muni-fusagasuga); }
+.fr-chip-muni--pasca { --muni: var(--muni-pasca); }
+.fr-chip-muni--arbelaez { --muni: var(--muni-arbelaez); }
+.fr-chip-muni--silvania { --muni: var(--muni-silvania); }
+.fr-chip-muni--granada { --muni: var(--muni-granada); }
+.fr-chip-muni--tibacuy { --muni: var(--muni-tibacuy); }
+.fr-chip-muni--venecia { --muni: var(--muni-venecia); }
+.fr-chip-muni--san-bernardo { --muni: var(--muni-san-bernardo); }
+.fr-chip-muni--pandi { --muni: var(--muni-pandi); }
+.fr-chip-muni--cabrera { --muni: var(--muni-cabrera); }
+/* Fila de chips bajo un título: municipio + tipo de ruta. */
+.fr-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+
+/*
+ * R3 · Acentos del páramo en componentes del sistema. Son modificadores: el
+ * componente base no cambia, se le suma el acento donde la pantalla lo pide.
+ */
+.fr-bento-item--paramo { background: var(--niebla); }
+.fr-bento-item--paramo .fr-eta-numero { color: var(--paramo); }
+.fr-card--paramo { border-top: var(--trazo-8) solid var(--paramo); }
+.fr-texto-paramo { color: var(--paramo); }
+.fr-btn-paramo { background: var(--paramo); color: var(--sobre-paramo); }
+
+/* Encabezado con cenefa: la greca cuelga del borde inferior del header. */
+.fr-header-greca {
+  display: block;
+  height: 10px;
+  margin: 0 calc(var(--space-4) * -1);
+  background-color: var(--paramo);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 0h16v2h-2v2h-2v2h-2v2H6V6H4V4H2V2H0z'/%3E%3C/svg%3E") repeat-x left top / 20px 10px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 0h16v2h-2v2h-2v2h-2v2H6V6H4V4H2V2H0z'/%3E%3C/svg%3E") repeat-x left top / 20px 10px;
 }

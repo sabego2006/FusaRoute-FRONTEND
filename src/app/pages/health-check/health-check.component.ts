@@ -5,19 +5,23 @@ import { HealthService } from '../../services/health.service';
   selector: 'app-health-check',
   standalone: true,
   template: `
-    <div style="padding: 20px; font-family: sans-serif;">
-      <h1 style="color: #333;">Prueba de Conexión Backend</h1>
-      <p style="font-size: 1.2rem;">Estado del servidor:
-        <strong [style.color]="status() === 'OK' ? 'green' : (status() === 'ERROR' ? 'red' : 'orange')">
+    <!-- T05: misma piel que el resto de la app (antes era una página sin estilos). -->
+    <div class="fr-card fr-card--paramo" style="max-width: 480px; margin: 2rem auto;">
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Diagnóstico · FusaRoute</p>
+      <h1 class="fr-titulo-1">Prueba de conexión con el backend</h1>
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin: var(--space-3) 0;"></div>
+      <p class="fr-texto">Estado del servidor:
+        <strong [class.fr-texto-paramo]="status() === 'OK'" [style.color]="status() === 'ERROR' ? 'var(--rojo-texto)' : null">
           {{ status() || 'Cargando...' }}
         </strong>
       </p>
       @if (error()) {
-        <div style="color: red; margin-top: 10px; border: 1px solid red; padding: 10px; border-radius: 4px;">
-          <strong>Error:</strong> {{ error() }}
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p><strong>Error:</strong> {{ error() }}</p></div>
         </div>
       }
-      <button (click)="check()" style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">
+      <button type="button" class="fr-btn fr-btn-primario" style="margin-top: var(--space-4);" (click)="check()">
         Reintentar Conexión
       </button>
     </div>

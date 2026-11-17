@@ -4,6 +4,7 @@ import { RouteService } from '../../../services/route.service';
 import { Route } from '../../../models/route.model';
 import { formatCop } from '../../../lib/format';
 import { pickNeighborhoodSteps } from '../../../lib/route-steps';
+import { municipalityOf } from '../../../lib/municipality';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 
 @Component({
@@ -18,6 +19,8 @@ export class RoutesListComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   readonly pickNeighborhoodSteps = pickNeighborhoodSteps;
+  /** Chip de municipio por tarjeta (T05, R5). */
+  readonly municipalityOf = municipalityOf;
 
   constructor(private routeService: RouteService) {}
 

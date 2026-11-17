@@ -1,10 +1,10 @@
 <main class="fr-pila" style="max-width: 1000px; margin: 2rem auto; padding: 0 var(--space-4);">
   <header style="text-align: center; margin-bottom: var(--space-8);">
-    <div class="fr-barra" style="justify-content: center; margin-bottom: var(--space-4);">
-      <span class="fr-wordmark">Fusa<b>Route</b></span>
-    </div>
+    <!-- T05 (R2): la placa de la buseta como eyebrow; el wordmark ya está en el encabezado. -->
+    <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
     <h1 class="fr-titulo-1">Todas las rutas de Fusa</h1>
     <p class="fr-texto-sm">Pille acá por dónde pasa cada buseta y cuánto vale el pasaje.</p>
+    <div class="fr-greca fr-greca--paramo" aria-hidden="true" style="max-width: 240px; margin: var(--space-4) auto 0;"></div>
   </header>
 
   <!--
@@ -35,20 +35,26 @@
   }
 
   @if (errorMessage()) {
-    <div class="fr-alerta" role="alert">
-      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
+    <!-- T05 (R4): Sutá acompaña el error. -->
+    <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+      </div>
     </div>
   }
 
   @if (!loading() && !errorMessage()) {
     @if (routes().length === 0) {
       <!-- Vacío con Sutá: es el momento en que más sirve una cara conocida. -->
-      <div class="fr-card fr-entra-solo" style="text-align: center; padding: var(--space-8);">
+      <div class="fr-suta-estado fr-entra-solo" style="flex-direction: column; text-align: center; padding: var(--space-8);">
         <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
-             class="fr-suta" width="96" height="96" loading="lazy" decoding="async"
-             style="margin: 0 auto var(--space-4);">
-        <p class="fr-texto">Qué falla, parcero: ahora mismo no hay rutas activas.</p>
-        <p class="fr-texto-sm">Vuelve a intentarlo en un momento.</p>
+             class="fr-suta" width="96" height="96" loading="lazy" decoding="async">
+        <div>
+          <p class="fr-texto">Qué falla, parcero: ahora mismo no hay rutas activas.</p>
+          <p class="fr-texto-sm">Vuelve a intentarlo en un momento.</p>
+        </div>
       </div>
     } @else {
       <!--
@@ -60,9 +66,17 @@
       <ul class="fr-bento fr-entra-z" style="list-style: none; padding: 0;">
         @for (route of routes(); track route.id) {
           <li class="fr-card fr-card-interactiva">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-2);">
               <h2 class="fr-titulo-3">{{ route.name }}</h2>
-              <strong style="font: 700 18px/24px var(--font-display); white-space: nowrap;">{{ fareLabel(route) }}</strong>
+              <strong class="fr-texto-paramo" style="font: 700 18px/24px var(--font-display); white-space: nowrap;">{{ fareLabel(route) }}</strong>
+            </div>
+
+            <!-- T05 (R5): de qué municipio es la ruta, con su color. -->
+            <div class="fr-chips" style="margin-bottom: var(--space-3);">
+              @if (municipalityOf(route.name, route.type); as m) {
+                <span [class]="'fr-chip-muni fr-chip-muni--' + m.slug">{{ m.name }}</span>
+              }
+              <span class="fr-chip-letrero">{{ route.type === 'URBANA' ? 'Urbana' : 'Intermunicipal' }}</span>
             </div>
 
             @if (route.signFile) {
@@ -71,6 +85,7 @@
               </div>
             }
 
+            <div class="fr-greca fr-greca--fina" aria-hidden="true"></div>
             <div>
               <strong class="fr-etiqueta" style="margin: 0; text-transform: none; font-size: 14px;">Barrios:</strong>
               <span class="fr-texto-sm">{{ pickNeighborhoodSteps(route.neighborhoods).join(' → ') }}</span>

@@ -23,8 +23,13 @@
   }
 
   @if (errorMessage()) {
-    <div class="fr-alerta" role="alert">
-      <strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}
+    <!-- T05 (R4): Sutá acompaña el error. -->
+    <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+      </div>
     </div>
   }
 
@@ -36,24 +41,30 @@
       tráfico y la tarifa caben a media fila en escritorio.
     -->
     <div class="fr-bento fr-entra-z">
-      <div class="fr-bento-item fr-bento-span-2">
+      <div class="fr-bento-item fr-bento-span-2 fr-card--paramo">
         <h1 class="fr-titulo-1" style="margin: 0;">{{ r.name }}</h1>
-        <p class="fr-texto-sm" style="margin: 0;">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</p>
+        <!-- T05 (R5): el chip dice de qué municipio es la ruta, con su color. -->
+        <div class="fr-chips">
+          @if (municipality(); as m) {
+            <span [class]="'fr-chip-muni fr-chip-muni--' + m.slug">{{ m.name }}</span>
+          }
+          <span class="fr-texto-sm">{{ isUrban() ? 'Ruta urbana' : 'Ruta intermunicipal' }}</span>
+        </div>
       </div>
 
       @if (r.signFile) {
         <div class="fr-bento-item fr-bento-span-2">
-          <h2 class="fr-titulo-3">Busque este letrero</h2>
+          <h2 class="fr-letrero-titulo">Busque este letrero</h2>
           <app-letrero [signFile]="r.signFile" [routeName]="r.name" />
         </div>
       }
 
       <div class="fr-bento-item">
-        <h2 class="fr-titulo-3">Por dónde pasa</h2>
+        <h2 class="fr-letrero-titulo fr-letrero-titulo--paramo">Por dónde pasa</h2>
         <app-route-steps [neighborhoods]="r.neighborhoods" />
       </div>
 
-      <div class="fr-bento-item">
+      <div class="fr-bento-item fr-bento-item--paramo">
         <h2 class="fr-titulo-3">Cómo está el tráfico</h2>
         <app-traffic-badge [sectors]="congestionSectors()" />
         @if (congestionSectors().length === 0) {
@@ -69,6 +80,7 @@
         prueba que lo fija, y el Bento lo habia invertido sin querer.
       -->
       <div class="fr-bento-item fr-bento-span-2">
+        <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true"></div>
         <h2 class="fr-titulo-3">El recorrido en el mapa</h2>
         @if (mapData(); as mapa) {
           <app-map-view [path]="mapa.path" [origin]="mapa.start" [destination]="mapa.end" />

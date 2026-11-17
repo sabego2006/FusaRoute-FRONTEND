@@ -23,7 +23,10 @@ const GENERIC_ERROR = 'No pudimos cargar las métricas. Intenta de nuevo.';
   imports: [RouterLink],
   template: `
     <div class="fr-metricas">
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
       <h1 class="fr-titulo-1">Métricas de uso</h1>
+      <div class="fr-greca fr-greca--paramo" aria-hidden="true" style="max-width: 240px; margin: var(--space-3) 0 var(--space-4);"></div>
 
       @if (loading()) {
         <p class="fr-solo-lectores" role="status">Cargando métricas...</p>
@@ -123,7 +126,8 @@ const GENERIC_ERROR = 'No pudimos cargar las métricas. Intenta de nuevo.';
     .fr-metricas__valor {
       margin: 0;
       font: 700 2.25rem/1.1 var(--font-display);
-      color: var(--tinta);
+      /* T05 (R3): la cifra en verde del páramo, 7.94:1 sobre --fondo. */
+      color: var(--paramo, var(--tinta));
     }
     .fr-metricas__enlace,
     .fr-ranking__nombre {

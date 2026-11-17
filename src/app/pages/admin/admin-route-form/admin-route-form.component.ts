@@ -60,7 +60,10 @@ interface FareRow extends FareDraft {
   template: `
     <section class="fr-ruta-form">
       <a class="fr-link" routerLink="/admin/rutas">← Volver a las rutas</a>
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin: var(--space-3) 0;">Administración · FusaRoute</p>
       <h1 class="fr-titulo-1">{{ editingId === null ? 'Crear ruta' : 'Editar ruta' }}</h1>
+      <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true" style="margin: var(--space-3) 0 var(--space-4);"></div>
 
       @if (loading()) {
         <p class="fr-texto" role="status">Cargando la ruta...</p>

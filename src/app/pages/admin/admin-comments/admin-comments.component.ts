@@ -33,7 +33,9 @@ type Filtro = 'TODOS' | CommentStatus;
   selector: 'app-admin-comments',
   standalone: true,
   template: `
-    <div class="fr-card" style="max-width: 760px; margin: 2rem auto;">
+    <div class="fr-card fr-card--paramo" style="max-width: 760px; margin: 2rem auto;">
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
       <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Comentarios de los usuarios</h1>
       <p style="color: var(--tinta-suave); margin-bottom: var(--space-6);">
         Los pendientes salen primero. Responder bloquea el comentario para que su autor no lo cambie.
@@ -53,7 +55,11 @@ type Filtro = 'TODOS' | CommentStatus;
       @if (loading()) {
         <p style="color: var(--tinta-suave);">Cargando comentarios...</p>
       } @else if (loadError()) {
-        <p class="fr-alerta">{{ loadError() }}</p>
+        <!-- T05 (R4): Sutá acompaña el error. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p>{{ loadError() }}</p></div>
+        </div>
       } @else if (comments().length === 0) {
         <p style="color: var(--tinta-suave);">{{ mensajeVacio() }}</p>
       } @else {
@@ -173,7 +179,8 @@ type Filtro = 'TODOS' | CommentStatus;
       display: block;
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--indigo, #4F46E5);
+      /* --indigo-texto y no --indigo: a 12 px sobre --indigo-suave el índigo de marca da 5.62:1 (T02); este da 7.07:1. */
+      color: var(--indigo-texto, #4338CA);
       margin-bottom: var(--space-1);
     }
   `],

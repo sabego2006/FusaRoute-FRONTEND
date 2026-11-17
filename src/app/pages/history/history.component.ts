@@ -20,23 +20,34 @@ import { ProblemDetail } from '../../models/auth.model';
   standalone: true,
   template: `
     <div style="max-width: 640px; margin: 2rem auto; padding: 0 var(--space-4);">
+      <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+      <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Tu cuenta · FusaRoute</p>
       <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Mis búsquedas</h1>
-      <p class="fr-texto-sm" style="color: var(--tinta-suave); margin-bottom: var(--space-6);">
+      <p class="fr-texto-sm" style="color: var(--tinta-suave); margin-bottom: var(--space-4);">
         Las últimas 6 búsquedas de tu cuenta. Las ves iguales desde cualquier dispositivo.
       </p>
+      <div class="fr-greca fr-greca--paramo" aria-hidden="true" style="max-width: 240px; margin-bottom: var(--space-6);"></div>
 
       @if (loading()) {
         <p class="fr-texto" role="status">Cargando tu historial…</p>
       } @else if (errorMessage()) {
-        <p class="fr-alerta" role="alert">{{ errorMessage() }}</p>
+        <!-- T05 (R4): Sutá acompaña el error. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p>{{ errorMessage() }}</p></div>
+        </div>
       } @else if (isEmpty()) {
-        <div class="fr-card">
-          <p class="fr-texto" style="margin: 0 0 var(--space-4);">
-            Todavía no has buscado ninguna ruta. Las búsquedas que hagas aparecerán aquí.
-          </p>
-          <button type="button" class="fr-btn fr-btn-primario" (click)="goToSearch()">
-            Buscar una ruta
-          </button>
+        <!-- T05 (R4): estado vacío con Sutá. -->
+        <div class="fr-suta-estado" style="align-items: flex-start;">
+          <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta" width="96" height="96" loading="lazy" decoding="async">
+          <div>
+            <p class="fr-texto" style="margin: 0 0 var(--space-4);">
+              Todavía no has buscado ninguna ruta. Las búsquedas que hagas aparecerán aquí.
+            </p>
+            <button type="button" class="fr-btn fr-btn-primario" (click)="goToSearch()">
+              Buscar una ruta
+            </button>
+          </div>
         </div>
       } @else {
         <ul class="fr-lista" style="display: flex; flex-direction: column; gap: var(--space-3);">
@@ -64,7 +75,7 @@ import { ProblemDetail } from '../../models/auth.model';
 
                 @if (isAvailable(entry)) {
                   <span class="fr-texto-sm" style="color: var(--tinta-suave);">
-                    {{ formatDate(entry.searchedAt) }} · Toca para repetir
+                    {{ formatDate(entry.searchedAt) }} · <strong class="fr-texto-paramo">Toca para repetir</strong>
                   </span>
                 } @else {
                   <!--

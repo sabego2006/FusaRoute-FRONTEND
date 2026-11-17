@@ -35,6 +35,10 @@ type Filtro = 'TODAS' | AdminRouteStatus;
     <section class="fr-rutas">
       <header class="fr-rutas__cabecera">
         <div>
+          <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+          <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
+          <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
+          <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
           <h1 class="fr-titulo-1" style="margin-bottom: var(--space-1);">Gestión de rutas</h1>
           <p class="fr-texto-sm" style="color: var(--tinta-suave); margin: 0;">
             Aquí ves todas las rutas, también las inactivas.
@@ -88,9 +92,17 @@ type Filtro = 'TODAS' | AdminRouteStatus;
       @if (loading()) {
         <p class="fr-texto" role="status">Cargando rutas...</p>
       } @else if (loadError()) {
-        <p class="fr-alerta" role="alert">{{ loadError() }}</p>
+        <!-- T05 (R4): Sutá acompaña el error. -->
+        <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+          <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p>{{ loadError() }}</p></div>
+        </div>
       } @else if (routes().length === 0) {
-        <p class="fr-texto" style="color: var(--tinta-suave);">Todavía no hay rutas. Crea la primera.</p>
+        <!-- T05 (R4): estado vacío con Sutá. -->
+        <div class="fr-suta-estado">
+          <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+          <div><p class="fr-texto">Todavía no hay rutas. Crea la primera.</p></div>
+        </div>
       } @else if (visible().length === 0) {
         <p class="fr-texto" role="status" style="color: var(--tinta-suave);">
           Ninguna ruta coincide con la búsqueda o el filtro.

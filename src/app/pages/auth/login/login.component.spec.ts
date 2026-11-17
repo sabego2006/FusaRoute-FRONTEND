@@ -45,7 +45,7 @@ describe('LoginComponent', () => {
     expect(fixture.componentInstance.errorMessage()).toBe('Correo o contraseña incorrectos.');
     // El mensaje debe ser visible en el DOM
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.fr-alerta')?.textContent).toContain('Correo o contraseña incorrectos.');
+    expect(compiled.querySelector('.fr-suta-estado--error')?.textContent).toContain('Correo o contraseña incorrectos.');
   });
 
   describe('verificación en dos pasos', () => {
@@ -149,7 +149,7 @@ describe('LoginComponent', () => {
       expect(fixture.componentInstance.errorMessage()).not.toBe('Correo o contraseña incorrectos.');
       expect(fixture.componentInstance.errorMessage()).toContain('bloqueada temporalmente');
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.fr-alerta')?.textContent).toContain('bloqueada temporalmente');
+      expect(compiled.querySelector('.fr-suta-estado--error')?.textContent).toContain('bloqueada temporalmente');
     });
 
     it('acepta un código de respaldo sin exigir 6 dígitos', () => {
