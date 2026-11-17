@@ -25,7 +25,7 @@ let nextId = 0;
   selector: 'app-place-combobox',
   standalone: true,
   template: `
-    <label class="fr-etiqueta" [for]="inputId">{{ label() }}</label>
+    <label class="fr-etiqueta" [class.fr-solo-lectores]="!labelVisible()" [for]="inputId">{{ label() }}</label>
     <div class="combo">
       <input #campo
              [id]="inputId"
@@ -80,7 +80,7 @@ let nextId = 0;
     </div>
     @if (noMatches()) {
       <p class="fr-texto-sm combo__pista" role="status">
-        No encontramos "{{ text() }}". Pruebe con otro nombre o elija en el mapa.
+        No encontramos "{{ text() }}". Pruebe con otro nombre o toque «Señalar en el mapa».
       </p>
     }
     @if (hint()) {
@@ -130,6 +130,10 @@ export class PlaceComboboxComponent {
   readonly placeholder = input('Escriba un lugar');
   readonly places = input<Place[]>([]);
   readonly offerMyLocation = input(false);
+  /** Con `false` la lista solo trae lugares: los atajos (GPS, mapa) los pone la pantalla como botones. */
+  readonly showActions = input(true);
+  /** Con `false` la etiqueta queda solo para el lector de pantalla (la pantalla pone su propia pregunta). */
+  readonly labelVisible = input(true);
   /** Mensaje bajo el campo: "Buscando su ubicación…", "No pudimos…", etc. */
   readonly hint = input<string | null>(null);
   /** Lo elegido. `null` mientras el texto no corresponda a una elección. */
@@ -159,7 +163,9 @@ export class PlaceComboboxComponent {
     if (this.offerMyLocation()) {
       opts.push({ kind: 'action', action: 'my-location', label: '📍 Mi ubicación', id: `${this.listId}-gps` });
     }
-    opts.push({ kind: 'action', action: 'map', label: '🗺️ Elegir en el mapa', id: `${this.listId}-mapa` });
+    if (this.showActions()) {
+      opts.push({ kind: 'action', action: 'map', label: '🗺️ Elegir en el mapa', id: `${this.listId}-mapa` });
+    }
     for (const place of this.suggestions()) {
       opts.push({ kind: 'place', place, id: `${this.listId}-${place.id}` });
     }

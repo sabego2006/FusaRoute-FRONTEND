@@ -5,10 +5,20 @@ import { LatLngPoint } from '../map-view/map-view.component';
 import { FUSA_CENTER } from '../places-map/places-map.component';
 
 /**
- * Panel modal para "Elegir en el mapa" (reemplaza al `<details>` y al selector de dos
- * modos que había antes). Se abre para UNA punta: un toque fija el punto, "Usar este
- * punto" lo confirma y el panel se cierra. Es un `<dialog>` nativo: atrapa el foco,
- * cierra con Escape y el lector de pantalla lo anuncia como diálogo sin código extra.
+ * Panel modal para "Señalar en el mapa". Se abre para UNA punta: un toque fija el punto,
+ * "Listo" lo confirma y el panel se cierra. En el móvil ocupa toda la pantalla (T16).
+ * Es un `<dialog>` nativo: atrapa el foco, cierra con Escape y el lector de pantalla lo
+ * anuncia como diálogo sin código extra.
+ *
+ * Causa raíz del "toco y no pasa nada" (SCRUM-195, medida en PROD): `<google-map>` recibía
+ * `height="min(55vh, 420px)"`. @angular/google-maps solo agrega "px" a lo que no termina en
+ * letras; como esa cadena termina en ")" la convertía en "min(55vh, 420px)px", el navegador
+ * descartaba el valor y el mapa quedaba de 0 px de alto: no había nada que tocar. La altura
+ * ahora la da el CSS de la caja (`.dlg__mapa`) y el componente recibe "100%".
+ *
+ * Teclado y lector de pantalla: Google no ofrece "clic" por teclado, así que con el mapa
+ * enfocado se mueve con las flechas y Intro marca el centro. Y escribir el lugar en el campo
+ * sigue siendo siempre un camino que no necesita el mapa.
  */
 @Component({
   selector: 'app-map-pick-dialog',
@@ -16,29 +26,38 @@ import { FUSA_CENTER } from '../places-map/places-map.component';
   imports: [GoogleMap, MapMarker],
   template: `
     <dialog #dialogo class="dlg" aria-labelledby="dlg-titulo" (close)="onClosed()" (cancel)="onClosed()">
-      <div class="dlg__cuerpo fr-pila">
+      <div class="dlg__cuerpo">
         <h2 id="dlg-titulo" class="fr-titulo-3" style="margin: 0;">{{ title() }}</h2>
         @if (notConfigured() || loadError()) {
-          <p class="fr-texto-sm" role="status">
-            Elegir en el mapa no está disponible ahora. Escriba el nombre del lugar en el campo.
+          <p class="fr-texto" role="status">
+            El mapa no está disponible ahora. Cierre esta ventana y escriba el lugar en el campo.
           </p>
         } @else if (!mapsReady()) {
           <p role="status" class="fr-solo-lectores">Cargando mapa...</p>
           <div class="fr-esqueleto dlg__mapa" aria-hidden="true"></div>
         } @else {
-          <p class="fr-texto-sm" style="margin: 0;">Toque el mapa donde quiere {{ forWhich() === 'origin' ? 'salir' : 'llegar' }}.</p>
-          <google-map height="min(55vh, 420px)" width="100%" [center]="center" [zoom]="14"
-                      [options]="mapOptions" (mapClick)="onMapClick($event)">
-            @if (point(); as p) {
-              <map-marker [position]="p" title="Punto elegido" />
-            }
-          </google-map>
+          <p class="fr-texto" style="margin: 0;">{{ instruction() }}</p>
+          <div class="dlg__mapa" role="group" aria-label="Mapa" aria-describedby="dlg-teclado"
+               (keydown.enter)="pickCenter($event)">
+            <google-map height="100%" width="100%" [center]="center" [zoom]="14"
+                        [options]="mapOptions" (mapClick)="onMapClick($event)">
+              @if (point(); as p) {
+                <map-marker [position]="p" title="Punto elegido" />
+              }
+            </google-map>
+          </div>
+          <p id="dlg-teclado" class="fr-solo-lectores">
+            Con el teclado: mueva el mapa con las flechas y presione Intro para marcar el centro.
+          </p>
+          @if (point()) {
+            <p role="status" class="fr-solo-lectores">Punto marcado. Toque el botón Listo para confirmarlo.</p>
+          }
         }
         <div class="dlg__acciones">
-          <button type="button" class="fr-btn" (click)="close()">Cancelar</button>
           <button type="button" class="fr-btn fr-btn-primario" [disabled]="!point()" (click)="confirm()">
-            Usar este punto
+            {{ doneLabel() }}
           </button>
+          <button type="button" class="fr-btn" (click)="close()">Cancelar</button>
         </div>
       </div>
     </dialog>
@@ -51,10 +70,22 @@ import { FUSA_CENTER } from '../places-map/places-map.component';
       background: var(--superficie); color: var(--tinta);
     }
     .dlg::backdrop { background: rgb(0 0 0 / 0.5); }
-    .dlg__cuerpo { padding: var(--space-4); gap: var(--space-3); }
-    .dlg__mapa { height: min(55vh, 420px); width: 100%; border-radius: var(--radius-md); }
-    .dlg__acciones { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; }
-    .dlg__acciones > .fr-btn { flex: 1 1 140px; }
+    .dlg__cuerpo { display: flex; flex-direction: column; padding: var(--space-4); gap: var(--space-3); box-sizing: border-box; }
+    /* La altura la da esta caja, no un atributo de <google-map> (ver la causa raíz arriba). */
+    .dlg__mapa { position: relative; height: min(55vh, 420px); width: 100%; border-radius: var(--radius-md); overflow: hidden; }
+    .dlg__mapa google-map { display: block; position: absolute; inset: 0; }
+    .dlg__acciones { display: flex; flex-direction: column; gap: var(--space-3); }
+    .dlg__acciones > .fr-btn { width: 100%; min-height: 48px; box-sizing: border-box; }
+    /* En el móvil el panel es la pantalla entera: el mapa se lleva todo el espacio sobrante. */
+    @media (max-width: 640px) {
+      .dlg { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
+      .dlg[open] { display: flex; flex-direction: column; }
+      .dlg__cuerpo {
+        flex: 1 1 auto; min-height: 0;
+        padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+      }
+      .dlg__mapa { flex: 1 1 auto; height: auto; min-height: 240px; }
+    }
   `],
 })
 export class MapPickDialogComponent {
@@ -62,9 +93,13 @@ export class MapPickDialogComponent {
 
   readonly forWhich = signal<'origin' | 'destination'>('origin');
   readonly point = signal<LatLngPoint | null>(null);
-  readonly title = computed(() => (this.forWhich() === 'origin' ? 'Elija de dónde sale' : 'Elija a dónde va'));
+  readonly title = computed(() => (this.forWhich() === 'origin' ? 'Señale de dónde sale' : 'Señale a dónde va'));
+  readonly instruction = computed(() =>
+    `Toque el mapa en el sitio donde quiere ${this.forWhich() === 'origin' ? 'salir' : 'llegar'}.`);
+  readonly doneLabel = computed(() => (this.forWhich() === 'origin' ? 'Listo, salir de aquí' : 'Listo, ir aquí'));
 
   private readonly dialogo = viewChild.required<ElementRef<HTMLDialogElement>>('dialogo');
+  private readonly map = viewChild(GoogleMap);
   private readonly loader = inject(GoogleMapsLoaderService);
   protected readonly notConfigured = computed(() => this.loader.status() === 'sin-clave');
   protected readonly loadError = computed(() => this.loader.status() === 'error');
@@ -72,7 +107,7 @@ export class MapPickDialogComponent {
   protected readonly center = FUSA_CENTER;
   protected readonly mapOptions: google.maps.MapOptions = { disableDefaultUI: true, clickableIcons: false, zoomControl: true };
 
-  /** A quién devolverle el foco al cerrar: el campo desde el que se abrió. */
+  /** A quién devolverle el foco al cerrar: el botón desde el que se abrió. */
   private returnFocus: HTMLElement | null = null;
 
   open(which: 'origin' | 'destination', start: LatLngPoint | null = null): void {
@@ -89,6 +124,14 @@ export class MapPickDialogComponent {
   onMapClick(event: google.maps.MapMouseEvent): void {
     const ll = event.latLng;
     if (ll) this.point.set({ lat: ll.lat(), lng: ll.lng() });
+  }
+
+  /** Camino por teclado: Intro con el mapa enfocado marca el centro que se está viendo. */
+  pickCenter(event?: Event): void {
+    const c = this.map()?.getCenter();
+    if (!c) return;
+    event?.preventDefault();
+    this.point.set({ lat: c.lat(), lng: c.lng() });
   }
 
   confirm(): void {

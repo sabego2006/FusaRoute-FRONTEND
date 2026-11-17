@@ -29,29 +29,28 @@
   <form (submit)="$event.preventDefault(); onSubmit()" class="fr-card fr-card--paramo" style="margin-bottom: var(--space-6);"
         aria-label="Buscar ruta">
     <div class="fr-campo">
-      <app-place-combobox
-        label="Origen"
-        placeholder="¿De dónde sale?"
+      <app-trip-end-field
+        end="origin"
         [places]="places()"
         [offerMyLocation]="true"
+        [locating]="locating()"
         [hint]="originHint()"
         [(value)]="origin"
-        (action)="onComboAction('origin', $event)" />
+        (pickOnMap)="pickOnMap('origin')"
+        (useMyLocation)="useMyLocation()" />
     </div>
 
     <!-- P4: atajo "último destino". Llena solo el destino. -->
     <app-last-destination-chip [ride]="lastRide()" (choose)="useRideDestination($event)" />
 
     <div class="fr-campo">
-      <div class="fr-campo-con-accion">
-        <app-place-combobox
-          label="Destino"
-          placeholder="¿Para dónde va?"
-          [places]="places()"
-          [(value)]="destination"
-          (action)="onComboAction('destination', $event)" />
+      <app-trip-end-field
+        end="destination"
+        [places]="places()"
+        [(value)]="destination"
+        (pickOnMap)="pickOnMap('destination')">
         @if (canUseFavorite()) {
-          <button type="button"
+          <button type="button" slot="accion"
                   class="fr-boton-favorito"
                   [class.fr-boton-favorito--activo]="chosenIsFavorite()"
                   [class.fr-boton-favorito--pulsado]="favoritoPulsado()"
@@ -63,7 +62,7 @@
             <span aria-hidden="true">{{ chosenIsFavorite() ? '★' : '☆' }}</span>
           </button>
         }
-      </div>
+      </app-trip-end-field>
       @if (favorite(); as fav) {
         <p class="fr-texto-sm fr-nota-favorito">
           @if (chosenIsFavorite()) {
@@ -81,7 +80,7 @@
 
     @if (placesError()) {
       <p class="fr-texto-sm" style="color: var(--rojo-texto);" role="alert">
-        No pudimos cargar la lista de lugares. Puede elegir en el mapa o intentar de nuevo en un momento.
+        No pudimos cargar la lista de lugares. Puede señalar el lugar en el mapa o intentar de nuevo en un momento.
       </p>
     }
 
