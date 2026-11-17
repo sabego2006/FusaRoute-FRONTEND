@@ -93,6 +93,24 @@ Lines        : 90.81 % (603/664)
 pero no impide el merge. Cuando el equipo acuerde los umbrales, se agrega
 `sonar.qualitygate.wait=true` al paso de análisis.
 
+## Cambios de seguridad revisados sin hallazgo nuevo
+
+### SCRUM-196 — dispositivo de confianza del segundo factor (17-nov-2026)
+
+`AuthService` (PR #60) empieza a guardar y reenviar un `trustToken` en `localStorage`, junto
+al JWT de acceso que ya se guardaba ahí. Verificado contra la API de SonarCloud sobre el
+análisis real del PR #60 (no solo el badge del check, informativo mientras no haya umbral
+bloqueante):
+
+```
+GET sonarcloud.io/api/hotspots/search?projectKey=sabego2006_FusaRoute-FRONTEND&pullRequest=60 → 0 hotspots
+GET sonarcloud.io/api/issues/search?componentKeys=sabego2006_FusaRoute-FRONTEND&pullRequest=60&types=VULNERABILITY → 0 issues
+```
+
+Cero hallazgos nuevos: guardar el `trustToken` en `localStorage` no dispara nada distinto de
+lo que ya corre limpio para `token`/`user` (mismo mecanismo, mismo origen, mismo riesgo ya
+aceptado).
+
 ## Lo que falta (lo hace el admin)
 
 1. Importar `sabego2006/FusaRoute-FRONTEND` en SonarQube Cloud.

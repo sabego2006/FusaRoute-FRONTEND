@@ -14,12 +14,20 @@ export interface RegisterRequest {
   password: string;
 }
 
-/** Espeja LoginResponse del backend (POST /api/auth/login → 200). */
+/**
+ * Espeja LoginResponse del backend (POST /api/auth/login → 200).
+ *
+ * `trustToken` es el dispositivo de confianza del segundo factor (decisión del
+ * 17-nov-2026, SCRUM-196): solo viene presente cuando el login acaba de verificar un
+ * código TOTP correcto de una cuenta USER. Si viene ausente, el frontend
+ * conserva el que ya tenía guardado (no se renueva con cada uso).
+ */
 export interface LoginResponse {
   token: string;
   tokenType: string;
   expiresAt: string;
   user: UserSummary;
+  trustToken?: string | null;
 }
 
 /** Datos del usuario dentro de LoginResponse. Sin passwordHash. */
@@ -31,11 +39,18 @@ export interface UserSummary {
   active: boolean;
 }
 
-/** Cuerpo de la petición POST /api/auth/login. `totpCode` acepta también un código de respaldo. */
+/**
+ * Cuerpo de la petición POST /api/auth/login. `totpCode` acepta también un código de respaldo.
+ *
+ * `trustToken` no lo rellena quien llama a `AuthService.login`: el propio
+ * servicio lo adjunta desde lo que tenga guardado (decisión del 17-nov-2026, SCRUM-196).
+ * Se declara aquí, opcional, solo para que el tipo del cuerpo HTTP sea exacto.
+ */
 export interface LoginCredentials {
   email: string;
   password: string;
   totpCode?: string;
+  trustToken?: string;
 }
 
 /**
