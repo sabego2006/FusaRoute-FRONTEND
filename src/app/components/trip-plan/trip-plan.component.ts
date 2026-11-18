@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouteSearchResult } from '../../models/route.model';
 import { buildTripPlan } from '../../lib/trip-steps';
+import { formatDistance } from '../../lib/format';
 
 /**
  * "Su viaje": los tres momentos del trayecto de quien buscó (SCRUM-198).
@@ -56,4 +57,10 @@ export class TripPlanComponent {
 
   /** Número del último momento, que depende de cuántos se mostraron antes. */
   readonly lastStepNumber = computed(() => this.busStepNumber() + 1);
+
+  /** El tramo en bus dicho en metros o en kilómetros, según cuál se lea más rápido. */
+  readonly rideDistance = computed(() => {
+    const meters = this.plan()?.rideMeters;
+    return meters === null || meters === undefined ? null : formatDistance(meters);
+  });
 }

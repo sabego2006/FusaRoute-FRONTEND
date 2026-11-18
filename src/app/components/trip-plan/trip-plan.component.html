@@ -39,7 +39,7 @@
         }
         @if (p.rideMeters !== null) {
           <p class="fr-texto-sm momento__detalle" data-testid="tramo-en-bus">
-            {{ p.rideMeters }} m en bus@if (p.rideMinutes !== null) {, unos {{ p.rideMinutes }} min}.
+            {{ rideDistance() }} en bus@if (p.rideMinutes !== null) {, unos {{ p.rideMinutes }} min}.
           </p>
         }
       </div>

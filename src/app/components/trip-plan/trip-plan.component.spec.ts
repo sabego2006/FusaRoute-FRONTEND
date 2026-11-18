@@ -71,7 +71,7 @@ describe('TripPlanComponent', () => {
 
     expect(texto(el)).toContain('Suba a la buseta Centro - Galería - Terminal en Puente Águila.');
     expect(texto(el)).toContain('Bájese en Plaza de Mercado.');
-    expect(texto(el)).toContain('4614 m en bus, unos 19 min.');
+    expect(texto(el)).toContain('4,6 km en bus, unos 19 min.');
   });
 
   it('numera los momentos y los renumera cuando no hay caminata de entrada', async () => {
