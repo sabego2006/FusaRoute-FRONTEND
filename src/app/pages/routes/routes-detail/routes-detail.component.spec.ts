@@ -151,6 +151,19 @@ describe('RoutesDetailComponent', () => {
     expect(el.querySelector('article')).toBeNull();
   });
 
+  // T15 (SCRUM-199): un corte de red no puede dejar el detalle sin salida.
+  it('un error que no es 404 ofrece "Reintentar"', async () => {
+    const el = await render(() => throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    expect(Array.from(el.querySelectorAll('button')).some((b) => b.textContent?.includes('Reintentar'))).toBe(true);
+  });
+
+  it('un 404 no ofrece "Reintentar": repetirlo daría lo mismo', async () => {
+    const el = await render(() => throwError(() => new HttpErrorResponse({ status: 404 })), '999');
+
+    expect(Array.from(el.querySelectorAll('button')).some((b) => b.textContent?.includes('Reintentar'))).toBe(false);
+  });
+
   it('otro error: mensaje genérico de carga', async () => {
     const el = await render(() => throwError(() => new HttpErrorResponse({ status: 500 })));
 

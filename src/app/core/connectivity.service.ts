@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { EMPTY, Observable, fromEvent, map, of, take } from 'rxjs';
 
 /**
  * Conectividad del navegador, para decidir si la búsqueda de ruta usa el endpoint
@@ -25,6 +26,28 @@ export class ConnectivityService {
     }
     window.addEventListener('online', () => this.online.set(true));
     window.addEventListener('offline', () => this.online.set(false));
+  }
+
+  /**
+   * Emite **una vez** cuando vuelve la red, o de inmediato si ya la hay (T15, SCRUM-199).
+   *
+   * Para qué: con señal débil la petición no se pone lenta, se corta, y el navegador avisa
+   * del regreso de la red antes de que el usuario alcance a tocar "Reintentar". Volver a
+   * pedir en ese momento convierte un error terminal en una espera de un par de segundos.
+   */
+  whenOnlineAgain(): Observable<void> {
+    if (typeof window === 'undefined' || this.online()) {
+      return of(undefined);
+    }
+    return fromEvent(window, 'online').pipe(take(1), map(() => undefined));
+  }
+
+  /** Cada vez que la red regresa, sin importar cuántas veces. */
+  reconnections(): Observable<void> {
+    if (typeof window === 'undefined') {
+      return EMPTY;
+    }
+    return fromEvent(window, 'online').pipe(map(() => undefined));
   }
 
   private readInitialState(): boolean {

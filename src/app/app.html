@@ -1,6 +1,32 @@
 <app-header />
 <app-suspension-notices />
 <main class="fr-shell">
+  <!--
+    Pantalla que no alcanzó a cargarse (T15). Antes el router abortaba la navegación y
+    la vista quedaba en blanco: ni lista, ni esqueleto, ni aviso. Esto es la salida.
+  -->
+  @if (failedUrl()) {
+    @if (isOnline()) {
+      <div class="fr-suta-estado fr-suta-estado--error" role="alert">
+        <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
+             class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+        <div>
+          <p><strong style="color: var(--rojo-texto);">Qué falla:</strong>
+            esta pantalla no alcanzó a cargar completa.</p>
+          <button type="button" class="fr-btn" (click)="reload()">Reintentar</button>
+        </div>
+      </div>
+    } @else {
+      <div class="fr-suta-estado" role="status">
+        <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+             class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+        <div>
+          <p><strong>Se le fue el internet a mitad de camino.</strong> Apenas vuelva cargamos esta pantalla solos.</p>
+          <button type="button" class="fr-btn" (click)="reload()">Reintentar</button>
+        </div>
+      </div>
+    }
+  }
   <router-outlet />
 </main>
 <app-bottom-nav />

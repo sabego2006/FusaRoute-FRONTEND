@@ -78,17 +78,41 @@
       <app-traffic-badge [sectors]="sectores" variant="detail" />
     }
 
-    @if (placesError()) {
-      <p class="fr-texto-sm" style="color: var(--rojo-texto);" role="alert">
-        No pudimos cargar la lista de lugares. Puede señalar el lugar en el mapa o intentar de nuevo en un momento.
-      </p>
+    @if (placesWaitingForNetwork()) {
+      <div role="status">
+        <p class="fr-texto-sm">
+          <strong>Se le fue el internet.</strong> Apenas vuelva traemos la lista de lugares solos.
+          Igual puede señalar el lugar en el mapa.
+        </p>
+        <button type="button" class="fr-btn" [disabled]="loadingPlaces()" (click)="loadPlaces()">
+          {{ loadingPlaces() ? 'Cargando…' : 'Reintentar' }}
+        </button>
+      </div>
+    } @else if (placesError()) {
+      <div role="alert">
+        <p class="fr-texto-sm" style="color: var(--rojo-texto);">
+          No pudimos cargar la lista de lugares. Puede señalar el lugar en el mapa o intentar de nuevo en un momento.
+        </p>
+        <button type="button" class="fr-btn" [disabled]="loadingPlaces()" (click)="loadPlaces()">
+          {{ loadingPlaces() ? 'Cargando…' : 'Reintentar' }}
+        </button>
+      </div>
     }
 
     <!-- Vista previa: los puntos elegidos, antes de buscar. -->
     @if (previewMarkers().length > 0 && !result()) {
       <section class="fr-vista-previa" aria-label="Vista previa en el mapa" data-testid="vista-previa">
-        <app-places-map [markers]="previewMarkers()" [height]="220"
-                        fallbackText="Igual puede buscar con lo que eligió." />
+        <!--
+          T15: el mapa (y @angular/google-maps con él) sale del bundle inicial. Se baja en
+          reposo, antes de que haga falta, y el esqueleto tiene el mismo alto para que
+          nada se mueva cuando llega.
+        -->
+        @defer (on immediate; prefetch on idle) {
+          <app-places-map [markers]="previewMarkers()" [height]="220"
+                          fallbackText="Igual puede buscar con lo que eligió." />
+        } @placeholder {
+          <div class="fr-esqueleto" style="height: 220px;" aria-hidden="true"></div>
+        }
       </section>
     }
 
@@ -109,7 +133,16 @@
   }
   <app-ride-history [rides]="rides()" (choose)="useRideDestination($event)" />
 
-  <app-map-pick-dialog (picked)="onMapPicked($event)" />
+  <!--
+    T15: el selector de punto también sale del bundle inicial. Si alguien toca "Señalar en el
+    mapa" antes de que baje, `pickOnMap` lo deja pendiente y se abre apenas aparece.
+  -->
+  @defer (on idle; prefetch on idle) {
+    <app-map-pick-dialog #pickDialog (picked)="onMapPicked($event)" />
+  }
+  @if (pickPending()) {
+    <p role="status" class="fr-texto-sm">Abriendo el mapa…</p>
+  }
 
   <!-- Ancla fija del desplazamiento al buscar. -->
   <div #zonaResultado></div>
@@ -143,12 +176,25 @@
     </div>
   }
 
-  @if (errorMessage()) {
+  <!-- T15: sin internet se espera, no se declara el fallo. -->
+  @if (searchWaitingForNetwork()) {
+    <div class="fr-suta-estado fr-entra-solo" role="status">
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong>Se le fue el internet a mitad de la búsqueda.</strong> Apenas vuelva, buscamos de nuevo solos.</p>
+        <button type="button" class="fr-btn" [disabled]="loading()" (click)="retrySearch()">Reintentar</button>
+      </div>
+    </div>
+  } @else if (errorMessage()) {
     <div class="fr-suta-estado fr-suta-estado--error fr-entra-solo" role="alert">
       <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
            class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
       <div>
         <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+        @if (canRetrySearch()) {
+          <button type="button" class="fr-btn" [disabled]="loading()" (click)="retrySearch()">Reintentar</button>
+        }
       </div>
     </div>
   }
@@ -228,11 +274,18 @@
           <h3 class="fr-titulo-3">Su viaje en el mapa</h3>
           <!--
             Solo el tramo que la persona recorre en bus, más las dos caminatas punteadas. El
-            trazado completo de la ruta (`r.path`) ya NO se dibuja: hacía ver un recorrido mucho
+            trazado completo de la ruta () ya NO se dibuja: hacía ver un recorrido mucho
             más largo que el real. Quien quiera verlo entero tiene el detalle de la ruta.
+
+            T15: el mapa sale del bundle inicial. Se baja en reposo, antes de que haga falta, y
+            el esqueleto tiene el mismo alto para que nada se mueva cuando llega.
           -->
-          <app-places-map [markers]="resultMarkers()" [path]="ridePath()"
-                          [walkPaths]="walkPaths()" [height]="320" />
+          @defer (on immediate; prefetch on idle) {
+            <app-places-map [markers]="resultMarkers()" [path]="ridePath()"
+                            [walkPaths]="walkPaths()" [height]="320" />
+          } @placeholder {
+            <div class="fr-esqueleto" style="height: 320px;" aria-hidden="true"></div>
+          }
         </div>
       }
 

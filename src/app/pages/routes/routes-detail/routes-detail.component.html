@@ -29,6 +29,9 @@
            class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
       <div>
         <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+        @if (retryId()) {
+          <button type="button" class="fr-btn" [disabled]="loading()" (click)="retry()">Reintentar</button>
+        }
       </div>
     </div>
   }

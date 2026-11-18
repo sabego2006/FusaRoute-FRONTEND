@@ -26,5 +26,17 @@
         ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "catalogo",
+      "urls": ["**/api/routes", "**/api/places"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 4,
+        "maxAge": "1d",
+        "timeout": "3s"
+      }
+    }
   ]
 }

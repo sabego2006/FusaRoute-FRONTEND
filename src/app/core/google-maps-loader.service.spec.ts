@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { GoogleMapsLoaderService } from './google-maps-loader.service';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { GoogleMapsLoaderService, MAPS_LOAD_BUDGET_MS } from './google-maps-loader.service';
 import { environment } from '../../environments/environment';
 
 const claveOriginal = environment.googleMapsApiKey;
@@ -113,5 +113,47 @@ describe('GoogleMapsLoaderService', () => {
     window.gm_authFailure?.();
 
     expect(service.status()).toBe('error');
+  });
+
+  describe('presupuesto de tiempo (T15)', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('si Google no contesta dentro del presupuesto, pasa a "error" y el componente muestra el aviso', () => {
+      environment.googleMapsApiKey = 'clave-de-prueba';
+      const service = new GoogleMapsLoaderService();
+      void service.load();
+
+      vi.advanceTimersByTime(MAPS_LOAD_BUDGET_MS - 1);
+      expect(service.status()).toBe('cargando');
+
+      vi.advanceTimersByTime(2);
+
+      expect(service.status()).toBe('error');
+    });
+
+    it('si Google llega tarde, el mapa igual aparece: el estado vuelve a "listo"', () => {
+      environment.googleMapsApiKey = 'clave-de-prueba';
+      const service = new GoogleMapsLoaderService();
+      void service.load();
+
+      vi.advanceTimersByTime(MAPS_LOAD_BUDGET_MS + 1);
+      expect(service.status()).toBe('error');
+
+      googleTerminaDeInstalarLaApi();
+
+      expect(service.status()).toBe('listo');
+    });
+
+    it('si Google contesta a tiempo, el presupuesto no vuelve a tocar el estado', () => {
+      environment.googleMapsApiKey = 'clave-de-prueba';
+      const service = new GoogleMapsLoaderService();
+      void service.load();
+
+      googleTerminaDeInstalarLaApi();
+      vi.advanceTimersByTime(MAPS_LOAD_BUDGET_MS * 2);
+
+      expect(service.status()).toBe('listo');
+    });
   });
 });

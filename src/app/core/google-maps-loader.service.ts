@@ -17,6 +17,25 @@ declare global {
 const CALLBACK_GOOGLE_MAPS = '__fusarouteGoogleMapsReady' as const;
 
 /**
+ * Presupuesto de tiempo para que Google Maps termine de instalarse (T15, SCRUM-199).
+ *
+ * De dónde sale el número: `T15-throttle.mjs` midió la ventana de este cargador — desde que
+ * se inyecta el script hasta que Google invoca el callback — en 30 corridas de red
+ * estrangulada. Con la red lenta pero sana va de **1,5 s a 5,6 s** (lo peor, Slow 3G); con
+ * Google respondiendo 10 s tarde, de **10,2 s a 11,3 s**.
+ *
+ * 12 s quedan por encima de las dos cosas: no cortan una carga normal (2,1× la peor
+ * observada) ni una donde Google llega diez segundos tarde. Lo único que cortan es el caso
+ * que sí pasaba: con Google que **nunca** contesta, el hueco del mapa se quedaba de
+ * esqueleto para siempre, sin aviso y sin salida.
+ *
+ * Al vencerse NO se cancela la descarga: solo se pasa a `error`, que es lo que hace que el
+ * componente muestre el aviso discreto. Si Google llega tarde, el estado vuelve a `listo`
+ * y el mapa aparece.
+ */
+export const MAPS_LOAD_BUDGET_MS = 12_000;
+
+/**
  * Estado público de la carga de la API de Google Maps. `MapViewComponent` (y cualquier otra
  * pieza que la use) lo lee de forma reactiva: así, si Google rechaza la clave *después* de que
  * `script.onload` ya resolvió — que es el orden real en el que Google dispara `gm_authFailure` —
@@ -35,6 +54,7 @@ export type MapsStatus = 'cargando' | 'listo' | 'sin-clave' | 'error';
 })
 export class GoogleMapsLoaderService {
   private loadPromise: Promise<void> | null = null;
+  private budgetTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly status = signal<MapsStatus>('cargando');
 
@@ -63,7 +83,7 @@ export class GoogleMapsLoaderService {
       // Google invoca esto cuando la clave es inválida o el dominio no está autorizado. Puede
       // llegar antes o después de `onload`, así que no asumimos el orden.
       window.gm_authFailure = () => {
-        this.status.set('error');
+        this.fail();
         if (!settled) {
           settled = true;
           reject(new Error('carga-fallida'));
@@ -82,6 +102,7 @@ export class GoogleMapsLoaderService {
       // El parametro `callback` es el contrato que Google documenta para `loading=async`, y es
       // lo unico que garantiza que la API esta completa antes de que nadie la use.
       window[CALLBACK_GOOGLE_MAPS] = () => {
+        this.clearBudget();
         this.status.set('listo');
         if (!settled) {
           settled = true;
@@ -89,12 +110,21 @@ export class GoogleMapsLoaderService {
         }
       };
 
+      // Techo de espera (T15): sin esto, con internet lento el hueco del mapa se queda de
+      // esqueleto indefinidamente. No se rechaza la promesa, porque la carga puede terminar
+      // despues y entonces el mapa sí aparece.
+      this.budgetTimer = setTimeout(() => {
+        if (this.status() === 'cargando') {
+          this.status.set('error');
+        }
+      }, MAPS_LOAD_BUDGET_MS);
+
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(environment.googleMapsApiKey)}`
         + `&v=weekly&loading=async&callback=${CALLBACK_GOOGLE_MAPS}`;
       script.async = true;
       script.onerror = () => {
-        this.status.set('error');
+        this.fail();
         if (!settled) {
           settled = true;
           reject(new Error('carga-fallida'));
@@ -102,5 +132,17 @@ export class GoogleMapsLoaderService {
       };
       document.head.appendChild(script);
     });
+  }
+
+  private fail(): void {
+    this.clearBudget();
+    this.status.set('error');
+  }
+
+  private clearBudget(): void {
+    if (this.budgetTimer !== null) {
+      clearTimeout(this.budgetTimer);
+      this.budgetTimer = null;
+    }
   }
 }

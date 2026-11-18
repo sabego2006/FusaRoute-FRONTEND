@@ -1,4 +1,5 @@
-import { Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -20,8 +21,12 @@ import { LetreroComponent } from '../../../components/letrero/letrero.component'
 import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
 import { TripEndFieldComponent } from '../../../components/trip-end-field/trip-end-field.component';
 import { canSearchEnds, mapEnd } from '../../../lib/trip-end';
-import { MapMarkerPoint, PlacesMapComponent } from '../../../components/places-map/places-map.component';
+import { PlacesMapComponent } from '../../../components/places-map/places-map.component';
+import type { MapMarkerPoint } from '../../../components/places-map/places-map.component';
+// Solo como TIPO: un import de valor de MapPickDialogComponent (p. ej. en viewChild) lo dejaria en el
+// bundle inicial y @defer no podria sacarlo, con @angular/google-maps detras (T15, SCRUM-199).
 import { MapPickDialogComponent } from '../../../components/map-pick-dialog/map-pick-dialog.component';
+import type { MapPickDialogComponent as MapPickDialogType } from '../../../components/map-pick-dialog/map-pick-dialog.component';
 import { LatLngPoint } from '../../../components/map-view/map-view.component';
 import { BoardedButtonComponent } from '../../../components/boarded-button/boarded-button.component';
 import { LastDestinationChipComponent } from '../../../components/last-destination-chip/last-destination-chip.component';
@@ -114,6 +119,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
   private readonly rideService = inject(RideService);
+  private readonly destroyRef = inject(DestroyRef);
 
   // ---- "Ya me subí" e historial de viajes (P4) ----
   readonly rides = this.rideService.rides;
@@ -141,6 +147,10 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
 
   readonly places = signal<Place[]>([]);
   readonly placesError = signal(false);
+  /** `true` mientras se pide la lista de lugares de nuevo. */
+  readonly loadingPlaces = signal(false);
+  /** `true` cuando el fallo fue por falta de red y se espera a que vuelva para reintentar solo. */
+  readonly placesWaitingForNetwork = signal(false);
 
   readonly origin = signal<TripEnd | null>(null);
   readonly destination = signal<TripEnd | null>(null);
@@ -153,13 +163,21 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
   readonly errorMessage = signal<string | null>(null);
   /** Si el resultado salió del endpoint offline (sin red no hay tiempo). */
   readonly servedOffline = signal(false);
+  /** `true` cuando la búsqueda falló por falta de red y se espera a que vuelva. */
+  readonly searchWaitingForNetwork = signal(false);
+  /** Hay con qué repetir la búsqueda: las dos puntas siguen elegidas. */
+  readonly canRetrySearch = computed(() => this.origin() !== null && this.destination() !== null);
 
   /** Valor animado del tiempo; `result()` guarda siempre el verdadero. */
   readonly etaMostrado = signal(0);
   readonly favoritoPulsado = signal(false);
 
   private readonly zonaResultado = viewChild.required<ElementRef<HTMLElement>>('zonaResultado');
-  private readonly pickDialog = viewChild.required(MapPickDialogComponent);
+  /** El selector se baja en reposo (@defer): hasta entonces no existe, y por eso es opcional. */
+  private readonly pickDialog = viewChild<MapPickDialogType>('pickDialog');
+  /** Punta que el usuario pidio señalar en el mapa antes de que el selector terminara de bajar. */
+  private readonly pendingPick = signal<End | null>(null);
+  readonly pickPending = computed(() => this.pendingPick() !== null);
   private cuadroEta = 0;
   private relojPulso: ReturnType<typeof setTimeout> | null = null;
 
@@ -270,15 +288,40 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     const q = this.activatedRoute.snapshot.queryParamMap;
     this.pendingNames = { origin: q.get('origen') ?? undefined, destination: q.get('destino') ?? undefined };
 
+    this.loadPlaces();
+    this.loadFavorite();
+    this.rideService.load();
+  }
+
+  /**
+   * Lugares canónicos del buscador. Sin ellos el combobox queda vacío y la pantalla es
+   * inservible, así que un fallo nunca es definitivo: el servicio ya reintenta dos veces con
+   * espera creciente, acá se ofrece "Reintentar" y, si lo que faltó fue red, se vuelve a pedir
+   * solo apenas vuelva (T15).
+   */
+  loadPlaces(): void {
+    this.loadingPlaces.set(true);
+    this.placesError.set(false);
+    this.placesWaitingForNetwork.set(false);
     this.placeService.getPlaces().subscribe({
       next: (places) => {
         this.places.set(places);
+        this.loadingPlaces.set(false);
         this.resolvePendingNames();
       },
-      error: () => this.placesError.set(true),
+      error: () => {
+        this.loadingPlaces.set(false);
+        // Faltar internet no es "no se pudo": es una espera con reintento automático.
+        if (!this.connectivity.isOnline()) {
+          this.placesWaitingForNetwork.set(true);
+          this.connectivity.whenOnlineAgain()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => this.loadPlaces());
+          return;
+        }
+        this.placesError.set(true);
+      },
     });
-    this.loadFavorite();
-    this.rideService.load();
   }
 
   ngOnDestroy(): void {
@@ -306,9 +349,28 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
 
   /** "Señalar en el mapa": abre el panel para esa punta, partiendo del punto que ya tenga. */
   pickOnMap(end: End): void {
-    const other: End = end === 'origin' ? 'destination' : 'origin';
-    this.pickDialog().open(end, endPoint(this.signalFor(end)()), endPoint(this.signalFor(other)()));
+    const dialog = this.pickDialog();
+    if (!dialog) {
+      // Todavia no bajo: se abre solo apenas aparezca (ver el efecto de abajo).
+      this.pendingPick.set(end);
+      return;
+    }
+    this.openPick(dialog, end);
   }
+
+  private openPick(dialog: MapPickDialogType, end: End): void {
+    const other: End = end === 'origin' ? 'destination' : 'origin';
+    dialog.open(end, endPoint(this.signalFor(end)()), endPoint(this.signalFor(other)()));
+  }
+
+  private readonly openPendingPick = effect(() => {
+    const dialog = this.pickDialog();
+    const end = this.pendingPick();
+    if (dialog && end) {
+      this.pendingPick.set(null);
+      this.openPick(dialog, end);
+    }
+  });
 
   onMapPicked(e: { which: End; point: LatLngPoint }): void {
     this.signalFor(e.which).set(mapEnd(e.point.lat, e.point.lng));
@@ -352,6 +414,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     this.result.set(null);
     this.notFound.set(null);
     this.errorMessage.set(null);
+    this.searchWaitingForNetwork.set(false);
     this.etaMostrado.set(0);
     afterNextRender(() => this.irAlResultado(), { injector: this.injector });
 
@@ -367,18 +430,41 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
         this.result.set(data);
         this.servedOffline.set(offline);
         this.loading.set(false);
+        this.searchWaitingForNetwork.set(false);
         if (data.estimatedMinutes != null) this.animarEta(data.estimatedMinutes);
       },
       error: (err: HttpErrorResponse) => {
         // status 0 = no salió de la máquina; 503 = Google falló. El offline no lo necesita.
+        // La búsqueda online no se reintenta tal cual: cada llamada puede gastar cuota de
+        // Google. Se cae al endpoint offline, que no cuesta cuota y sí lleva reintentos.
         if (!offline && (err.status === 0 || err.status === 503)) {
           this.run(this.routeService.searchRouteOffline(params), true, params);
           return;
         }
         this.loading.set(false);
+        /*
+         * Sin red, "no se pudo completar la búsqueda" es mentira: va a volver. Se dice que
+         * se está esperando y la búsqueda se repite sola apenas la red regrese (T15).
+         *
+         * Un 404 ("no hay ruta que conecte esos puntos") nunca cae acá: para responder 404
+         * el backend tuvo que contestar, así que había red.
+         */
+        if (!this.connectivity.isOnline() && this.canRetrySearch()) {
+          this.searchWaitingForNetwork.set(true);
+          this.connectivity.whenOnlineAgain()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => this.retrySearch());
+          return;
+        }
         this.handleError(err);
       },
     });
+  }
+
+  /** Repite la última búsqueda: el botón del mensaje de error y el reintento automático. */
+  retrySearch(): void {
+    if (this.loading()) return;
+    this.onSubmit();
   }
 
   private handleError(err: HttpErrorResponse): void {
