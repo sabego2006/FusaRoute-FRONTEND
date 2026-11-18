@@ -136,19 +136,7 @@ import { UnreadRepliesStore } from '../../core/unread-replies.store';
       box-sizing: border-box;
     }
     .fr-header__link:hover { background: var(--indigo-suave); }
-    /*
-     * --indigo-accion y no --indigo: con texto blanco el índigo de marca da
-     * 6.28:1 y AAA pide 7:1 (T02 lo midió en las seis pantallas anónimas).
-     * El hover se oscurece en vez de aclararse por la misma razón.
-     */
-    .fr-header__link--cta {
-      background: var(--indigo-accion);
-      color: var(--sobre-indigo);
-      padding: var(--space-1) var(--space-3);
-      border: var(--trazo-2) solid var(--borde);
-      box-shadow: var(--sombra-dura-sm);
-    }
-    .fr-header__link--cta:hover { background: var(--indigo-texto); }
+    /* El estilo de «Crear cuenta» (sticker rosa) vive en styles.css, bajo «Identidad v2». */
     .fr-header__greeting {
       font-size: 0.9rem;
       color: var(--tinta-suave);
