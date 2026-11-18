@@ -95,7 +95,7 @@ Neobrutalismo de Fusagasugá con actitud de **sticker pegado**: irreverente, exa
 - **El torcido es solo CSS:** el orden del DOM y el foco por teclado no cambian. Campos de formulario, párrafos, tablas y mapa nunca se giran.
 - **Movimiento:** «pegado» al entrar y la chiva de la carga están activos por defecto; con `prefers-reduced-motion: reduce` quedan quietos.
 - **Presupuestos que siguen vigentes:** LCP de `/rutas/buscar` < 2,5 s (mediana de 3 corridas), `main-*.js` ≤ 115 KB gzip (hoy ≈ 112,7), imágenes WebP/AVIF ≤ 40 KB, AA con axe en 0 violaciones, objetivos táctiles ≥ 44 px. **El CSS nuevo va en `src/styles.css`, no en los `styles` de los componentes** (esos viajan dentro del JS).
-- **Créditos:** tres fotos de los personajes son CC BY-SA o CC BY y exigen atribución (`public/creditos.html` y README); el texto exacto está en `ASSETS.md`.
+- **Créditos:** las fotos de personajes son CC BY-SA o CC BY y exigen atribución. Santiago decidió (2026-11-18) no publicar página de créditos; el texto está en `sustentacion/diseno-v2/ASSETS.md` §3 y la forma de cumplir la atribución sigue **pendiente** de su decisión.
 
 ## Testing
 
