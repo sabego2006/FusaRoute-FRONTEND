@@ -85,7 +85,7 @@ Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celula
 
 ## Identidad visual (v2, aprobada por Santiago el 17–18 de noviembre de 2026)
 
-Neobrutalismo de Fusagasugá con actitud de **sticker pegado**: irreverente, exagerado y colombiano, pero legible y rápido. Es inspiración de actitud (stickers, textos torcidos, colores chillones, cultura pop), no un clon de ninguna marca. La fuente única está en la carpeta de la sustentación (`sustentacion/diseno-v2/`: `ESTANDAR-VISUAL.md` la regla, `DECISIONES.md` lo aprobado con las palabras de Santiago, `PLAN-IMPLEMENTACION.md` el paso a paso por fases F1–F4, `ASSETS.md` los recursos y su licencia). **No se implementa nada de v2 sin el visto bueno escrito de Angélica.** Esta sección resume lo que hay que respetar al tocar la interfaz:
+Neobrutalismo de Fusagasugá con actitud de **sticker pegado**: irreverente, exagerado y colombiano, pero legible y rápido. Es inspiración de actitud (stickers, textos torcidos, colores chillones, cultura pop), no un clon de ninguna marca. La fuente única está en la carpeta de la sustentación (`sustentacion/diseno-v2/`: `ESTANDAR-VISUAL.md` la regla, `DECISIONES.md` lo aprobado con las palabras de Santiago, `PLAN-IMPLEMENTACION.md` el paso a paso por fases F1–F4, `ASSETS.md` los recursos y su licencia). **Santiago informó el 2026-11-18 que Angélica dio su visto bueno al plan; se adjunta su confirmación escrita al PR de la primera fase.** Esta sección resume lo que hay que respetar al tocar la interfaz:
 
 - **Se conserva** de T05: isotipo y wordmark, Suta (solo en estados vacío, error, éxito y sin conexión; nunca encima del buscador inicial), greca escalonada, letreros de buseta SVG y la paleta por municipio `--muni-*`.
 - **Tipografías: 2 familias, 47,5 KB.** Bowlby One (OFL) para titulares, CTA, cintas, sellos y bocadillos; Plus Jakarta Sans para texto. Space Grotesk sale. Bowlby One se declara con `font-weight: 400 900` (un solo peso; sin negrita falsa). Texto en Bowlby sobre un fondo que da menos de 7:1 va a 24 px o más. Una tercera familia está prohibida.
@@ -95,7 +95,7 @@ Neobrutalismo de Fusagasugá con actitud de **sticker pegado**: irreverente, exa
 - **El torcido es solo CSS:** el orden del DOM y el foco por teclado no cambian. Campos de formulario, párrafos, tablas y mapa nunca se giran.
 - **Movimiento:** «pegado» al entrar y la chiva de la carga están activos por defecto; con `prefers-reduced-motion: reduce` quedan quietos.
 - **Presupuestos que siguen vigentes:** LCP de `/rutas/buscar` < 2,5 s (mediana de 3 corridas), `main-*.js` ≤ 115 KB gzip (hoy ≈ 112,7), imágenes WebP/AVIF ≤ 40 KB, AA con axe en 0 violaciones, objetivos táctiles ≥ 44 px. **El CSS nuevo va en `src/styles.css`, no en los `styles` de los componentes** (esos viajan dentro del JS).
-- **Créditos:** las fotos de personajes son CC BY-SA o CC BY y exigen atribución. Santiago decidió (2026-11-18) no publicar página de créditos; el texto está en `sustentacion/diseno-v2/ASSETS.md` §3 y la forma de cumplir la atribución sigue **pendiente** de su decisión.
+- **Créditos:** Santiago decidió (2026-11-18) no publicar créditos de imágenes (sin página, sin README, sin slide). Las fotos del Indio, de Lucho (CC BY-SA) y de Gabo (CC BY) exigen atribución por licencia; el riesgo lo asume él. El texto está solo en `sustentacion/diseno-v2/ASSETS.md` §3.
 
 ## Testing
 
