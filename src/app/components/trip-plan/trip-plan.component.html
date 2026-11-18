@@ -1,0 +1,77 @@
+<!--
+  "Su viaje": tres momentos, una frase cada uno. El orden es el del viaje, que es el orden en
+  que se lee, y los números se calculan en el componente porque el primer momento desaparece
+  cuando no hay que caminar para subir.
+-->
+@if (plan(); as p) {
+  <ol class="momentos" data-testid="su-viaje">
+    @if (p.walkToBoarding; as paso) {
+      <li class="momento">
+        <span class="momento__marca" aria-hidden="true">1</span>
+        <div>
+          <p class="momento__frase">
+            Camine {{ paso.minutes }} min (aprox. {{ paso.meters }} m)@if (paso.heading) { hacia el {{ paso.heading }}}@if (paso.target) { hasta {{ paso.target }}}.
+          </p>
+          <p class="fr-texto-sm momento__detalle">Es un cálculo aproximado, en línea recta.</p>
+        </div>
+      </li>
+    }
+
+    <li class="momento momento--bus">
+      <span class="momento__marca" aria-hidden="true">{{ busStepNumber() }}</span>
+      <div>
+        <p class="momento__frase">
+          Suba a la buseta <strong>{{ result().route.name }}</strong>@if (p.boardAt) { en {{ p.boardAt }}}.@if (p.getOffAt) { Bájese en {{ p.getOffAt }}.}
+        </p>
+        <!--
+          Solo los barrios DEL TRAMO. Lista vacía es lo normal en recorridos cortos, y entonces
+          no se muestra la línea: un rótulo "Pasará por:" sin nada detrás no informa nada.
+        -->
+        @if (p.neighborhoods.shown.length > 0) {
+          <p class="momento__barrios" data-testid="barrios-del-tramo">
+            @if (p.neighborhoods.total > p.neighborhoods.shown.length) {
+              Pasará por {{ p.neighborhoods.total }} barrios:
+            } @else {
+              Pasará por:
+            }
+            {{ p.neighborhoods.shown.join(', ') }}.
+          </p>
+        }
+        @if (p.rideMeters !== null) {
+          <p class="fr-texto-sm momento__detalle" data-testid="tramo-en-bus">
+            {{ rideDistance() }} en bus@if (p.rideMinutes !== null) {, unos {{ p.rideMinutes }} min}.
+          </p>
+        }
+      </div>
+    </li>
+
+    @if (p.walkToDestination; as paso) {
+      <li class="momento">
+        <span class="momento__marca" aria-hidden="true">{{ lastStepNumber() }}</span>
+        <div>
+          <p class="momento__frase">
+            Camine {{ paso.minutes }} min (aprox. {{ paso.meters }} m)@if (paso.heading) { hacia el {{ paso.heading }}}@if (paso.target) { hasta {{ paso.target }}}.
+          </p>
+        </div>
+      </li>
+    }
+  </ol>
+
+  <!--
+    Un backend anterior a SCRUM-198 no manda `tripSegment`: hay subida y bajada, pero no se sabe
+    por dónde pasa el tramo ni hacia dónde se camina. Se dice, en vez de callarlo o de volver a
+    mostrar el recorrido completo.
+  -->
+  @if (p.missingSegmentDetail) {
+    <p class="fr-texto-sm" style="margin-top: var(--space-4);" data-testid="sin-detalle-tramo">
+      No tenemos el detalle del tramo de esta ruta: le decimos cuánto caminar y cuánto va en bus,
+      pero no por qué barrios pasa ni hacia qué lado queda la subida.
+    </p>
+  }
+} @else {
+  <!-- Ruta sin trazado cargado: no hay subida, bajada ni tramo que mostrar. -->
+  <p class="fr-texto" data-testid="sin-trazado">
+    Esta ruta todavía no tiene su recorrido cargado, así que no le podemos decir dónde tomarla ni
+    por qué barrios pasa su tramo. Pregunte al conductor por <strong>{{ result().route.name }}</strong>.
+  </p>
+}

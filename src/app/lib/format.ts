@@ -32,6 +32,20 @@ export function formatDateShort(isoDate: string): string {
   return `${day}/${month}/${year}`;
 }
 
+/**
+ * Una distancia en metros, dicha como la diría una persona: 868 → "868 m", 4614 → "4,6 km".
+ *
+ * El corte está en el kilómetro porque "4614 m" obliga a contar cifras para saber de qué tamaño
+ * es el viaje, y el módulo "Su viaje" existe justo para que no haya que hacer esa cuenta. Coma
+ * decimal, que es como se escribe en Colombia.
+ */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) {
+    return `${Math.round(meters)} m`;
+  }
+  return `${(meters / 1000).toFixed(1).replace('.', ',')} km`;
+}
+
 /** "08:30:00" → "08:30". El backend manda la hora con segundos; al usuario le sobran. */
 export function formatTime(time: string): string {
   return time.slice(0, 5);

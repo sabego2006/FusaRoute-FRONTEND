@@ -1,6 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { formatCop, formatDateEs, formatDateShort, formatTime } from './format';
+import { formatCop, formatDateEs, formatDateShort, formatDistance, formatTime } from './format';
 import { pickNeighborhoodSteps } from './route-steps';
+
+describe('formatDistance', () => {
+  it('por debajo del kilómetro va en metros', () => {
+    expect(formatDistance(0)).toBe('0 m');
+    expect(formatDistance(195)).toBe('195 m');
+    expect(formatDistance(868.4)).toBe('868 m');
+    expect(formatDistance(999)).toBe('999 m');
+  });
+
+  it('desde el kilómetro va en kilómetros, con coma decimal', () => {
+    expect(formatDistance(1000)).toBe('1,0 km');
+    expect(formatDistance(1399)).toBe('1,4 km');
+    expect(formatDistance(4614)).toBe('4,6 km');
+  });
+});
 
 describe('formatCop', () => {
   it('formatea pesos colombianos sin decimales', () => {

@@ -7,14 +7,14 @@ import { PlaceService } from '../../../services/place.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
 import { ConnectivityService } from '../../../core/connectivity.service';
-import { RouteNotFoundProblem, RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
+import { GeoJsonLineString, RouteNotFoundProblem, RouteSearchParams, RouteSearchResult } from '../../../models/route.model';
 import { Place, TripEnd } from '../../../models/place.model';
 import { FavoriteDestination } from '../../../models/favorite.model';
 import { findExactPlace } from '../../../lib/place-search';
 import { buildSearchParams } from '../../../lib/trip-params';
 import { formatBogota } from '../../../lib/bogota-time';
 import { municipalityOf } from '../../../lib/municipality';
-import { RouteStepsComponent } from '../../../components/route-steps/route-steps.component';
+import { TripPlanComponent } from '../../../components/trip-plan/trip-plan.component';
 import { FareTableComponent } from '../../../components/fare-table/fare-table.component';
 import { LetreroComponent } from '../../../components/letrero/letrero.component';
 import { TrafficBadgeComponent } from '../../../components/traffic-badge/traffic-badge.component';
@@ -49,7 +49,7 @@ export const GPS_TIMEOUT_MS = 8_000;
 @Component({
   selector: 'app-route-search',
   standalone: true,
-  imports: [RouterLink, RouteStepsComponent, FareTableComponent, LetreroComponent, TrafficBadgeComponent,
+  imports: [RouterLink, TripPlanComponent, FareTableComponent, LetreroComponent, TrafficBadgeComponent,
             TripEndFieldComponent, PlacesMapComponent, MapPickDialogComponent,
             BoardedButtonComponent, LastDestinationChipComponent, RideHistoryComponent],
   templateUrl: './route-search.component.html',
@@ -207,10 +207,42 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     const o = r.origin ?? toResolved(this.origin());
     const d = r.destination ?? toResolved(this.destination());
     if (o) out.push({ position: { lat: o.lat, lng: o.lng }, title: `Sale de ${o.label}`, label: 'A' });
-    if (r.boarding) out.push({ position: { lat: r.boarding.latitude, lng: r.boarding.longitude }, title: 'Aquí toma la buseta', label: '↑' });
-    if (r.dropOff) out.push({ position: { lat: r.dropOff.latitude, lng: r.dropOff.longitude }, title: 'Aquí se baja', label: '↓' });
+    // SCRUM-198: el rótulo dice la acción ("Subir aquí"), no describe el punto ("aquí toma la
+    // buseta"); es lo que va en la leyenda del mapa, y ahí una instrucción se lee más rápido.
+    if (r.boarding) out.push({ position: { lat: r.boarding.latitude, lng: r.boarding.longitude }, title: 'Subir aquí', label: '↑' });
+    if (r.dropOff) out.push({ position: { lat: r.dropOff.latitude, lng: r.dropOff.longitude }, title: 'Bajar aquí', label: '↓' });
     if (d) out.push({ position: { lat: d.lat, lng: d.lng }, title: `Llega a ${d.label}`, label: 'B' });
     return out;
+  });
+
+  /**
+   * Lo que se dibuja como recorrido del bus: SOLO el tramo entre la subida y la bajada
+   * (SCRUM-198). Antes se pasaba `r.path`, el trazado completo de la ruta, y el mapa hacía ver
+   * un viaje mucho más largo que el real.
+   *
+   * `null` si el backend no manda `tripSegment` (versión anterior) o si la ruta no tiene
+   * trazado: en los dos casos el mapa queda con los marcadores, que es lo que de verdad se sabe.
+   */
+  readonly ridePath = computed<GeoJsonLineString | null>(() => this.result()?.tripSegment?.ridePath ?? null);
+
+  /**
+   * Las dos caminatas, para dibujarlas punteadas: del origen al punto de subida y de la bajada
+   * al destino. Se arman con los puntos que ya trae el resultado — son dos segmentos rectos,
+   * igual que la distancia que se le muestra a la persona, que tampoco es ruteo peatonal.
+   */
+  readonly walkPaths = computed<GeoJsonLineString[]>(() => {
+    const r = this.result();
+    if (!r) return [];
+    const o = r.origin ?? toResolved(this.origin());
+    const d = r.destination ?? toResolved(this.destination());
+    const legs: GeoJsonLineString[] = [];
+    if (o && r.boarding) {
+      legs.push({ type: 'LineString', coordinates: [[o.lng, o.lat], [r.boarding.longitude, r.boarding.latitude]] });
+    }
+    if (d && r.dropOff) {
+      legs.push({ type: 'LineString', coordinates: [[r.dropOff.longitude, r.dropOff.latitude], [d.lng, d.lat]] });
+    }
+    return legs;
   });
 
   // ---- Favorito (RF-10) ----

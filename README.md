@@ -258,7 +258,8 @@ src/
 │   │   └── route.model.ts
 │   ├── lib/                         utilidades puras, sin estado
 │   │   ├── format.ts                formato de moneda COP, horas
-│   │   └── route-steps.ts           reducción de barrios a ≤7 pasos
+│   │   ├── route-steps.ts           reducción de barrios a ≤7 pasos (detalle de la ruta)
+│   │   └── trip-steps.ts            los tres momentos de "Su viaje" y el rumbo en palabras
 │   ├── app.config.ts                providers de la aplicación
 │   ├── app.routes.ts                tabla de rutas
 │   └── app.ts / app.html / app.css  shell raíz
@@ -283,7 +284,7 @@ public/
 | `src/app/core/guards/` | `CanActivateFn` que decide si una ruta se puede abrir. Hoy solo `authGuard` para `/perfil`. |
 | `src/app/core/interceptors/` | Middleware HTTP funcional. `authInterceptor` adjunta el `Authorization: Bearer` y centraliza la respuesta a `401`. |
 | `src/app/models/` | `interface` / `type` que reflejan el dominio del backend (usuario, ruta, respuesta de login). Sin `any`. |
-| `src/app/lib/` | Utilidades puras: formateo de pesos colombianos, reducción de la lista de barrios a los 7 pasos que exige la UI. |
+| `src/app/lib/` | Utilidades puras: formateo de pesos colombianos, reducción de la lista de barrios del **detalle** de la ruta a los 7 pasos que exige la UI (`route-steps.ts`) y armado de los tres momentos de **"Su viaje"** en el resultado de la búsqueda (`trip-steps.ts`: rumbo en palabras y qué momentos se muestran; los barrios del tramo los calcula el backend). |
 | `src/environments/` | Configuración por ambiente que se compila **dentro** del bundle (`apiUrl`, `production`). No es un `.env` en runtime. |
 | `public/` | Activos servidos tal cual en la raíz: `favicon.ico` y el `manifest.webmanifest` que convierte la app en PWA instalable. |
 | `.github/workflows/` | Pipelines de CI. `ci.yml` corre `ng build` + `ng test` en cada PR; `security.yml` revisa vulnerabilidades de dependencias. |

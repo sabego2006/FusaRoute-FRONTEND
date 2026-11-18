@@ -204,51 +204,35 @@
         }
       </div>
 
-      <div class="fr-bento-item">
-        <h3 class="fr-letrero-titulo fr-letrero-titulo--paramo">Por dónde pasa</h3>
-        <app-route-steps [neighborhoods]="r.route.neighborhoods" />
-      </div>
-
+      <!--
+        SCRUM-198: un solo módulo con el viaje de esta persona, en vez de los dos que había
+        ("Por dónde pasa", con el recorrido COMPLETO de la ruta, y "Cómo la toma"). Los barrios
+        que se nombran son solo los del tramo entre la subida y la bajada.
+      -->
       <div class="fr-bento-item fr-bento-span-2" data-testid="caminata">
         <div class="fr-greca fr-greca--fina fr-greca--paramo" aria-hidden="true"></div>
-        <h3 class="fr-titulo-3">Cómo la toma</h3>
+        <h3 class="fr-titulo-3">Su viaje</h3>
         @if (r.longWalk) {
-          <p class="fr-aviso-caminata" role="status">
+          <p class="fr-aviso-caminata" role="status" style="margin-bottom: var(--space-4);">
             <strong>Le toca caminar más de lo normal.</strong>
             @if (r.boarding && r.dropOff) {
               Unos {{ r.boarding.distanceInMeters }} m hasta la buseta y {{ r.dropOff.distanceInMeters }} m al bajarse.
             }
           </p>
         }
-        @if (r.boarding && r.dropOff) {
-          <ul class="fr-lista fr-entra">
-            <li class="fr-fila">
-              <span class="fr-chip-lugar" aria-hidden="true">↑</span>
-              <span>
-                Camine aprox. <strong>{{ r.boarding.distanceInMeters }} m</strong>
-                (unos {{ r.boarding.walkingMinutes }} min) y ahí la toma.
-              </span>
-            </li>
-            <li class="fr-fila">
-              <span class="fr-chip-lugar" aria-hidden="true">↓</span>
-              <span>
-                Al bajarse le quedan aprox. <strong>{{ r.dropOff.distanceInMeters }} m</strong>
-                (unos {{ r.dropOff.walkingMinutes }} min) hasta su destino.
-              </span>
-            </li>
-          </ul>
-        } @else {
-          <p class="fr-texto-sm">
-            Esta ruta todavía no tiene su trazado cargado, así que no le podemos decir el
-            punto exacto donde tomarla.
-          </p>
-        }
+        <app-trip-plan [result]="r" />
       </div>
 
       @if (resultMarkers().length > 0) {
         <div class="fr-bento-item fr-bento-span-2" data-testid="mapa-resultado">
-          <h3 class="fr-titulo-3">El recorrido en el mapa</h3>
-          <app-places-map [markers]="resultMarkers()" [path]="r.path ?? null" [height]="320" />
+          <h3 class="fr-titulo-3">Su viaje en el mapa</h3>
+          <!--
+            Solo el tramo que la persona recorre en bus, más las dos caminatas punteadas. El
+            trazado completo de la ruta (`r.path`) ya NO se dibuja: hacía ver un recorrido mucho
+            más largo que el real. Quien quiera verlo entero tiene el detalle de la ruta.
+          -->
+          <app-places-map [markers]="resultMarkers()" [path]="ridePath()"
+                          [walkPaths]="walkPaths()" [height]="320" />
         </div>
       }
 
