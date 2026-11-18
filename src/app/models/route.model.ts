@@ -155,6 +155,43 @@ export interface BoardingPoint {
  * El letrero de la ruta sugerida viaja en `route.signFile` (SCRUM-184). Ya no hay un
  * campo `signs` aparte: con un letrero por ruta, el dato cabe en `Route`.
  */
+/**
+ * Espeja TripSegmentResponse.WalkGuideResponse: hacia dónde va una caminata y hasta qué
+ * sitio reconocible llega.
+ *
+ * Los dos datos faltan por separado y por razones distintas, así que son `null` y no cadena
+ * vacía: sin `bearingDegrees` cuando los dos puntos están a menos de 20 m y no hay dirección
+ * que tenga sentido dar, y sin `reference` cuando ningún lugar del catálogo queda a menos de
+ * 300 m del punto — nombrar uno más lejos mandaría a la persona a otra esquina.
+ *
+ * `bearingDegrees` llega en GRADOS desde el norte y en sentido horario (0 = norte,
+ * 90 = oriente): el backend manda el dato geométrico y el frontend elige la palabra, porque
+ * el idioma de la pantalla lo conoce el frontend. Ver `compassLabel` en `lib/trip-steps.ts`.
+ */
+export interface WalkGuide {
+  bearingDegrees: number | null;
+  reference: string | null;
+}
+
+/**
+ * Espeja TripSegmentResponse del backend (SCRUM-198): el tramo que la persona recorre de
+ * verdad, que es lo que el resultado muestra en vez de la ruta completa.
+ *
+ * `ridePath` es el pedazo del trazado entre la subida y la bajada — NO la ruta completa, que
+ * sigue viajando en `RouteSearchResult.path` y que el resultado ya no dibuja. Es `null` si la
+ * ruta no tiene trazado y entonces no se sabe cuál es el tramo.
+ *
+ * `neighborhoods` vacío es una respuesta VÁLIDA y frecuente, no un error ni un "todavía no se
+ * calculó": con recorridos cortos no queda ningún barrio entre la subida y la bajada (en los 6
+ * pares reales medidos el 17-nov, 5 recorrían entre 195 m y 1,4 km de rutas de 9 a 13 km).
+ */
+export interface TripSegment {
+  ridePath: GeoJsonLineString | null;
+  neighborhoods: string[];
+  boardingWalk: WalkGuide;
+  dropOffWalk: WalkGuide;
+}
+
 export interface RouteSearchResult {
   route: Route;
   estimatedMinutes: number | null;
@@ -162,12 +199,22 @@ export interface RouteSearchResult {
   boarding: BoardingPoint | null;
   dropOff: BoardingPoint | null;
   /**
-   * Trazado para pintar el mapa en el resultado de la búsqueda, igual que el detalle.
-   * `null` si la ruta todavía no tiene su GeoJSON cargado; opcional para tolerar un
-   * backend anterior a este campo (no manda la clave).
+   * Trazado COMPLETO de la ruta, de punta a punta. `null` si la ruta todavía no tiene su
+   * GeoJSON cargado; opcional para tolerar un backend anterior a este campo.
+   *
+   * SCRUM-198: el resultado de la búsqueda ya NO lo dibuja — pintaba el recorrido entero y
+   * hacía creer a quien toma media ruta que la recorre toda. Lo que se dibuja es
+   * `tripSegment.ridePath`. Se conserva en el contrato porque el detalle de la ruta
+   * (`/rutas/:id`) sí muestra el recorrido completo, que es justo lo que esa pantalla es.
    */
   path?: GeoJsonLineString | null;
   lastUpdatedAt: string | null;
+  /**
+   * El tramo que la persona recorre de verdad (SCRUM-198). Opcional a propósito: un backend
+   * anterior a esta historia no manda la clave, y entonces el frontend cae al comportamiento
+   * honesto de "no hay detalle del tramo" en vez de inventarlo o volver a la ruta completa.
+   */
+  tripSegment?: TripSegment | null;
   /** Opcionales: un backend anterior al contrato de lugares (P1) no los manda. */
   etaSource?: EtaSource | null;
   longWalk?: boolean;

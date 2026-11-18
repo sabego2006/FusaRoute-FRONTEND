@@ -276,6 +276,32 @@ describe('RouteSearchComponent', () => {
     expect(aviso).toContain('indio (tarde)');
   });
 
+  it('el módulo "Su viaje" nombra solo los barrios del tramo (SCRUM-198)', async () => {
+    // La ruta pasa por cinco barrios; el tramo de esta persona empieza en el tercero.
+    const conTramo: RouteSearchResult = {
+      ...resultado,
+      route: { ...resultado.route, neighborhoods: ['Mirazul', 'San Francisco', 'Indio', 'Cra 7', 'Terminal'] },
+      tripSegment: {
+        ridePath: { type: 'LineString', coordinates: [[-74.3775, 4.3317], [-74.3779, 4.3459]] },
+        neighborhoods: ['Indio', 'Cra 7', 'Terminal'],
+        boardingWalk: { bearingDegrees: 45, reference: 'Puente Águila' },
+        dropOffWalk: { bearingDegrees: 180, reference: 'Plaza de Mercado' },
+      },
+    };
+    const { el, elegirAmbos, buscar } = await render({ searchRoute: () => of(conTramo) });
+    elegirAmbos();
+    await buscar();
+
+    const viaje = el.querySelector('[data-testid="caminata"]')!.textContent!.replace(/\s+/g, ' ');
+    expect(viaje).toContain('Su viaje');
+    expect(viaje).toContain('Pasará por: Indio, Cra 7, Terminal.');
+    // Los barrios por los que la buseta ya pasó no aparecen en ninguna parte del módulo.
+    expect(viaje).not.toContain('Mirazul');
+    expect(viaje).not.toContain('San Francisco');
+    // Y ya no existe el módulo que mostraba el recorrido completo de la ruta.
+    expect(el.textContent).not.toContain('Por dónde pasa');
+  });
+
   it('avisa la caminata larga', async () => {
     const { el, elegirAmbos, buscar } = await render({ searchRoute: () => of({ ...resultado, longWalk: true }) });
     elegirAmbos();

@@ -71,6 +71,15 @@ export const FUSA_CENTER: LatLngPoint = { lat: 4.3364, lng: -74.3638 };
 export class PlacesMapComponent implements OnInit, OnDestroy {
   readonly markers = input<MapMarkerPoint[]>([]);
   readonly path = input<GeoJsonLineString | null>(null);
+  /**
+   * Tramos a pie, dibujados PUNTEADOS para que no se confundan con el recorrido del bus
+   * (SCRUM-198): en el resultado de la búsqueda son la caminata hasta la subida y la que va de
+   * la bajada al destino.
+   *
+   * Van como `Polyline` y no por la capa de datos porque el estilo de esa capa no admite línea
+   * punteada: el punteado se hace con un símbolo repetido sobre una línea transparente.
+   */
+  readonly walkPaths = input<GeoJsonLineString[]>([]);
   readonly height = input(260);
   readonly fallbackText = input('El resto de la información sigue disponible.');
   readonly accentColorToken = input('--muni-fusagasuga');
@@ -90,13 +99,17 @@ export class PlacesMapComponent implements OnInit, OnDestroy {
       const map = this.map();
       const markers = this.markers();
       const path = this.path();
+      const walkPaths = this.walkPaths();
       if (!map) return;
       map.data.forEach((f) => map.data.remove(f));
       if (path) {
         map.data.addGeoJson({ type: 'Feature', properties: {}, geometry: path });
         map.data.setStyle({ strokeColor: this.resolveAccentColor(), strokeWeight: 4 });
       }
-      const points = [...markers.map((m) => m.position), ...(path?.coordinates ?? []).map(([lng, lat]) => ({ lat, lng }))];
+      this.drawWalkPaths(map, walkPaths);
+      const walkPoints = walkPaths.flatMap((w) => w.coordinates.map(([lng, lat]) => ({ lat, lng })));
+      const points = [...markers.map((m) => m.position), ...walkPoints,
+        ...(path?.coordinates ?? []).map(([lng, lat]) => ({ lat, lng }))];
       if (points.length > 1) {
         const bounds = new google.maps.LatLngBounds();
         points.forEach((p) => bounds.extend(p));
@@ -116,6 +129,35 @@ export class PlacesMapComponent implements OnInit, OnDestroy {
     this.map.set(map);
   }
 
+  /** Las caminatas vivas en el mapa, para poder borrarlas antes de volver a dibujar. */
+  private walkLines: google.maps.Polyline[] = [];
+
+  /**
+   * Dibuja los tramos a pie punteados. El punteado estándar de Google Maps es una línea con
+   * `strokeOpacity: 0` y un símbolo repetido encima: no hay propiedad `dashArray`.
+   */
+  private drawWalkPaths(map: google.maps.Map, walkPaths: GeoJsonLineString[]): void {
+    this.walkLines.forEach((line) => line.setMap(null));
+    this.walkLines = walkPaths
+      .filter((walk) => walk.coordinates.length >= 2)
+      .map((walk) => new google.maps.Polyline({
+        map,
+        path: walk.coordinates.map(([lng, lat]) => ({ lat, lng })),
+        strokeOpacity: 0,
+        icons: [{
+          icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeWeight: 3, scale: 2, strokeColor: this.resolveWalkColor() },
+          offset: '0',
+          repeat: '14px',
+        }],
+      }));
+  }
+
+  /** Color de las caminatas: la tinta del tema, para que contraste con el color del bus. */
+  private resolveWalkColor(): string {
+    const value = getComputedStyle(document.documentElement).getPropertyValue('--tinta').trim();
+    return value || '#0A0A0C';
+  }
+
   private resolveAccentColor(): string {
     const value = getComputedStyle(document.documentElement).getPropertyValue(this.accentColorToken()).trim();
     return value || '#4F46E5';
@@ -124,5 +166,7 @@ export class PlacesMapComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     const map = this.map();
     map?.data.forEach((f) => map.data.remove(f));
+    this.walkLines.forEach((line) => line.setMap(null));
+    this.walkLines = [];
   }
 }
