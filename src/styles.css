@@ -1,5 +1,15 @@
 /* FusaRoute — Premium Vibrant Tokens */
 :root {
+  /* Identidad v2 · SCRUM-194 */
+  --rosa: #FF5FAE;
+  --sobre-rosa: #0A0A0C;
+  --crema: #FFF6D6;
+  --rojo-sello: #A50F26;
+  --lima-punto: #C6EC7C;
+  --sombra-sticker: 3px 3px 0 var(--tinta);
+  --sombra-cta: 7px 7px 0 var(--tinta);
+  --sombra-papel: 6px 6px 0 var(--tinta);
+
   /* Palette Evolution */
   --fondo: #FDFCFB;
   --superficie: #FFFFFF;
@@ -106,7 +116,7 @@
    * dependen de él: la barra, el relleno inferior del shell y la posición de
    * la zona del pulgar. Si se desincronizan, la barra tapa contenido.
    */
-  --fr-nav-alto: 60px;
+  --fr-nav-alto: 66px; /* antes 60px (identidad v2: barra de stickers) */
 
   /*
    * Motion. Dos curvas y tres duraciones, no más: un sistema de movimiento con
@@ -141,7 +151,7 @@
   --shadow-soft-depth: var(--sombra-dura-sm);
 
   /* Typography */
-  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Bowlby One", "Arial Black", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 }
 
@@ -666,13 +676,14 @@ body {
 
 .fr-titulo-1, .fr-titulo-2, .fr-titulo-3 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 400;
+  letter-spacing: 0;
   margin: 0;
   text-wrap: balance;
 }
-.fr-titulo-1 { font-size: 32px; line-height: 36px; letter-spacing: -0.02em; }
-.fr-titulo-2 { font-size: 28px; line-height: 32px; letter-spacing: -0.01em; }
-.fr-titulo-3 { font-size: 20px; line-height: 26px; }
+.fr-titulo-1 { font-size: 34px; line-height: 36px; }
+.fr-titulo-2 { font-size: 26px; line-height: 30px; }
+.fr-titulo-3 { font-size: 18px; line-height: 24px; }
 
 .fr-texto { font-size: 16px; line-height: 24px; font-weight: 500; margin: 0; }
 .fr-texto-sm { font-size: 14px; line-height: 20px; font-weight: 500; margin: 0; color: var(--tinta-suave); }
@@ -1056,3 +1067,207 @@ body {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 0h16v2h-2v2h-2v2h-2v2H6V6H4V4H2V2H0z'/%3E%3C/svg%3E") repeat-x left top / 20px 10px;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8'%3E%3Cpath d='M0 0h16v2h-2v2h-2v2h-2v2H6V6H4V4H2V2H0z'/%3E%3C/svg%3E") repeat-x left top / 20px 10px;
 }
+
+/* ======================= Identidad v2 · SCRUM-194 ======================= */
+
+/* --- Titular de cartel (P-02) --- */
+.fr-titulo-cartel { line-height: 1; max-width: 100%; }
+.fr-cartel-1 {
+  display: inline-block;
+  transform: rotate(-3deg) translateX(-12px);
+  text-shadow: 3px 3px 0 var(--lima);
+}
+.fr-cartel-2 {
+  display: inline-block;
+  max-width: calc(100% - 24px);
+  margin-top: 4px;
+  padding: 2px 12px 4px;
+  font-size: .94em;
+  color: var(--tinta);
+  background: var(--amarillo-congestion);
+  border: 3px solid var(--tinta);
+  box-shadow: 5px 5px 0 var(--tinta);
+  transform: rotate(2.5deg) translateX(14px);
+}
+
+/* --- Stickers (P-06) y pegado (P-16) --- */
+.fr-sticker {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(var(--sombra-sticker));
+  transform: rotate(var(--r, 0deg));
+}
+@keyframes fr-pegar {
+  0%   { opacity: 0; transform: scale(2.2) rotate(calc(var(--r, 0deg) + 28deg)); }
+  60%  { opacity: 1; transform: scale(.92) rotate(var(--r, 0deg)); }
+  100% { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); }
+}
+.fr-pegar {
+  opacity: 0;
+  animation: fr-pegar .55s var(--curva-resorte) forwards;
+  animation-delay: var(--d, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fr-pegar { opacity: 1; animation: none; }
+}
+
+/* --- Bocadillo --- */
+.fr-bocadillo {
+  position: absolute;
+  z-index: 2;
+  padding: 5px 10px;
+  font: 400 14px/1.1 var(--font-display);
+  color: #000;
+  white-space: nowrap;
+  background: #fff;
+  border: 3px solid var(--tinta);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--tinta);
+  transform: rotate(var(--r, 0deg));
+  pointer-events: none;
+}
+.fr-bocadillo::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  bottom: -8px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-right: 3px solid var(--tinta);
+  border-bottom: 3px solid var(--tinta);
+  transform: rotate(45deg);
+}
+.fr-bocadillo--der::after { left: auto; right: 22px; }
+
+/* --- Pared de puntos y franja arhuaca (P-05) --- */
+.fr-fondo-puntos {
+  background-image: radial-gradient(circle, var(--lima-punto) 2.4px, transparent 2.8px);
+  background-size: 13px 13px;
+}
+.fr-fondo-puntos .fr-texto-sm { color: var(--tinta); } /* 7:1 sobre los puntos */
+.fr-franja-arhuaca {
+  height: 24px;
+  margin-inline: -12px;
+  background: url(/assets/stickers/mochila-arhuaca-tile.svg) 0 0 / 24px 24px;
+  border-block: 3px solid var(--tinta);
+  transform: rotate(-1.4deg);
+}
+.fr-franja-arhuaca--inversa { transform: rotate(1.2deg); }
+
+/* --- Etiquetas torcidas y chip rosa (P-10) --- */
+.fr-boleto .fr-etiqueta,
+.fr-etiqueta--cinta {
+  display: inline-block;
+  width: fit-content;
+  margin-bottom: 6px;
+  padding: 1px 10px;
+  font: 400 13px/18px var(--font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  background: var(--amarillo-congestion);
+  border: 2px solid var(--tinta);
+  box-shadow: 2px 2px 0 var(--tinta);
+  transform: rotate(-3deg);
+}
+.fr-boleto .fr-campo:nth-of-type(even) .fr-etiqueta {
+  background: var(--lima);
+  transform: rotate(2.5deg) translateX(14px);
+}
+.fr-chip-letrero.fr-chip-letrero--sticker {
+  color: var(--sobre-rosa);
+  background: var(--rosa);
+  border: 3px solid var(--tinta);
+  box-shadow: 4px 4px 0 var(--tinta);
+  font: 400 12px/16px var(--font-display);
+  letter-spacing: .06em;
+  transform: rotate(-4deg);
+}
+.fr-subrayado {
+  padding-bottom: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'%3E%3Cpath d='M2 6C20 0 30 10 50 5S80 1 100 6 140 10 160 4 190 2 198 6' stroke='%23FF5FAE' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center bottom / 100% 10px no-repeat;
+}
+
+/* --- Botón primario: sticker (P-04) --- */
+.fr-btn.fr-btn-primario {
+  color: var(--sobre-rosa);
+  background: var(--rosa);
+  font: 400 18px/22px var(--font-display);
+  letter-spacing: .02em;
+  min-height: 48px;
+  border: 3px solid var(--tinta);
+  border-radius: 10px;
+  box-shadow: 5px 5px 0 var(--tinta);
+  transform: rotate(-2deg);
+}
+.fr-btn.fr-btn-primario.fr-btn-bloque {          /* tamaño L: botón de ancho completo */
+  max-width: calc(100% - 8px);
+  min-height: 60px;
+  font-size: 26px;
+  line-height: 28px;
+  box-shadow: var(--sombra-cta);
+  transform: rotate(-2.5deg);
+}
+@media (hover: hover) {
+  .fr-btn.fr-btn-primario:hover { transform: rotate(-3.5deg) translate(-2px, -2px); box-shadow: 10px 10px 0 var(--tinta); }
+}
+.fr-btn.fr-btn-primario:active { transform: rotate(-2.5deg) translate(6px, 6px); box-shadow: 1px 1px 0 var(--tinta); }
+.fr-btn.fr-btn-primario:focus-visible { outline: 3px solid var(--foco); outline-offset: 4px; }
+.fr-btn.fr-btn-primario:disabled { color: var(--tinta-suave); background: var(--fondo); box-shadow: none; transform: none; }
+
+/* --- Cabecera pegada (P-11) --- */
+.fr-header .fr-header__brand {
+  padding: 2px 12px 2px 6px;
+  background: var(--superficie);
+  border: 3px solid var(--tinta);
+  border-radius: 10px;
+  box-shadow: var(--sombra-sticker);
+  transform: rotate(-3deg);
+}
+.fr-header .fr-header__brand .fr-wordmark { font-family: var(--font-sans); font-weight: 700; }
+.fr-header .fr-header__links .fr-header__link--cta {
+  padding: 8px 12px;
+  font: 400 13px/16px var(--font-display);
+  color: var(--sobre-rosa);
+  background: var(--rosa);
+  border: 3px solid var(--tinta);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 var(--tinta);
+  text-decoration: none;
+  transform: rotate(3deg);
+}
+
+/* --- Barra inferior (P-12) --- */
+.fr-nav .fr-nav__item .fr-nav__icono { width: 26px; height: 26px; }
+.fr-nav .fr-nav__item.is-activa {
+  color: var(--tinta);
+  background: var(--lima);
+  border: 3px solid #fff;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--rosa);
+  transform: rotate(-4deg) translateY(-8px);
+}
+
+/* --- Letreros pegados con cinta (P-14) --- */
+app-letrero { position: relative; display: inline-block; }
+app-letrero::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  left: -10px;
+  width: 56px;
+  height: 18px;
+  background: url(/assets/stickers/cinta.svg) center / 100% 100% no-repeat;
+  filter: drop-shadow(2px 2px 0 var(--tinta));
+  transform: rotate(-30deg);
+  pointer-events: none;
+}
+app-letrero .letrero { filter: drop-shadow(3px 3px 0 var(--tinta)); transform: rotate(-3deg); }
+app-letrero:nth-of-type(3n + 2) .letrero { transform: rotate(3deg); }
+app-letrero:nth-of-type(3n) .letrero { transform: rotate(-4deg); }
