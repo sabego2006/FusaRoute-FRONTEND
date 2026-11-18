@@ -87,6 +87,20 @@ El backend emite un JWT (Spring Security) con validez de **una semana** — al e
 
 Pensado para móvil: la mayoría de usuarios consultará la ruta desde el celular en la calle. Diseño responsive desde el inicio, no adaptado al final.
 
+## Identidad visual (v2, aprobada por Santiago el 17–18 de noviembre de 2026)
+
+Neobrutalismo de Fusagasugá con actitud de **sticker pegado**: irreverente, exagerado y colombiano, pero legible y rápido. Es inspiración de actitud (stickers, textos torcidos, colores chillones, cultura pop), no un clon de ninguna marca. La fuente única está en la carpeta de la sustentación (`sustentacion/diseno-v2/`: `ESTANDAR-VISUAL.md` la regla, `DECISIONES.md` lo aprobado con las palabras de Santiago, `PLAN-IMPLEMENTACION.md` el paso a paso por fases F1–F4, `ASSETS.md` los recursos y su licencia). **Santiago informó el 2026-11-18 que Angélica dio su visto bueno al plan; se adjunta su confirmación escrita al PR de la primera fase.** Esta sección resume lo que hay que respetar al tocar la interfaz:
+
+- **Se conserva** de T05: isotipo y wordmark, Suta (solo en estados vacío, error, éxito y sin conexión; nunca encima del buscador inicial), greca escalonada, letreros de buseta SVG y la paleta por municipio `--muni-*`.
+- **Tipografías: 2 familias, 47,5 KB.** Bowlby One (OFL) para titulares, CTA, cintas, sellos y bocadillos; Plus Jakarta Sans para texto. Space Grotesk sale. Bowlby One se declara con `font-weight: 400 900` (un solo peso; sin negrita falsa). Texto en Bowlby sobre un fondo que da menos de 7:1 va a 24 px o más. Una tercera familia está prohibida.
+- **Tokens nuevos:** `--rosa #FF5FAE`, `--sobre-rosa #0A0A0C`, `--crema #FFF6D6`, `--rojo-sello #A50F26`, `--lima-punto #C6EC7C`. Los valores ya están ajustados para 7:1 (`color-contrast-enhanced` en 0).
+- **Botón primario** = sticker rosa torcido (−2,5°, sombra dura de 7 px, se hunde al presionar). En el buscador el CTA es el **sello** dentro del boleto. **Titular de cartel:** dos líneas desalineadas, las últimas dos palabras en caja amarilla.
+- **Stickers:** personajes con foto real, fondo quitado y benday (Indio Sutagao, Lucho Herrera, La Pola, Gabo, Bolívar) más SVG propios (sombrero vueltiao, mariposas amarillas, destellos, chiva, cinta). Pueden rozar bordes y esquinas, **nunca** cubrir texto que informa, campos ni botones; máximo 6 por pantalla y 2 personajes; siempre `aria-hidden`, `loading="lazy"`, con `width` y `height`, y fuera del camino del LCP. **Las pantallas de administración no llevan personajes.**
+- **El torcido es solo CSS:** el orden del DOM y el foco por teclado no cambian. Campos de formulario, párrafos, tablas y mapa nunca se giran.
+- **Movimiento:** «pegado» al entrar y la chiva de la carga están activos por defecto; con `prefers-reduced-motion: reduce` quedan quietos.
+- **Presupuestos que siguen vigentes:** LCP de `/rutas/buscar` < 2,5 s (mediana de 3 corridas), `main-*.js` ≤ 115 KB gzip (hoy ≈ 112,7), imágenes WebP/AVIF ≤ 40 KB, AA con axe en 0 violaciones, objetivos táctiles ≥ 44 px. **El CSS nuevo va en `src/styles.css`, no en los `styles` de los componentes** (esos viajan dentro del JS).
+- **Créditos:** Santiago decidió (2026-11-18) no publicar créditos de imágenes (sin página, sin README, sin slide). Las fotos del Indio, de Lucho (CC BY-SA) y de Gabo (CC BY) exigen atribución por licencia; el riesgo lo asume él. El texto está solo en `sustentacion/diseno-v2/ASSETS.md` §3.
+
 ## Testing
 
 - Vitest (`ng test`), probando **comportamiento visible** al usuario, no detalles internos del componente.
