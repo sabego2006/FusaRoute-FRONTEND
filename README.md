@@ -211,6 +211,28 @@ Solo funciona sobre HTTPS o sobre `localhost` — es una regla del navegador. Y 
 worker hace que **la app cargue** sin red; **no** es el modo offline del requisito, que es un
 endpoint del backend que calcula la ruta por distancia sobre los GeoJSON.
 
+`ngsw-config.json` cachea el armazón (`assetGroups`, con `prefetch`) y, desde T15, también el
+catálogo: `dataGroups` guarda `**/api/routes` y `**/api/places` con estrategia `freshness` y
+`timeout: 3s`. Qué hace y qué no: en una **visita repetida** sirve el catálogo de la caché si la
+red tarda más de 3 s; en la **primera visita no ayuda en nada**, porque no hay nada guardado. El
+patrón de las URL lleva `**/` a propósito: la API vive en otro origen (Render), y un patrón
+`/api/...` solo casaría con rutas del mismo origen.
+
+## Con internet lento (T15, SCRUM-199)
+
+Con señal débil una petición no se pone lenta: se **corta**, y el navegador entrega `status 0`.
+Hasta T15, un solo corte dejaba la pantalla en un mensaje de error del que no se salía sin
+recargar. Lo que hay ahora, todo medido con `sustentacion/resultados/T15-throttle.mjs`:
+
+| Pieza | Qué hace |
+|---|---|
+| `lib/retry-transient.ts` | Reintenta dos veces, con espera creciente (600 ms, 1,2 s), los GET de solo lectura que se cortan (`status 0`, `408`, `429`, `5xx`). Un `4xx` no se reintenta. |
+| `RouteService.searchRoute` | **No** se reintenta: cada llamada puede gastar una de las 150 consultas diarias a Google. Un corte cae a `/search/offline`, que sí lleva reintentos porque no cuesta cuota. |
+| `ConnectivityService.whenOnlineAgain()` | Cuando el fallo fue por falta de red, la pantalla vuelve a pedir sola apenas el navegador avisa que regresó. |
+| Botón «Reintentar» | En el catálogo, el detalle, la lista de lugares y la búsqueda. Ningún error se queda sin salida. |
+| `GoogleMapsLoaderService` | Presupuesto de 12 s para que Google Maps termine de instalarse. Pasado ese tiempo el hueco del mapa se vuelve un aviso discreto en vez de un esqueleto eterno; si Google llega tarde, el mapa igual aparece. El resultado de la búsqueda **no depende** del mapa. |
+| `NavigationFailureStore` + aviso en `app.html` | Una pantalla diferida cuyo chunk no alcanzó a bajar dejaba la vista **en blanco**, porque el router aborta la navegación. Ahora lo dice y ofrece volver a cargar. |
+
 ## Seguridad
 
 **Ninguna clave secreta va en este repositorio.** Todo lo que se compila en Angular viaja al
