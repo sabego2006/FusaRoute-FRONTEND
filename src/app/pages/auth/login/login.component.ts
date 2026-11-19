@@ -64,7 +64,7 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
           <p class="fr-texto-sm" style="margin-top: var(--space-2); text-align: center;">
             Puedes ver las rutas sin iniciar sesión. <a class="fr-link" routerLink="/rutas">Ver catálogo</a>
           </p>
-          <img class="fr-sticker fr-pegar" style="--r:7deg;--d:.2s;right:-8px;top:-30px;width:86px" src="assets/stickers/policarpa-salavarrieta.webp" width="86" height="118" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <img class="fr-sticker fr-pegar" style="--r:7deg;--d:.2s;right:-8px;top:-42px;width:86px" src="assets/stickers/policarpa-salavarrieta.webp" width="86" height="118" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
           <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-4deg;--d:.2s;right:84px;top:-22px" aria-hidden="true">¡Ingrese, pues!</span>
           <img class="fr-sticker fr-pegar" style="--r:5deg;--d:.4s;right:-6px;bottom:-26px;width:84px" src="assets/stickers/gabo-garcia-marquez.webp" width="84" height="76" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
           <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-3deg;--d:.4s;right:90px;bottom:-14px" aria-hidden="true">Cien años de ruta</span>

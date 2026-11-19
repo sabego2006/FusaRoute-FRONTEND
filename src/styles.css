@@ -1459,3 +1459,6 @@ body:has(app-admin-layout) .fr-pie { display: none; } /* sin pie en administraci
 /* Los personajes de perfil e historial se apoyan debajo de la tarjeta, no encima de sus botones. */
 .fr-pagina--personajes { padding-bottom: 180px; }
 .fr-pagina--admin { padding-bottom: 136px; }
+
+/* El torcido de la caja amarilla (+2,5° y su sombra) pisaba la primera línea del subtítulo; los h1 que ya traen margin inline lo conservan. */
+.fr-titulo-cartel { margin-bottom: var(--space-4); }
