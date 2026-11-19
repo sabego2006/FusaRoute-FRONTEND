@@ -1,8 +1,9 @@
-<main class="fr-pila" style="max-width: 1000px; margin: 2rem auto; padding: 0 var(--space-4);">
+<main class="fr-pila fr-fondo-puntos" style="max-width: 1000px; margin: 2rem auto; padding: 0 var(--space-4); position: relative;">
+  <div class="fr-franja-arhuaca" aria-hidden="true"></div>
   <header style="text-align: center; margin-bottom: var(--space-8);">
     <!-- T05 (R2): la placa de la buseta como eyebrow; el wordmark ya está en el encabezado. -->
-    <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
-    <h1 class="fr-titulo-1">Todas las rutas de Fusa</h1>
+    <p class="fr-chip-letrero fr-chip-letrero--sticker" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
+    <h1 class="fr-titulo-1 fr-titulo-cartel"><span class="fr-cartel-1">Todas las rutas</span> <span class="fr-cartel-2">de Fusa</span></h1>
     <p class="fr-texto-sm">Pille acá por dónde pasa cada buseta y cuánto vale el pasaje.</p>
     <div class="fr-greca fr-greca--paramo" aria-hidden="true" style="max-width: 240px; margin: var(--space-4) auto 0;"></div>
   </header>
@@ -80,8 +81,12 @@
         mismo apilado de antes.
       -->
       <ul class="fr-bento fr-entra-z" style="list-style: none; padding: 0;">
-        @for (route of routes(); track route.id) {
-          <li class="fr-card fr-card-interactiva">
+        @for (route of routes(); track route.id; let primera = $first) {
+          <li class="fr-card fr-card-interactiva fr-card--etiqueta">
+            @if (primera) {
+              <img class="fr-sticker fr-pegar" style="--r:8deg;--d:.2s;right:-10px;top:-44px;height:112px" src="assets/stickers/simon-bolivar.webp" width="42" height="112" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+              <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-3deg;--d:.2s;right:34px;top:-34px" aria-hidden="true">¡Esta es la buena!</span>
+            }
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-2);">
               <h2 class="fr-titulo-3">{{ route.name }}</h2>
               <strong class="fr-texto-paramo" style="font: 700 18px/24px var(--font-display); white-space: nowrap;">{{ fareLabel(route) }}</strong>
@@ -117,4 +122,7 @@
       </ul>
     }
   }
+  <img class="fr-sticker fr-pegar" style="--r:10deg;--d:.3s;right:12px;top:-6px;width:34px" src="assets/stickers/destello.svg" width="34" height="34" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+  <img class="fr-sticker fr-pegar" style="--r:-18deg;--d:.5s;left:6px;top:170px;width:44px" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+  <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
 </main>

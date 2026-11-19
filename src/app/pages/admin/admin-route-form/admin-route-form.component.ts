@@ -58,6 +58,7 @@ interface FareRow extends FareDraft {
   standalone: true,
   imports: [RouterLink, MapViewComponent],
   template: `
+    <div class="fr-pagina fr-pagina--admin">
     <section class="fr-ruta-form">
       <a class="fr-link" routerLink="/admin/rutas">← Volver a las rutas</a>
       <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
@@ -249,6 +250,9 @@ interface FareRow extends FareDraft {
         </form>
       }
     </section>
+      <img class="fr-sticker fr-pegar" style="--r:14deg;--d:.2s;right:12px;top:-8px;width:40px" src="assets/stickers/mariposa-amarilla.svg" width="40" height="40" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <img class="fr-sticker fr-pegar" style="--r:-4deg;--d:.4s;right:8px;bottom:12px;height:120px" src="assets/stickers/indio-sutagao.webp" width="62" height="120" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+    </div>
   `,
   styles: [`
     .fr-ruta-form { max-width: 760px; margin: 2rem auto; display: flex; flex-direction: column; gap: var(--space-4); }

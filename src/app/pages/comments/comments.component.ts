@@ -58,10 +58,12 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
+    <div class="fr-pagina fr-fondo-puntos">
+      <div class="fr-franja-arhuaca" aria-hidden="true"></div>
     <div class="fr-card fr-card--paramo" style="max-width: 640px; margin: 2rem auto;">
       <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
       <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Tu voz · FusaRoute</p>
-      <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Comentarios</h1>
+      <h1 class="fr-titulo-1 fr-titulo-cartel" style="margin-bottom: var(--space-2);"><span class="fr-cartel-2">Comentarios</span></h1>
       <p style="color: var(--tinta-suave); margin-bottom: var(--space-6);">
         Cuéntanos qué mejorar. Un administrador lee todos los comentarios y te responde aquí mismo.
       </p>
@@ -194,6 +196,10 @@ function trimmedLength(control: AbstractControl): ValidationErrors | null {
           }
         </ul>
       }
+    </div>
+      <img class="fr-sticker fr-pegar" style="--r:12deg;--d:.2s;right:14px;top:-8px;width:36px" src="assets/stickers/destello.svg" width="36" height="36" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <img class="fr-sticker fr-pegar" style="--r:-16deg;--d:.4s;left:8px;top:150px;width:44px" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
     </div>
   `,
   styles: [`

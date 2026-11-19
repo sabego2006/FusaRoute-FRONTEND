@@ -1,4 +1,5 @@
-<main class="fr-pila" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4);">
+<main class="fr-pila fr-fondo-puntos" style="max-width: 600px; margin: 2rem auto; padding: 0 var(--space-4); position: relative;">
+  <div class="fr-franja-arhuaca" aria-hidden="true"></div>
   <button [routerLink]="['/rutas']" class="fr-btn" style="margin-bottom: var(--space-6); min-height: 44px;">
     ← Volver al listado
   </button>
@@ -101,4 +102,7 @@
       </div>
     </div>
   }
+  <img class="fr-sticker fr-pegar" style="--r:12deg;--d:.2s;right:14px;top:-8px;width:36px" src="assets/stickers/destello.svg" width="36" height="36" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+  <img class="fr-sticker fr-pegar" style="--r:16deg;--d:.4s;right:6px;top:120px;width:44px" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+  <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
 </main>

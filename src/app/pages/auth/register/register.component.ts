@@ -11,7 +11,9 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto;">
+    <div class="fr-pagina fr-fondo-puntos">
+      <div class="fr-franja-arhuaca" aria-hidden="true"></div>
+    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto; position: relative; padding-bottom: 36px;">
       <div style="margin-bottom: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);">
         <span class="fr-wordmark">Fusa<b>Route</b></span>
         <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
@@ -21,7 +23,7 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
 
       <div style="text-align: center; margin-bottom: var(--space-4);">
         <img src="assets/mascot/suta-wave.webp" alt="Indio Sutá saludando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
-        <h1 class="fr-titulo-1">¡Hágale, parcero!</h1>
+        <h1 class="fr-titulo-1 fr-titulo-cartel"><span class="fr-cartel-2">¡Hágale, parcero!</span></h1>
         <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Únete a la comunidad y guarda tus rutas favoritas.</p>
       </div>
 
@@ -68,6 +70,15 @@ import { FieldViolation, ProblemDetail } from '../../../models/auth.model';
       <p class="fr-texto-sm" style="margin-top: var(--space-6); text-align: center;">
         ¿Ya tienes cuenta? <a class="fr-link" routerLink="/login">Inicia sesión aquí</a>
       </p>
+    
+          <img class="fr-sticker fr-pegar" style="--r:7deg;--d:.2s;right:-8px;top:-30px;width:86px" src="assets/stickers/policarpa-salavarrieta.webp" width="86" height="118" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-4deg;--d:.2s;right:84px;top:-22px" aria-hidden="true">¡Regístrese, pues!</span>
+          <img class="fr-sticker fr-pegar" style="--r:5deg;--d:.4s;right:-6px;bottom:-26px;width:84px" src="assets/stickers/gabo-garcia-marquez.webp" width="84" height="76" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-3deg;--d:.4s;right:90px;bottom:-14px" aria-hidden="true">Cien años de ruta</span>
+          <img class="fr-sticker fr-pegar" style="--r:16deg;--d:.5s;right:6px;top:46%;width:44px" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <img class="fr-sticker fr-pegar" style="--r:-18deg;--d:.6s;left:-8px;top:62%;width:38px" src="assets/stickers/mariposa-amarilla.svg" width="38" height="38" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      </div>
+      <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
     </div>
   `,
   styles: [],
