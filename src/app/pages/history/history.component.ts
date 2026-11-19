@@ -19,10 +19,12 @@ import { ProblemDetail } from '../../models/auth.model';
   selector: 'app-history',
   standalone: true,
   template: `
+    <div class="fr-pagina fr-fondo-puntos fr-pagina--personajes">
+      <div class="fr-franja-arhuaca" aria-hidden="true"></div>
     <div style="max-width: 640px; margin: 2rem auto; padding: 0 var(--space-4);">
       <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
       <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Tu cuenta · FusaRoute</p>
-      <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Mis búsquedas</h1>
+      <h1 class="fr-titulo-1 fr-titulo-cartel" style="margin-bottom: var(--space-2);"><span class="fr-cartel-2">Mis búsquedas</span></h1>
       <p class="fr-texto-sm" style="color: var(--tinta-suave); margin-bottom: var(--space-4);">
         Las últimas 6 búsquedas de tu cuenta. Las ves iguales desde cualquier dispositivo.
       </p>
@@ -94,6 +96,10 @@ import { ProblemDetail } from '../../models/auth.model';
           }
         </ul>
       }
+    </div>
+      <img class="fr-sticker fr-pegar" style="--r:-4deg;--d:.4s;left:8px;bottom:12px;height:154px" src="assets/stickers/indio-sutagao.webp" width="77" height="154" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <img class="fr-sticker fr-pegar" style="--r:-3deg;--d:.6s;right:8px;bottom:12px;height:152px" src="assets/stickers/lucho-herrera.webp" width="91" height="152" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
     </div>
   `,
 })

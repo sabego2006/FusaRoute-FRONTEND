@@ -14,7 +14,9 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, TotpEnrollComponent],
   template: `
-    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto;">
+    <div class="fr-pagina fr-fondo-puntos">
+      <div class="fr-franja-arhuaca" aria-hidden="true"></div>
+    <div class="fr-card fr-card--paramo" style="max-width: 400px; margin: 2rem auto; position: relative; padding-bottom: 36px;">
       <div style="margin-bottom: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);">
         <span class="fr-wordmark">Fusa<b>Route</b></span>
         <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
@@ -36,7 +38,7 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
         @case ('credentials') {
           <div style="text-align: center; margin-bottom: var(--space-4);">
             <img src="assets/mascot/suta-wave.webp" alt="Indio Sutá saludando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
-            <h1 class="fr-titulo-1">¡Hágale, parcero!</h1>
+            <h1 class="fr-titulo-1 fr-titulo-cartel"><span class="fr-cartel-2">¡Hágale, parcero!</span></h1>
             <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">Entra a tu cuenta para guardar tu historial y tu destino favorito.</p>
           </div>
 
@@ -62,11 +64,17 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
           <p class="fr-texto-sm" style="margin-top: var(--space-2); text-align: center;">
             Puedes ver las rutas sin iniciar sesión. <a class="fr-link" routerLink="/rutas">Ver catálogo</a>
           </p>
+          <img class="fr-sticker fr-pegar" style="--r:7deg;--d:.2s;right:-8px;top:-42px;width:86px" src="assets/stickers/policarpa-salavarrieta.webp" width="86" height="118" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-4deg;--d:.2s;right:84px;top:-22px" aria-hidden="true">¡Ingrese, pues!</span>
+          <img class="fr-sticker fr-pegar" style="--r:5deg;--d:.4s;right:-6px;bottom:-26px;width:84px" src="assets/stickers/gabo-garcia-marquez.webp" width="84" height="76" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-3deg;--d:.4s;right:90px;bottom:-14px" aria-hidden="true">Cien años de ruta</span>
+          <img class="fr-sticker fr-pegar" style="--r:16deg;--d:.5s;right:6px;top:46%;width:44px" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+          <img class="fr-sticker fr-pegar" style="--r:-18deg;--d:.6s;left:-8px;top:62%;width:38px" src="assets/stickers/mariposa-amarilla.svg" width="38" height="38" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
         }
         @case ('totp') {
           <div style="text-align: center; margin-bottom: var(--space-4);">
             <img src="assets/mascot/suta-pointing.webp" alt="Indio Sutá señalando" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
-            <h1 class="fr-titulo-1">Tranqui, un paso más</h1>
+            <h1 class="fr-titulo-1 fr-titulo-cartel"><span class="fr-cartel-1">Tranqui, un</span> <span class="fr-cartel-2">paso más</span></h1>
             <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">
               {{ useBackupCode() ? 'Escribe uno de tus códigos de respaldo.' : 'Escribe el código de 6 dígitos de tu app autenticadora.' }}
             </p>
@@ -106,7 +114,7 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
         @case ('enroll') {
           <div style="text-align: center; margin-bottom: var(--space-4);">
             <img src="assets/mascot/suta-de-pie.webp" alt="Indio Sutá de pie" class="fr-suta" style="margin: 0 auto var(--space-4);" width="96" height="96" loading="lazy" decoding="async">
-            <h1 class="fr-titulo-1">Protege tu cuenta, parcero</h1>
+            <h1 class="fr-titulo-1 fr-titulo-cartel"><span class="fr-cartel-1">Protege tu</span> <span class="fr-cartel-2">cuenta, parcero</span></h1>
             <p class="fr-texto-sm" style="margin-bottom: var(--space-6);">
               Para entrar a FusaRoute necesitas activar la verificación en dos pasos.
             </p>
@@ -114,6 +122,8 @@ type LoginStep = 'credentials' | 'totp' | 'enroll';
           <app-totp-enroll (enrolled)="onEnrolled()" (expired)="onEnrollmentExpired()" />
         }
       }
+    </div>
+      <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
     </div>
   `,
   styles: [],

@@ -33,10 +33,11 @@ type Filtro = 'TODOS' | CommentStatus;
   selector: 'app-admin-comments',
   standalone: true,
   template: `
+    <div class="fr-pagina fr-pagina--admin">
     <div class="fr-card fr-card--paramo" style="max-width: 760px; margin: 2rem auto;">
       <!-- T05 (R2): la placa de la buseta como eyebrow de la pantalla. -->
       <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Administración · FusaRoute</p>
-      <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">Comentarios de los usuarios</h1>
+      <h1 class="fr-titulo-1 fr-titulo-cartel" style="margin-bottom: var(--space-2);"><span class="fr-cartel-1">Comentarios de</span> <span class="fr-cartel-2">los usuarios</span></h1>
       <p style="color: var(--tinta-suave); margin-bottom: var(--space-6);">
         Los pendientes salen primero. Responder bloquea el comentario para que su autor no lo cambie.
       </p>
@@ -128,6 +129,9 @@ type Filtro = 'TODOS' | CommentStatus;
           }
         </ul>
       }
+    </div>
+      <img class="fr-sticker fr-pegar" style="--r:14deg;--d:.2s;right:12px;top:-8px;width:40px" src="assets/stickers/mariposa-amarilla.svg" width="40" height="40" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <img class="fr-sticker fr-pegar" style="--r:-4deg;--d:.4s;right:8px;bottom:12px;height:120px" src="assets/stickers/indio-sutagao.webp" width="62" height="120" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
     </div>
   `,
   styles: [`

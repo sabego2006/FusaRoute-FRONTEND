@@ -1444,3 +1444,24 @@ app-letrero:nth-of-type(3n) .letrero { transform: rotate(-4deg); }
   .fr-card.fr-card--etiqueta.fr-card-interactiva:hover { transform: rotate(var(--r, -1.5deg)) translate(-2px, -2px); }
 }
 .fr-card.fr-card--etiqueta.fr-card-interactiva:active { transform: rotate(var(--r, -1.5deg)) translate(2px, 2px); }
+
+/* --- Pie (P-15) --- */
+.fr-pie { position: relative; padding: 0 var(--space-4) calc(var(--fr-nav-alto) + var(--space-6)); text-align: center; overflow: hidden; }
+.fr-pie .fr-franja-arhuaca { margin-top: var(--space-6); }
+.fr-pie__frase { margin: 22px 10px 0; font: 400 24px/1.25 var(--font-display); transform: rotate(1.5deg); }
+.fr-pie__frase span { background: var(--lima); box-shadow: 0 0 0 4px var(--lima); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.fr-pie__sello { display: block; margin: var(--space-6) auto 0; filter: drop-shadow(3px 3px 0 var(--tinta)); transform: rotate(-10deg); }
+body:has(app-admin-layout) .fr-pie { display: none; } /* sin pie en administración */
+@media (min-width: 760px) { .fr-pie { padding-bottom: var(--space-8); } }
+
+/* --- Envoltorio por pantalla (F4, decisión de Santiago: el envoltorio hace de <main> en las pantallas sin <main> propio) --- */
+.fr-pagina { position: relative; }
+/* Los personajes de perfil e historial se apoyan debajo de la tarjeta, no encima de sus botones. */
+.fr-pagina--personajes { padding-bottom: 180px; }
+.fr-pagina--admin { padding-bottom: 136px; }
+
+/* El torcido de la caja amarilla (+2,5° y su sombra) pisaba la primera línea del subtítulo; los h1 que ya traen margin inline lo conservan. */
+.fr-titulo-cartel { margin-bottom: var(--space-4); }
+
+/* El pie vive en el armazón y se pinta antes de que llegue la ruta (carga diferida): empujado luego por el contenido daba CLS 0,49 y el pie era el LCP. Con esta altura mínima nace fuera del primer viewport y su desplazamiento no se cuenta. */
+main.fr-shell.fr-shell { min-height: 100dvh; }
