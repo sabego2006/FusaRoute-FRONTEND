@@ -33,4 +33,30 @@ describe('ConnectivityService', () => {
 
     expect(service.isOnline()).toBe(true);
   });
+
+  describe('whenOnlineAgain (T15)', () => {
+    it('si ya hay red, emite de una vez', async () => {
+      simularNavegador(true);
+      const service = TestBed.inject(ConnectivityService);
+      const aviso = vi.fn();
+
+      service.whenOnlineAgain().subscribe(aviso);
+
+      expect(aviso).toHaveBeenCalledTimes(1);
+    });
+
+    it('sin red, espera a que vuelva y avisa una sola vez', () => {
+      simularNavegador(false);
+      const service = TestBed.inject(ConnectivityService);
+      const aviso = vi.fn();
+
+      service.whenOnlineAgain().subscribe(aviso);
+      expect(aviso).not.toHaveBeenCalled();
+
+      window.dispatchEvent(new Event('online'));
+      window.dispatchEvent(new Event('online'));
+
+      expect(aviso).toHaveBeenCalledTimes(1);
+    });
+  });
 });

@@ -1,6 +1,7 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
+import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withViewTransitions } from '@angular/router';
+import { NavigationError, provideRouter, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
+import { NavigationFailureStore } from './core/navigation-failure.store';
 
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -27,7 +28,19 @@ export const appConfig: ApplicationConfig = {
      *
      * Donde no hay soporte, Angular navega sin animación. Nada se rompe.
      */
-    provideRouter(routes, withViewTransitions({ skipInitialTransition: true })),
+    provideRouter(
+      routes,
+      withViewTransitions({ skipInitialTransition: true }),
+      /*
+       * Una pantalla diferida cuyo chunk no alcanzó a bajar (red que se cae y vuelve)
+       * dejaba la vista en blanco, sin mensaje y sin salida: el router aborta la
+       * navegación y nadie se enteraba (T15, SCRUM-199). Acá se anota para que el
+       * armazón lo diga y ofrezca volver a cargar.
+       */
+      withNavigationErrorHandler((error: NavigationError) => {
+        inject(NavigationFailureStore).fail(error.url);
+      }),
+    ),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'

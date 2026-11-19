@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import { Route, RouteDetail, RouteSearchParams, RouteSearchResult } from '../models/route.model';
+import { retryTransient } from '../lib/retry-transient';
 
 /** Cliente del catálogo público de rutas (RF-15). Ambos endpoints son públicos: no requieren sesión. */
 @Injectable({
@@ -13,18 +14,29 @@ export class RouteService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Catálogo completo. Con reintentos (T15): es un GET idempotente y cacheado 10 min por el
+   * borde, así que volver a pedirlo tras un corte de red no cuesta nada y evita que un solo
+   * corte deje la pantalla en un error del que no se sale.
+   */
   getAllPublicRoutes(): Observable<Route[]> {
-    return this.http.get<Route[]>(this.apiUrl);
+    return this.http.get<Route[]>(this.apiUrl).pipe(retryTransient());
   }
 
   /** El detalle trae además el trazado GeoJSON, que el listado no carga por peso. */
   getRouteById(id: string): Observable<RouteDetail> {
-    return this.http.get<RouteDetail>(`${this.apiUrl}/${encodeURIComponent(id)}`);
+    return this.http.get<RouteDetail>(`${this.apiUrl}/${encodeURIComponent(id)}`).pipe(retryTransient());
   }
 
   /**
    * Busca la mejor ruta entre un origen y un destino (RF-04, SCRUM-54).
-   * Con red: el backend cronometra las candidatas contra Google y gana la más rápida.
+   * Con red: el backend cronometra la candidata ganadora contra Google y la entrega con
+   * `etaSource: TRAFFIC`; si Google no contesta dentro de su presupuesto, la entrega igual
+   * con `ESTIMATED`.
+   *
+   * **Sin reintentos a propósito** (T15): cada llamada puede gastar una de las 150 consultas
+   * diarias a Google. Un fallo de transporte se resuelve cayendo al endpoint offline, que no
+   * cuesta cuota, no al repetir esta.
    */
   searchRoute(params: RouteSearchParams): Observable<RouteSearchResult> {
     return this.http.get<RouteSearchResult>(`${this.apiUrl}/search`, { params: searchQueryParams(params) });
@@ -34,9 +46,12 @@ export class RouteService {
    * Busca la mejor ruta sin conexión (RF-04 parte 2, SCRUM-51).
    * Sin red el backend no puede preguntarle el tiempo a Google, así que elige por el
    * recorrido más corto sobre el trazado propio y devuelve `estimatedMinutes` en null.
+   *
+   * Con reintentos: no consulta a Google, así que repetirla no gasta cuota.
    */
   searchRouteOffline(params: RouteSearchParams): Observable<RouteSearchResult> {
-    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search/offline`, { params: searchQueryParams(params) });
+    return this.http.get<RouteSearchResult>(`${this.apiUrl}/search/offline`, { params: searchQueryParams(params) })
+      .pipe(retryTransient());
   }
 }
 

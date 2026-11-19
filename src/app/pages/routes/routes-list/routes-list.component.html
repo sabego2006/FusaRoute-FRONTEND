@@ -34,18 +34,32 @@
     </ul>
   }
 
-  @if (errorMessage()) {
+  <!--
+    T15: faltar internet no es un error, es una espera. El aviso rojo se reserva para
+    cuando el backend de verdad no responde teniendo red.
+  -->
+  @if (waitingForNetwork()) {
+    <div class="fr-suta-estado" role="status">
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
+           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
+      <div>
+        <p><strong>Se le fue el internet.</strong> Apenas vuelva, cargamos las rutas solos.</p>
+        <button type="button" class="fr-btn" (click)="loadRoutes()">Reintentar</button>
+      </div>
+    </div>
+  } @else if (errorMessage()) {
     <!-- T05 (R4): Sutá acompaña el error. -->
     <div class="fr-suta-estado fr-suta-estado--error" role="alert">
       <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
            class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
       <div>
         <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
+        <button type="button" class="fr-btn" (click)="loadRoutes()">Reintentar</button>
       </div>
     </div>
   }
 
-  @if (!loading() && !errorMessage()) {
+  @if (!loading() && !errorMessage() && !waitingForNetwork()) {
     @if (routes().length === 0) {
       <!-- Vacío con Sutá: es el momento en que más sirve una cara conocida. -->
       <div class="fr-suta-estado fr-entra-solo" style="flex-direction: column; text-align: center; padding: var(--space-8);">

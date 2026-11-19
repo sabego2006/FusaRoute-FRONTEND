@@ -22,6 +22,8 @@ export class RoutesDetailComponent implements OnInit {
   route = signal<RouteDetail | null>(null);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
+  /** Id con el que vale la pena volver a intentar, o `null` si reintentar no cambiaría nada. */
+  readonly retryId = signal<string | null>(null);
 
   isUrban = computed(() => this.route()?.type === 'URBANA');
   /** Chip de municipio (T05, R5). Presentación: el color de la ruta. */
@@ -70,9 +72,18 @@ export class RoutesDetailComponent implements OnInit {
     }
   }
 
+  /** Vuelve a pedir el detalle que falló por red (botón del mensaje de error, T15). */
+  retry(): void {
+    const id = this.retryId();
+    if (id) {
+      this.loadRoute(id);
+    }
+  }
+
   loadRoute(id: string) {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.retryId.set(null);
     this.routeService.getRouteById(id).subscribe({
       next: (data) => {
         this.route.set(data);
@@ -80,11 +91,14 @@ export class RoutesDetailComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         // 404 también cubre una ruta suspendida: el backend no revela que existe.
+        const noExiste = err.status === 404;
         this.errorMessage.set(
-          err.status === 404
+          noExiste
             ? 'La ruta no existe o no está disponible.'
             : 'No se pudo cargar el detalle de la ruta.'
         );
+        // Reintentar un 404 no cambia nada; un corte de red sí (T15).
+        this.retryId.set(noExiste ? null : id);
         this.loading.set(false);
       }
     });

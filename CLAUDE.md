@@ -31,6 +31,12 @@ El frontend **presenta y captura**, no decide. Concretamente:
   - Qué barrios quedan en el tramo, dónde se sube, dónde se baja y hacia dónde se camina **lo calcula el backend** y viaja en `tripSegment` (campo opcional). El frontend elige las palabras: `lib/trip-steps.ts` traduce los grados del rumbo a "nororiente" y decide qué momentos vale la pena mostrar. Sin `tripSegment` el módulo lo dice ("no tenemos el detalle del tramo") en vez de volver a la ruta completa.
 - Consumo de la API REST del backend.
 - Detección de conectividad para usar el endpoint **online** (simulación en Google Maps) o el **offline** (cálculo por distancia sobre GeoJSON, sin tiempo estimado).
+- **Resistencia a internet lento (T15, SCRUM-199).** Con señal débil una petición no se pone lenta: se *corta*, y el navegador entrega `status 0`. Las reglas, todas medidas con `sustentacion/resultados/T15-throttle.mjs`:
+  - Los **GET de solo lectura** (`/api/routes`, `/api/routes/{id}`, `/api/places`, `/api/routes/search/offline`) se reintentan dos veces con espera creciente (`lib/retry-transient.ts`). **La búsqueda en línea no se reintenta**: cada llamada puede gastar una de las 150 consultas diarias a Google, así que un corte se resuelve cayendo al endpoint offline.
+  - Un `4xx` nunca se reintenta: el resultado sería el mismo y se gastarían datos.
+  - **Ningún error es el final del camino**: cada mensaje de fallo lleva un botón «Reintentar», y si lo que faltó fue red, la pantalla vuelve a pedir sola cuando el navegador avisa que regresó (`ConnectivityService.whenOnlineAgain`).
+  - **El resultado de la búsqueda no depende del mapa.** Google Maps JS tiene presupuesto de tiempo (`MAPS_LOAD_BUDGET_MS`, 12 s): pasado ese tiempo el hueco del mapa se vuelve un aviso discreto en vez de quedarse de esqueleto para siempre, y si Google llega tarde el mapa igual aparece.
+  - Una **pantalla diferida cuyo chunk no bajó** deja la vista en blanco: el router aborta la navegación. `NavigationFailureStore` + el aviso del armazón (`app.html`) son la salida.
 - Caja de comentarios: 10–100 caracteres, sin URLs; confirmación de envío como toast transitorio ("mensaje enviado") que desaparece solo, sin botón. Editar/borrar el propio comentario solo mientras esté pendiente de respuesta.
 - Historial: últimas 6 búsquedas del usuario, iguales en cualquier dispositivo donde inicie sesión (vienen de la cuenta, no de almacenamiento local).
 

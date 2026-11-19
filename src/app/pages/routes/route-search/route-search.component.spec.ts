@@ -4,7 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RIDES_STORAGE_KEY } from '../../../services/ride.service';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { GPS_TIMEOUT_MS, RouteSearchComponent } from './route-search.component';
 import { RouteService } from '../../../services/route.service';
@@ -43,6 +43,8 @@ interface Opciones {
   loggedIn?: boolean;
   getFavoriteDestination?: () => unknown;
   query?: Record<string, string>;
+  /** Emite cuando "vuelve la red"; por defecto no vuelve nunca. */
+  vuelveLaRed?: Subject<void>;
 }
 
 async function render(o: Opciones = {}) {
@@ -50,6 +52,7 @@ async function render(o: Opciones = {}) {
   const searchRouteOffline = vi.fn<(p: RouteSearchParams) => unknown>(
     o.searchRouteOffline ?? (() => of({ ...resultado, estimatedMinutes: null, etaSource: null })));
   const getPlaces = vi.fn(o.getPlaces ?? (() => of(MOCK_PLACES)));
+  const vuelveLaRed = o.vuelveLaRed ?? new Subject<void>();
 
   await TestBed.configureTestingModule({
     imports: [RouteSearchComponent],
@@ -60,7 +63,11 @@ async function render(o: Opciones = {}) {
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(o.query ?? {}) } } },
       { provide: RouteService, useValue: { searchRoute, searchRouteOffline } },
       { provide: PlaceService, useValue: { getPlaces } },
-      { provide: ConnectivityService, useValue: { isOnline: signal(o.online ?? true) } },
+      { provide: ConnectivityService, useValue: {
+        isOnline: signal(o.online ?? true),
+        whenOnlineAgain: () => vuelveLaRed.asObservable(),
+        reconnections: () => vuelveLaRed.asObservable(),
+      } },
       { provide: GoogleMapsLoaderService, useValue: { status: signal('sin-clave'), load: () => Promise.reject(new Error('sin-clave')) } },
       { provide: UserService, useValue: {
         getFavoriteDestination: vi.fn(o.getFavoriteDestination ?? (() => of(null))),
@@ -89,7 +96,15 @@ async function render(o: Opciones = {}) {
       expect(c.etaMostrado()).toBe(c.result()?.estimatedMinutes ?? 0);
     }, { timeout: 2000 });
   };
-  return { fixture, c, el, searchRoute, searchRouteOffline, elegirAmbos, buscar };
+  /** Vuelve a dibujar y deja asentar los efectos; para las pruebas de reintento. */
+  const asentar = async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+  const botonPorTexto = (texto: string) =>
+    Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes(texto));
+  return { fixture, c, el, searchRoute, searchRouteOffline, getPlaces, vuelveLaRed, elegirAmbos, buscar, asentar, botonPorTexto };
 }
 
 function mockGeolocation(impl: (ok: PositionCallback, fail: PositionErrorCallback, opts?: PositionOptions) => void) {
@@ -376,6 +391,120 @@ describe('RouteSearchComponent', () => {
     const { el, fixture } = await render({ getPlaces: () => throwError(() => new Error('x')) });
     fixture.detectChanges();
     expect(el.textContent).toContain('No pudimos cargar la lista de lugares');
+  });
+
+  // --- T15 (SCRUM-199): con internet lento ningún error es el final del camino ---
+
+  describe('internet lento', () => {
+    it('la lista de lugares se puede volver a pedir con el botón, y el combobox queda usable', async () => {
+      let intento = 0;
+      const { el, asentar, botonPorTexto, getPlaces } = await render({
+        getPlaces: () => {
+          intento += 1;
+          return intento === 1 ? throwError(() => new HttpErrorResponse({ status: 0 })) : of(MOCK_PLACES);
+        },
+      });
+      expect(el.textContent).toContain('No pudimos cargar la lista de lugares');
+
+      botonPorTexto('Reintentar')!.click();
+      await asentar();
+
+      expect(getPlaces).toHaveBeenCalledTimes(2);
+      expect(el.textContent).not.toContain('No pudimos cargar la lista de lugares');
+    });
+
+    it('sin red, los lugares no dicen "no pudimos": dicen que se está esperando, y vuelven solos', async () => {
+      const vuelveLaRed = new Subject<void>();
+      let intento = 0;
+      const { el, asentar, getPlaces, c } = await render({
+        online: false,
+        vuelveLaRed,
+        getPlaces: () => {
+          intento += 1;
+          return intento === 1 ? throwError(() => new HttpErrorResponse({ status: 0 })) : of(MOCK_PLACES);
+        },
+      });
+      expect(el.textContent).toContain('Apenas vuelva traemos la lista de lugares solos');
+      expect(el.textContent).not.toContain('No pudimos cargar la lista de lugares');
+
+      vuelveLaRed.next();
+      await asentar();
+
+      expect(getPlaces).toHaveBeenCalledTimes(2);
+      expect(c.places().length).toBeGreaterThan(0);
+    });
+
+    it('si la búsqueda falla, el error ofrece "Reintentar" y repetirla entrega el resultado', async () => {
+      let intento = 0;
+      const { el, elegirAmbos, asentar, botonPorTexto, c } = await render({
+        searchRoute: () => {
+          intento += 1;
+          return intento === 1 ? throwError(() => new HttpErrorResponse({ status: 500 })) : of(resultado);
+        },
+      });
+      elegirAmbos();
+      c.onSubmit();
+      await asentar();
+      expect(el.textContent).toContain('No se pudo completar la búsqueda');
+
+      botonPorTexto('Reintentar')!.click();
+      await asentar();
+
+      expect(c.result()).not.toBeNull();
+      expect(el.textContent).not.toContain('No se pudo completar la búsqueda');
+    });
+
+    it('sin red, la búsqueda cortada no dice "no se pudo": espera y se repite sola', async () => {
+      const vuelveLaRed = new Subject<void>();
+      let intento = 0;
+      const { el, elegirAmbos, asentar, c } = await render({
+        online: false,
+        vuelveLaRed,
+        searchRouteOffline: () => {
+          intento += 1;
+          return intento === 1 ? throwError(() => new HttpErrorResponse({ status: 0 })) : of(resultado);
+        },
+      });
+      elegirAmbos();
+      c.onSubmit();
+      await asentar();
+      expect(el.textContent).toContain('Apenas vuelva, buscamos de nuevo solos');
+      expect(el.textContent).not.toContain('No se pudo completar la búsqueda');
+
+      vuelveLaRed.next();
+      await asentar();
+
+      expect(c.result()).not.toBeNull();
+    });
+
+    it('si tocan "Señalar en el mapa" antes de que baje el selector, queda pendiente y se abre solo al aparecer', async () => {
+      const { c, el, fixture } = await render();
+      // El selector sale del bundle inicial (@defer): recién renderizada la pantalla aún no está.
+      expect(el.querySelector('dialog')).toBeNull();
+
+      c.pickOnMap('origin');
+      expect(c.pickPending()).toBe(true);
+
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(el.querySelector('dialog')?.hasAttribute('open')).toBe(true);
+      }, { timeout: 3000 });
+      expect(c.pickPending()).toBe(false);
+    });
+
+    it('el resultado NO depende del mapa: si Google Maps falla, los pasos y la tarifa igual se ven', async () => {
+      const { el, elegirAmbos, buscar } = await render();
+      elegirAmbos();
+      await buscar();
+
+      // El loader está en 'sin-clave' en estas pruebas, que es el mismo camino que 'error':
+      // el mapa se reemplaza por un aviso discreto y el resto de la pantalla sigue.
+      expect(el.querySelector('[data-testid="resultado"]')).not.toBeNull();
+      expect(el.textContent).toContain('Su viaje');
+      expect(el.textContent).toContain('Lo que vale el pasaje');
+      expect(el.querySelector('[data-testid="mapa-no-disponible"]')).not.toBeNull();
+      expect(el.querySelector('[role="alert"]')).toBeNull();
+    });
   });
 
   it('precarga el destino favorito', async () => {
