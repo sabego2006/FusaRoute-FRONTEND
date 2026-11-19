@@ -1462,3 +1462,6 @@ body:has(app-admin-layout) .fr-pie { display: none; } /* sin pie en administraci
 
 /* El torcido de la caja amarilla (+2,5° y su sombra) pisaba la primera línea del subtítulo; los h1 que ya traen margin inline lo conservan. */
 .fr-titulo-cartel { margin-bottom: var(--space-4); }
+
+/* El pie vive en el armazón y se pinta antes de que llegue la ruta (carga diferida): empujado luego por el contenido daba CLS 0,49 y el pie era el LCP. Con esta altura mínima nace fuera del primer viewport y su desplazamiento no se cuenta. */
+main.fr-shell.fr-shell { min-height: 100dvh; }
