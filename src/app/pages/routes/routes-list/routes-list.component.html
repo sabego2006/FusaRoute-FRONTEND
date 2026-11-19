@@ -49,10 +49,11 @@
     </div>
   } @else if (errorMessage()) {
     <!-- T05 (R4): Sutá acompaña el error. -->
-    <div class="fr-suta-estado fr-suta-estado--error" role="alert">
-      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
-           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
-      <div>
+    <div class="fr-suta-estado fr-suta-estado--error fr-suta-estado--papel" role="alert">
+      <span class="fr-sello-rojo" aria-hidden="true">ERROR</span>
+      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-lg" width="120" height="120" loading="lazy" decoding="async">
+      <p class="fr-papel__titulo">¡Uy, parcero!<br>Algo se nos cruzó</p>
+      <div class="fr-papel__texto">
         <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
         <button type="button" class="fr-btn" (click)="loadRoutes()">Reintentar</button>
       </div>
@@ -62,10 +63,11 @@
   @if (!loading() && !errorMessage() && !waitingForNetwork()) {
     @if (routes().length === 0) {
       <!-- Vacío con Sutá: es el momento en que más sirve una cara conocida. -->
-      <div class="fr-suta-estado fr-entra-solo" style="flex-direction: column; text-align: center; padding: var(--space-8);">
-        <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
-             class="fr-suta" width="96" height="96" loading="lazy" decoding="async">
-        <div>
+      <div class="fr-suta-estado fr-suta-estado--papel fr-entra-solo">
+        <span class="fr-sello-rojo" aria-hidden="true">SIN RUTA</span>
+        <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-lg" width="120" height="120" loading="lazy" decoding="async">
+        <p class="fr-papel__titulo">¡Uy, parcero!<br>No hay rutas activas</p>
+        <div class="fr-papel__texto">
           <p class="fr-texto">Qué falla, parcero: ahora mismo no hay rutas activas.</p>
           <p class="fr-texto-sm">Vuelve a intentarlo en un momento.</p>
         </div>
