@@ -1357,3 +1357,17 @@ app-letrero:nth-of-type(3n) .letrero { transform: rotate(-4deg); }
 }
 .fr-boleto .fr-btn.fr-btn-primario.fr-btn-bloque:active { transform: rotate(-10deg) translate(5px, 5px); box-shadow: 1px 1px 0 var(--tinta); }
 .fr-boleto .fr-btn.fr-btn-primario.fr-btn-bloque:disabled { box-shadow: none; transform: rotate(-10deg); }
+
+/* --- Aparición tardía (T19) ---
+   Los dos personajes del buscador (~50 KB) caen dentro del primer viewport y, aunque son lazy,
+   se piden de una vez: en Slow 4G le quitaban ~250 ms al LCP del titular. El contenedor nace con
+   content-visibility:hidden (no pinta ni descarga lo de dentro) y se muestra a los 1,2 s, con la
+   pantalla ya pintada. Cubre el <main> para que los stickers sigan posicionados contra él. */
+.fr-tarde {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content-visibility: hidden;
+  animation: fr-aparecer 0s linear 1.2s forwards;
+}
+@keyframes fr-aparecer { from { content-visibility: hidden; } to { content-visibility: visible; } }
