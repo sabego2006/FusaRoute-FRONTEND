@@ -3,7 +3,8 @@
   <div class="fr-progreso" aria-hidden="true"></div>
 }
 
-<main class="fr-pila fr-pagina-buscar">
+<main class="fr-pila fr-pagina-buscar fr-fondo-puntos">
+  <div class="fr-franja-arhuaca" aria-hidden="true"></div>
   <div style="text-align: center; margin-bottom: var(--space-6);">
     <!--
       T05 (R2, R4): Sutá ya no va encima del buscador inicial — la mascota se
@@ -11,9 +12,9 @@
       identidad la pone el letrero. Es texto, no imagen: el <h1> sigue siendo el
       LCP de esta pantalla (RNF-01) y nada compite con él por la red.
     -->
-    <p class="fr-chip-letrero" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
-    <h1 class="fr-titulo-1" style="margin-bottom: var(--space-2);">¿Para dónde va, parcero?</h1>
-    <p class="fr-texto-sm">Dinos de dónde sales y a dónde vas, y te decimos qué buseta tomar.</p>
+    <p class="fr-chip-letrero fr-chip-letrero--sticker" style="margin-bottom: var(--space-3);">Busetas de Fusa · Sumapaz</p>
+    <h1 class="fr-titulo-1 fr-titulo-cartel" style="margin-bottom: var(--space-2);"><span class="fr-cartel-1">¿Para dónde</span> <span class="fr-cartel-2">va, parcero?</span></h1>
+    <p class="fr-texto-sm fr-subrayado">Dinos de dónde sales y a dónde vas, y te decimos qué buseta tomar.</p>
   </div>
 
   @if (!isOnline()) {
@@ -26,8 +27,9 @@
     </div>
   }
 
-  <form (submit)="$event.preventDefault(); onSubmit()" class="fr-card fr-card--paramo" style="margin-bottom: var(--space-6);"
+  <form (submit)="$event.preventDefault(); onSubmit()" class="fr-boleto"
         aria-label="Buscar ruta">
+    <div class="fr-boleto__talon" aria-hidden="true"><span>N.º 0001 · FUSA</span></div>
     <div class="fr-campo">
       <app-trip-end-field
         end="origin"
@@ -122,9 +124,13 @@
               class="fr-btn fr-btn-primario fr-btn-bloque"
               [class.fr-btn--trabajando]="loading()"
               [disabled]="!canSearch()">
-        ¡Hágale!
+        <span aria-hidden="true">¡HÁ-<br>GALE!</span><span class="fr-solo-lectores">¡Hágale!</span>
       </button>
     </div>
+
+    <img class="fr-sticker fr-pegar" style="--r:14deg;--d:.1s;right:-16px;top:-34px;width:104px" src="assets/stickers/sombrero-vueltiao.svg" width="104" height="68" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+    <img class="fr-sticker fr-pegar" style="--r:18deg;--d:.3s;right:-14px;top:104px;width:54px" src="assets/stickers/mariposa-amarilla.svg" width="54" height="54" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+    <img class="fr-sticker fr-pegar" style="--r:-14deg;--d:.3s;left:-14px;top:-18px;width:34px" src="assets/stickers/destello.svg" width="34" height="34" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
   </form>
 
   <!-- P4: "Tus últimos viajes", plegado por defecto. -->
@@ -305,5 +311,14 @@
     <section class="fr-ya-me-subi" aria-label="Confirmar que tomó la buseta">
       <app-boarded-button [draft]="rideDraft()" />
     </section>
+  }
+  @if (!result() && !loading() && !notFound()) {
+    <div class="fr-franja-arhuaca fr-franja-arhuaca--inversa" aria-hidden="true"></div>
+    <div class="fr-tarde" aria-hidden="true">
+      <img class="fr-sticker fr-pegar" style="--r:-4deg;--d:.5s;left:8px;bottom:12px;height:154px" src="assets/stickers/indio-sutagao.webp" width="77" height="154" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <span class="fr-bocadillo fr-pegar" style="--r:3deg;--d:.5s;left:92px;bottom:140px" aria-hidden="true">¡Pille, pues!</span>
+      <img class="fr-sticker fr-pegar" style="--r:-3deg;--d:.7s;right:8px;bottom:12px;height:152px" src="assets/stickers/lucho-herrera.webp" width="91" height="152" alt="" aria-hidden="true" loading="lazy" decoding="async" fetchpriority="low">
+      <span class="fr-bocadillo fr-bocadillo--der fr-pegar" style="--r:-4deg;--d:.7s;right:92px;bottom:178px" aria-hidden="true">¡Pa' arriba!</span>
+    </div>
   }
 </main>
