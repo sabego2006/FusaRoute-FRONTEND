@@ -1371,3 +1371,76 @@ app-letrero:nth-of-type(3n) .letrero { transform: rotate(-4deg); }
   animation: fr-aparecer 0s linear 1.2s forwards;
 }
 @keyframes fr-aparecer { from { content-visibility: hidden; } to { content-visibility: visible; } }
+
+/* --- Carga (P-08) --- */
+.fr-carga { position: relative; container-type: inline-size; height: 320px; margin-top: var(--space-6); overflow: hidden; }
+.fr-carga__chiva {
+  position: absolute; left: 0; top: 70px; width: 210px; height: auto;
+  filter: drop-shadow(4px 4px 0 var(--tinta));
+  animation: fr-chiva 4s linear infinite;
+}
+@keyframes fr-chiva { from { transform: translateX(-230px); } to { transform: translateX(100cqw); } }
+.fr-carga__carretera {
+  position: absolute; left: 0; right: 0; top: 176px; height: 22px;
+  background: url(/assets/stickers/mochila-arhuaca-tile.svg) 0 0 / 22px 22px;
+  border-block: 3px solid var(--tinta);
+}
+.fr-carga__mariposa { position: absolute; filter: drop-shadow(2px 2px 0 var(--tinta)); animation: fr-flotar 1.8s ease-in-out infinite; }
+.fr-carga__mariposa--1 { left: 40px; top: 10px; }
+.fr-carga__mariposa--2 { right: 40px; top: 30px; animation-delay: .6s; }
+.fr-carga__mariposa--3 { left: calc(50% - 22px); top: 236px; animation-delay: 1.1s; }
+@keyframes fr-flotar { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-14px) rotate(10deg); } }
+.fr-carga__titulo { position: absolute; left: 0; right: 0; top: 214px; margin: 0; text-align: center; font: 400 30px/1.05 var(--font-display); }
+.fr-carga__titulo span {
+  display: inline-block; padding: 2px 12px 4px;
+  background: var(--lima); border: 3px solid var(--tinta); box-shadow: 5px 5px 0 var(--tinta);
+  transform: rotate(-2deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fr-carga__chiva, .fr-carga__mariposa { animation: none; }
+  .fr-carga__chiva { transform: translateX(80px); }
+}
+
+/* --- Estados en papel rasgado (P-13) --- */
+.fr-suta-estado.fr-suta-estado--papel {
+  position: relative;
+  display: block;
+  margin: var(--space-6) var(--space-2);
+  padding: 26px 18px 30px;
+  text-align: center;
+  background: var(--crema);
+  border: 3px solid var(--tinta);
+  box-shadow: 7px 7px 0 var(--tinta);
+  transform: rotate(-1.2deg);
+  clip-path: polygon(0 0, 100% 0, 100% 94%, 96% 97%, 92% 94%, 88% 98%, 84% 94%, 80% 97%, 76% 94%, 72% 98%, 68% 94%, 64% 97%, 60% 94%, 56% 98%, 52% 94%, 48% 97%, 44% 94%, 40% 98%, 36% 94%, 32% 97%, 28% 94%, 24% 98%, 20% 94%, 16% 97%, 12% 94%, 8% 98%, 4% 94%, 0 97%);
+}
+.fr-suta-estado--papel .fr-sello-rojo {
+  position: absolute; top: 16px; right: 10px;
+  padding: 2px 10px;
+  font: 400 24px/1.1 var(--font-display);
+  color: var(--rojo-sello);
+  background: rgba(255, 255, 255, .4);
+  border: 4px solid var(--rojo-sello);
+  transform: rotate(12deg);
+}
+.fr-suta-estado--papel .fr-suta { margin: 0 auto; filter: drop-shadow(3px 3px 0 var(--tinta)); }
+.fr-papel__titulo { margin: 10px 0 6px; font: 400 28px/1.05 var(--font-display); }
+.fr-papel__texto { margin: 0 0 18px; color: var(--tinta); }
+.fr-papel__texto p { margin: 0; }
+
+/* --- Tarjeta de ruta como etiqueta pegada (P-07) --- */
+.fr-card.fr-card--etiqueta { position: relative; transform: rotate(var(--r, -1.5deg)); }
+.fr-bento > li.fr-card--etiqueta:nth-child(even) { --r: 1.2deg; }
+.fr-card.fr-card--etiqueta::before {
+  content: "";
+  position: absolute; z-index: 1; top: -10px; left: -14px;
+  width: 90px; height: 25px;
+  background: url(/assets/stickers/cinta.svg) center / 100% 100% no-repeat;
+  filter: drop-shadow(2px 2px 0 var(--tinta));
+  transform: rotate(-30deg);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .fr-card.fr-card--etiqueta.fr-card-interactiva:hover { transform: rotate(var(--r, -1.5deg)) translate(-2px, -2px); }
+}
+.fr-card.fr-card--etiqueta.fr-card-interactiva:active { transform: rotate(var(--r, -1.5deg)) translate(2px, 2px); }

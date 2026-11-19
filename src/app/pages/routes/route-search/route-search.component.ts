@@ -405,6 +405,13 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Lleva al usuario de vuelta a «Origen» después de un resultado vacío o un error. */
+  volverAlFormulario(): void {
+    const origen = document.querySelector<HTMLInputElement>('app-place-combobox input');
+    origen?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    origen?.focus({ preventScroll: true });
+  }
+
   onSubmit(): void {
     const origin = this.origin();
     const destination = this.destination();

@@ -18,11 +18,12 @@
   </div>
 
   @if (!isOnline()) {
-    <div class="fr-suta-estado" role="status" style="margin-bottom: var(--space-4);">
-      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
-           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
-      <div>
-        <p><strong>Está sin internet.</strong> Le podemos decir la ruta más corta, pero no cuánto se va a demorar.</p>
+    <div class="fr-suta-estado fr-suta-estado--papel" role="status">
+      <span class="fr-sello-rojo" aria-hidden="true">SIN RED</span>
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-lg" width="120" height="120" loading="lazy" decoding="async">
+      <p class="fr-papel__titulo">¡Uy, parcero!<br>Está sin internet</p>
+      <div class="fr-papel__texto">
+        <p>Le podemos decir la ruta más corta, pero no cuánto se va a demorar.</p>
       </div>
     </div>
   }
@@ -155,21 +156,22 @@
 
   @if (loading()) {
     <p role="status" class="fr-solo-lectores">Buscando la mejor ruta...</p>
-    <div class="fr-esq-card fr-entra" animate.leave="fr-saliendo" aria-hidden="true">
-      <div class="fr-esqueleto fr-esq-titulo"></div>
-      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--corta"></div>
-      <div class="fr-esqueleto fr-esq-letrero" style="margin-top: var(--space-6);"></div>
-      <div class="fr-esqueleto fr-esq-linea fr-esq-linea--media"></div>
-      <div class="fr-esqueleto fr-esq-mapa" style="margin-top: var(--space-6);"></div>
-      <div class="fr-esqueleto fr-esq-boton"></div>
+    <div class="fr-carga fr-entra" animate.leave="fr-saliendo" aria-hidden="true">
+      <img class="fr-carga__mariposa fr-carga__mariposa--1" src="assets/stickers/mariposa-amarilla.svg" width="46" height="46" alt="" loading="lazy" decoding="async">
+      <img class="fr-carga__mariposa fr-carga__mariposa--2" src="assets/stickers/mariposa-amarilla.svg" width="38" height="38" alt="" loading="lazy" decoding="async">
+      <img class="fr-carga__mariposa fr-carga__mariposa--3" src="assets/stickers/mariposa-amarilla.svg" width="44" height="44" alt="" loading="lazy" decoding="async">
+      <img class="fr-carga__chiva" src="assets/stickers/chiva.svg" width="210" height="115" alt="" loading="lazy" decoding="async">
+      <div class="fr-carga__carretera"></div>
+      <p class="fr-carga__titulo"><span>Buscando su<br>buseta…</span></p>
     </div>
   }
 
   @if (notFound(); as nf) {
-    <div class="fr-suta-estado fr-entra-solo" role="status" style="align-items: flex-start;">
-      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true"
-           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
-      <div>
+    <div class="fr-suta-estado fr-suta-estado--papel fr-entra-solo" role="status">
+      <span class="fr-sello-rojo" aria-hidden="true">SIN RUTA</span>
+      <img src="assets/mascot/suta-pointing.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-lg" width="120" height="120" loading="lazy" decoding="async">
+      <p class="fr-papel__titulo">¡Uy, parcero!<br>Por ahí no pasa buseta</p>
+      <div class="fr-papel__texto">
         <p>{{ nf.detail }}</p>
         @if (nf.nearest.length) {
           <ul class="fr-cercanas">
@@ -179,6 +181,7 @@
           </ul>
         }
       </div>
+      <button type="button" class="fr-btn fr-btn-primario fr-btn-bloque" (click)="volverAlFormulario()">Buscar otra</button>
     </div>
   }
 
@@ -193,15 +196,17 @@
       </div>
     </div>
   } @else if (errorMessage()) {
-    <div class="fr-suta-estado fr-suta-estado--error fr-entra-solo" role="alert">
-      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true"
-           class="fr-suta fr-suta-sm" width="48" height="48" loading="lazy" decoding="async">
-      <div>
+    <div class="fr-suta-estado fr-suta-estado--error fr-suta-estado--papel fr-entra-solo" role="alert">
+      <span class="fr-sello-rojo" aria-hidden="true">ERROR</span>
+      <img src="assets/mascot/suta-de-pie.webp" alt="" aria-hidden="true" class="fr-suta fr-suta-lg" width="120" height="120" loading="lazy" decoding="async">
+      <p class="fr-papel__titulo">¡Uy, parcero!<br>Algo se nos cruzó</p>
+      <div class="fr-papel__texto">
         <p><strong style="color: var(--rojo-texto);">Qué falla:</strong> {{ errorMessage() }}</p>
         @if (canRetrySearch()) {
           <button type="button" class="fr-btn" [disabled]="loading()" (click)="retrySearch()">Reintentar</button>
         }
       </div>
+      <button type="button" class="fr-btn fr-btn-primario fr-btn-bloque" (click)="volverAlFormulario()">Buscar otra</button>
     </div>
   }
 

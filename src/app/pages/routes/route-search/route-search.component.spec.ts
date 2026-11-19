@@ -119,6 +119,18 @@ afterEach(() => {
 });
 
 describe('RouteSearchComponent', () => {
+  it('volverAlFormulario deja el foco en el campo Origen', async () => {
+    const { c, el, fixture } = await render();
+    // El componente se renderiza fuera del documento: se monta para que document.querySelector lo vea.
+    document.body.appendChild(el);
+    const origen = el.querySelector<HTMLInputElement>('app-place-combobox input')!;
+    origen.scrollIntoView = vi.fn();
+    c.volverAlFormulario();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(origen);
+    el.remove();
+  });
+
   it('reemplaza los select por dos campos escribibles y quita el details', async () => {
     const { el } = await render();
     expect(el.querySelector('select')).toBeNull();
