@@ -104,9 +104,9 @@ import { AuthService } from '../../services/auth.service';
       letter-spacing: .02em;
     }
 
+    /* La pestaña activa es un sticker lima: su estilo vive en styles.css, bajo «Identidad v2». */
     .fr-nav__item.is-activa {
       opacity: 1;
-      color: var(--lima);
     }
 
     .fr-nav__item:focus-visible {
