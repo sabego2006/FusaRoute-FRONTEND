@@ -1281,7 +1281,8 @@ app-letrero:nth-of-type(3n) .letrero { transform: rotate(-4deg); }
 .fr-boleto {
   position: relative;
   margin-bottom: var(--space-8);
-  padding: 18px 78px 40px 16px;
+  /* 86px abajo (el plan decía 40): con los tres modos de elegir origen y destino (T16) el formulario es más alto y el sello de 104 px tapaba el botón «Señalar en el mapa» del destino. */
+  padding: 18px 78px 86px 16px;
   background: var(--crema);
   border: 3px solid var(--tinta);
   border-radius: 6px;
