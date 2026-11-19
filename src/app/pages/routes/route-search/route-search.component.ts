@@ -173,7 +173,7 @@ export class RouteSearchComponent implements OnInit, OnDestroy {
   readonly favoritoPulsado = signal(false);
 
   private readonly zonaResultado = viewChild.required<ElementRef<HTMLElement>>('zonaResultado');
-  /** El selector se baja en reposo (@defer): hasta entonces no existe, y por eso es opcional. */
+  /** El selector se baja en un chunk aparte (@defer): hasta entonces no existe, y por eso es opcional. */
   private readonly pickDialog = viewChild<MapPickDialogType>('pickDialog');
   /** Punta que el usuario pidio señalar en el mapa antes de que el selector terminara de bajar. */
   private readonly pendingPick = signal<End | null>(null);

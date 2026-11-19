@@ -500,7 +500,7 @@ describe('RouteSearchComponent', () => {
       // El loader está en 'sin-clave' en estas pruebas, que es el mismo camino que 'error':
       // el mapa se reemplaza por un aviso discreto y el resto de la pantalla sigue.
       expect(el.querySelector('[data-testid="resultado"]')).not.toBeNull();
-      expect(el.textContent).toContain('Por dónde pasa');
+      expect(el.textContent).toContain('Su viaje');
       expect(el.textContent).toContain('Lo que vale el pasaje');
       expect(el.querySelector('[data-testid="mapa-no-disponible"]')).not.toBeNull();
       expect(el.querySelector('[role="alert"]')).toBeNull();

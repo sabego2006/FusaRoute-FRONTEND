@@ -104,10 +104,10 @@
       <section class="fr-vista-previa" aria-label="Vista previa en el mapa" data-testid="vista-previa">
         <!--
           T15: el mapa (y @angular/google-maps con él) sale del bundle inicial. Se baja en
-          reposo, antes de que haga falta, y el esqueleto tiene el mismo alto para que
+          un chunk aparte que se pide apenas hace falta, y el esqueleto tiene el mismo alto para que
           nada se mueva cuando llega.
         -->
-        @defer (on immediate; prefetch on idle) {
+        @defer (on immediate) {
           <app-places-map [markers]="previewMarkers()" [height]="220"
                           fallbackText="Igual puede buscar con lo que eligió." />
         } @placeholder {
@@ -137,7 +137,7 @@
     T15: el selector de punto también sale del bundle inicial. Si alguien toca "Señalar en el
     mapa" antes de que baje, `pickOnMap` lo deja pendiente y se abre apenas aparece.
   -->
-  @defer (on idle; prefetch on idle) {
+  @defer (on idle) {
     <app-map-pick-dialog #pickDialog (picked)="onMapPicked($event)" />
   }
   @if (pickPending()) {
@@ -277,10 +277,10 @@
             trazado completo de la ruta (r.path) ya NO se dibuja: hacía ver un recorrido mucho
             más largo que el real. Quien quiera verlo entero tiene el detalle de la ruta.
 
-            T15: el mapa sale del bundle inicial. Se baja en reposo, antes de que haga falta, y
+            T15: el mapa sale del bundle inicial. Se baja en un chunk aparte apenas se pide, y
             el esqueleto tiene el mismo alto para que nada se mueva cuando llega.
           -->
-          @defer (on immediate; prefetch on idle) {
+          @defer (on immediate) {
             <app-places-map [markers]="resultMarkers()" [path]="ridePath()"
                             [walkPaths]="walkPaths()" [height]="320" />
           } @placeholder {
